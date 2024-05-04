@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+
+{% block content %} 
+
+  <div class="content-wrapper">
+
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Cattle Add</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="../cattle">Home</a></li>
+              <li class="breadcrumb-item active">Cattle Add</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="content">
+    <form action="/cattle_add" method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card card-primary">
+            <div class="card-header">
+              <h3 class="card-title">Basic Information</h3>
+
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="inputName">Id</label>
+                <input type="text" id="inputName" name="id" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputDescription">Date of Birth</label>
+                <input type="date" id="inputName" name="dob" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Name</label>
+                <input type="text" id="inputName" name="name" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputClientCompany">Gender</label>
+                <select id="inputStatus" name="gender" class="form-control custom-select">
+                  <option selected disabled>Select one</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+        <div class="col-md-6">
+          <div class="card card-secondary">
+            <div class="card-header">
+              <h3 class="card-title">Others</h3>
+
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="inputName">Estimated Price</label>
+                <input type="text" id="inputName" name="estimated_price" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputStatus">Breed</label>
+                <select id="inputStatus" name="breed" class="form-control custom-select">
+                  <option selected disabled>Select one</option>
+                  <option>1</option>
+                  <option>2</option>
+                  <option>3</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="inputStatus"> Status</label>
+                <select id="inputStatus" name="status" class="form-control custom-select">
+                  {% for d in data1 %}
+                  <option value="{{d.cattle_status_id}}">{{ d.cattle_status}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+   
+          </div>
+  
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <a href="cattle" class="btn btn-secondary">Back</a>
+          <button type="submit" class="btn btn-success float-right" >Add Cattle</button>
+        </div>
+      </div>
+    </form>
+    <br>
+
+    <button type="button" class="btn btn-success" id="addPhotoBtn">Add Photo</button>
+
+    <!-- Hidden section for photo form -->
+    <div id="photoFormSection" style="display: none;">
+      <form action="/add_photo" method="post" id="photoForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <!-- Photo form fields -->
+        <div class="form-group">
+          <label for="inputStatus">Cattle id</label>
+          <select id="inputStatus" name="cattle_id" class="form-control custom-select">
+            {% for d in data2 %}
+            <option value="{{d.cattle_id}}">{{ d.cattle_id}}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="inputPhotoUrl">Photo</label>
+          <input type="file" id="inputPhotoUrl" name="photo_url" class="form-control" required>
+        </div> 
+        <div class="form-group">
+          <label for="inputPhotoDescription">Photo Description</label>
+          <input type="text" id="inputPhotoDescription" name="photo_description" class="form-control">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Add Photo</button>
+      </form>
+    </div>
+
+    </section>
+
+  </div>
+
+  <script>
+  // JavaScript code
+  document.getElementById('addPhotoBtn').addEventListener('click', function() {
+    document.getElementById('photoFormSection').style.display = 'block';
+  });
+</script>
+  
+  
+  
+  {% endblock %}
