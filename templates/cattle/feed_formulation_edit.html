@@ -9,12 +9,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Cattle Edit</h1>
+            <h1>Feed Formulation Edit</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="../cattle_status">Home</a></li>
-              <li class="breadcrumb-item active">Cattle Status Edit</li>
+              <li class="breadcrumb-item"><a href="../feed_formulation">Home</a></li>
+              <li class="breadcrumb-item active">Feed Formulation Edit</li>
             </ol>
           </div>
         </div>
@@ -22,7 +22,7 @@
     </section>
 
     <section class="content">
-      <form action="/cattle_status_edit/{{d.cattle_status_id}}" method="post">
+      <form action="/feed_formulation_edit/{{d.feed_formulation_id}}" method="post">
         {% csrf_token %}
         <div class="row">
           <div class="col-md-12">
@@ -38,8 +38,8 @@
               </div>
               <div class="card-body">
                 <div class="form-group">
-                  <label for="inputDescription">Status</label>
-                  <input type="text" id="inputName" name="status" value="{{d.cattle_status}}" class="form-control">
+                  <label for="inputDescription">Feed Formulation Description</label>
+                  <input type="text" id="inputName" name="feed_formulation_description" value="{{d.feed_formulation_description}}" class="form-control">
                 </div>
               </div>
             </div>
@@ -48,8 +48,8 @@
         </div>
         <div class="row">
           <div class="col-12">
-            <a href="../cattle_status" class="btn btn-secondary">Back</a>
-            <button type="submit" class="btn btn-success float-right" >Update Cattle Status</button>
+            <a href="../feed_formulation" class="btn btn-secondary">Back</a>
+            <button type="submit" class="btn btn-success float-right" >Update Feed Formulation</button>
           </div>
         </div>
       </form>

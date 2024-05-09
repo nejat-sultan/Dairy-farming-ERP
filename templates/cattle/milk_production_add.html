@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+
+{% block content %} 
+
+  <div class="content-wrapper">
+
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Milk Production Add</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="../milk_production">Home</a></li>
+              <li class="breadcrumb-item active">Milk Production Add</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="content">
+    <form action="/milk_production_add" method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card card-primary">
+            <div class="card-header">
+              <h3 class="card-title">Basic Information</h3>
+
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="inputName">Amount in Liter</label>
+                <input type="text" id="inputName" name="amount_in_liter" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Milk Time</label>
+                <input type="datetime-local" id="inputName" name="milk_time" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Fat Content</label>
+                <input type="text" id="inputName" name="fat_content" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Protein Content</label>
+                <input type="text" id="inputName" name="protein_content" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Somatic Cell Count</label>
+                <input type="text" id="inputName" name="somatic_cell_count" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Duration</label>
+                <input type="text" id="inputName" name="duration_in_min" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Cattle</label>
+                {% comment %} <input type="text" id="inputName" name="cattle_id" class="form-control"> {% endcomment %}
+                <select id="inputStatus" name="cattle_id" class="form-control custom-select">
+                  {% for d in data2 %}
+                  <option value="{{d.cattle_id}}">{{ d.cattle_name}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <a href="milk_production" class="btn btn-secondary">Back</a>
+          <button type="submit" class="btn btn-success float-right" >Add Milk Production</button>
+          {% comment %} <input type="submit" value="Add Cattle" class="btn btn-success float-right"> {% endcomment %}
+        </div>
+      </div>
+    </form>
+    </section>
+
+  </div>
+  
+  {% endblock %}
+

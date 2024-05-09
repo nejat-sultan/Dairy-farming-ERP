@@ -9,12 +9,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Cattle Status</h1>
+            <h1>Feed Formulation</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">Cattle Status</li>
+              <li class="breadcrumb-item active">Feed Formulation</li>
             </ol>
           </div>
         </div>
@@ -27,10 +27,10 @@
       <!-- Default box -->
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Manage Cattle Status</h3>
+          <h3 class="card-title">Manage Feed Formulation</h3>
 
           <div class="card-tools">
-            <a class="btn btn-primary" href="cattle_status_add">
+            <a class="btn btn-primary" href="feed_formulation_add">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -51,11 +51,11 @@
           <table class="table table-striped projects">
               <thead>
                   <tr>
-                      <th style="width: 30%">
+                      <th style="width: 20%">
                           Id
                       </th> 
-                      <th style="width: 30%">
-                        Status
+                      <th style="width: 40%">
+                        Feed Formulation Description
                       </th>
                     
                       <th style="width: 40%"> Actions </th>
@@ -65,19 +65,19 @@
                 {% for d in data1 %}
                   <tr>
                       <td>
-                        {{d.cattle_status_id}}
+                        {{d.feed_formulation_id}}
                       </td>
                       <td>
-                        {{d.cattle_status}}
+                        {{d.feed_formulation_description}}
                       </td>
 
                       <td class="project-actions">
-                          <a class="btn btn-info btn-sm" href="/cattle_status_edit/{{d.cattle_status_id}}">
+                          <a class="btn btn-info btn-sm" href="/feed_formulation_edit/{{d.feed_formulation_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
                               Edit
                           </a>
-                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.cattle_status_id }}')">
+                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.feed_formulation_id }}')">
                             <i class="fas fa-trash">
                             </i>
                             Delete
@@ -85,9 +85,9 @@
 
                           <script>
                             function confirmDelete(cattleId) {
-                                if (confirm("Are you sure you want to delete this cattle status?")) {
+                                if (confirm("Are you sure you want to delete this Feed Formulation?")) {
                                     // If user confirms, redirect to the delete URL
-                                    window.location.href = "/cattle_status_delete/" + cattleId;
+                                    window.location.href = "/feed_formulation_delete/" + cattleId;
                                 }
                             }
                           </script>
@@ -101,7 +101,6 @@
 
     </section>
   </div>
-
 
   {% endblock %}
   

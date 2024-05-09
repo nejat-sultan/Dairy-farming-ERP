@@ -9,12 +9,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Cattle Edit</h1>
+            <h1>Vaccine Edit</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="../cattle_status">Home</a></li>
-              <li class="breadcrumb-item active">Cattle Status Edit</li>
+              <li class="breadcrumb-item"><a href="../vaccine">Home</a></li>
+              <li class="breadcrumb-item active">Vaccine Edit</li>
             </ol>
           </div>
         </div>
@@ -22,7 +22,7 @@
     </section>
 
     <section class="content">
-      <form action="/cattle_status_edit/{{d.cattle_status_id}}" method="post">
+      <form action="/vaccine_edit/{{d.vaccine_id}}" method="post">
         {% csrf_token %}
         <div class="row">
           <div class="col-md-12">
@@ -38,8 +38,16 @@
               </div>
               <div class="card-body">
                 <div class="form-group">
-                  <label for="inputDescription">Status</label>
-                  <input type="text" id="inputName" name="status" value="{{d.cattle_status}}" class="form-control">
+                  <label for="inputName">Name</label>
+                  <input type="text" id="inputName" name="vaccine_name" value="{{d.vaccine_name}}" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label for="inputName">Benefit</label>
+                  <input type="text" id="inputName" name="vaccine_benefit" value="{{d.vaccine_benefit}}" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label for="inputName">Recommended Time</label>
+                  <input type="text" id="inputName" name="vaccine_recommended_time" value="{{d.vaccine_recommended_time}}" class="form-control">
                 </div>
               </div>
             </div>
@@ -48,8 +56,8 @@
         </div>
         <div class="row">
           <div class="col-12">
-            <a href="../cattle_status" class="btn btn-secondary">Back</a>
-            <button type="submit" class="btn btn-success float-right" >Update Cattle Status</button>
+            <a href="../vaccine" class="btn btn-secondary">Back</a>
+            <button type="submit" class="btn btn-success float-right" >Update Vaccine</button>
           </div>
         </div>
       </form>

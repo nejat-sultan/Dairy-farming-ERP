@@ -9,12 +9,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Cattle Status Add</h1>
+            <h1>Cattle Breed Add</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="../cattle_status">Home</a></li>
-              <li class="breadcrumb-item active">Cattle Status Add</li>
+              <li class="breadcrumb-item"><a href="../cattle_breed">Home</a></li>
+              <li class="breadcrumb-item active">Cattle Breed Add</li>
             </ol>
           </div>
         </div>
@@ -23,7 +23,7 @@
 
 
     <section class="content">
-    <form action="/cattle_status_add" method="post">
+    <form action="/cattle_breed_add" method="post">
       {% csrf_token %}
       <div class="row">
         <div class="col-md-12">
@@ -39,8 +39,12 @@
             </div>
             <div class="card-body">
               <div class="form-group">
-                <label for="inputName">Status</label>
-                <input type="text" id="inputName" name="status" class="form-control">
+                <label for="inputName">Breed Type</label>
+                <input type="text" id="inputName" name="breed_type" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Breed Description</label>
+                <input type="text" id="inputName" name="breed_description" class="form-control">
               </div>
             </div>
           </div>
@@ -49,8 +53,8 @@
       </div>
       <div class="row">
         <div class="col-12">
-          <a href="cattle_status" class="btn btn-secondary">Back</a>
-          <button type="submit" class="btn btn-success float-right" >Add Cattle Status</button>
+          <a href="cattle_breed" class="btn btn-secondary">Back</a>
+          <button type="submit" class="btn btn-success float-right" >Add Cattle Breed</button>
           {% comment %} <input type="submit" value="Add Cattle" class="btn btn-success float-right"> {% endcomment %}
         </div>
       </div>

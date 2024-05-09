@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+
+  <div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Supplier Edit</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="../supplier">Home</a></li>
+              <li class="breadcrumb-item active">Supplier Edit</li>
+            </ol>
+          </div>
+        </div>
+      </div><!-- /.container-fluid -->
+    </section>
+
+    <section class="content">
+      <form action="/supplier_edit/{{d.farm_entity_id}}" method="post">
+        {% csrf_token %}
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card card-primary">
+              <div class="card-header">
+                <h3 class="card-title">Basic Information</h3>
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="inputName">Supplier Name</label>
+                  <input type="text" id="inputName" name="supplier_name" value="{{ d.supplier_name }}" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label for="inputName">Supplier Type</label>
+                  <select id="inputStatus" name="supplier_type" class="form-control custom-select">
+                  {% for d in data1 %}
+                    <option value="{{d.supplier_type_id}}" {% if d.supplier_type_id == type.supplier_type_id %} selected {% endif %}>
+                      {{ d.supplier_type }}
+                    </option>
+                  {% endfor %}    
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="inputName">Account Number</label>
+                  <input type="text" id="inputName" name="account_number" value="{{ d.account_number }}" class="form-control">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12">
+            <a href="../supplier" class="btn btn-secondary">Back</a>
+            <button type="submit" class="btn btn-success float-right">Update Supplier</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+  
+  </div>
+  
+  {% endblock %}

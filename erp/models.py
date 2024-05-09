@@ -54,6 +54,22 @@ class SaleType(models.Model):
     class Meta:
         db_table = 'sale_type'
 
+# class ItemType(models.Model):
+#     item_type_id = models.AutoField(primary_key=True)
+#     item_type = models.CharField(max_length=100, null=True)
+#     modified_date = models.DateField(null=True)
+
+#     class Meta:
+#         db_table = 'item_type'
+
+class Item(models.Model):
+    item_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'item'
+
 class Region(models.Model):
     region_id = models.AutoField(primary_key=True)
     region = models.CharField(max_length=100, null=True)
@@ -70,12 +86,9 @@ class GuaranteeType(models.Model):
     class Meta:
         db_table = 'guarantee_type'
 
-
-
-
 class CattleBreed(models.Model):
     cattle_breed_id = models.AutoField(primary_key=True)
-    cattle_breed_name = models.CharField(max_length=100, null=True)
+    cattle_breed_type = models.CharField(max_length=100, null=True)
     cattle_breed_description = models.CharField(max_length=200, null=True)
     modified_date = models.DateTimeField(null=True)
 
@@ -104,7 +117,7 @@ class CattlePhoto(models.Model):
         db_table = 'cattle_photo'
 
 class Vaccine(models.Model):
-    vaccine_id = models.IntegerField(primary_key=True)
+    vaccine_id = models.AutoField(primary_key=True)
     vaccine_name = models.CharField(max_length=45, null=True)
     vaccine_benefit = models.CharField(max_length=2555, null=True)
     vaccine_recommended_time = models.CharField(max_length=45, null=True)
@@ -126,6 +139,7 @@ class CattlePregnancy(models.Model):
     cattle_pregnancy_type = models.CharField(max_length=45, null=True)
     cattle_pregnancy_date = models.DateField()
     cattle_expected_delivery_date = models.DateField(null=True)
+    cattle_pregnancy_status = models.CharField(max_length=45, null=True)
     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
 
     class Meta:
@@ -153,6 +167,15 @@ class Job(models.Model):
     class Meta:
         db_table = 'job'
 
+class Shift(models.Model):
+    shift_id = models.AutoField(primary_key=True)
+    shift_name = models.CharField(max_length=45, null=True)
+    shift_start_time = models.DateTimeField(null=True)
+    shift_end_time = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'shift'
+
 class Department(models.Model):
     department_id = models.AutoField(primary_key=True)
     department_name = models.CharField(max_length=45, null=True)
@@ -177,7 +200,7 @@ class Employee(models.Model):
 
 class FeedFormulation(models.Model):
     feed_formulation_id = models.AutoField(primary_key=True)
-    feed_formulation_descriprion = models.CharField(max_length=255)
+    feed_formulation_description = models.CharField(max_length=255)
 
     class Meta:
         db_table = 'feed_formulation'
@@ -202,5 +225,91 @@ class FeedTime(models.Model):
 
     class Meta:
         db_table = 'feed_time'
+
+
+class FarmEntity(models.Model):
+    farm_entity_id = models.AutoField(primary_key=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'farm_entity'
+
+class Supplier(models.Model):
+    farm_entity = models.OneToOneField('FarmEntity', primary_key=True, on_delete=models.CASCADE)
+    supplier_name = models.CharField(max_length=250, null=True)
+    account_number = models.CharField(max_length=45, null=True)
+    supplier_type_id = models.IntegerField()
+
+    class Meta:
+        db_table = 'supplier'
+
+    def delete(self, *args, **kwargs):
+        # Delete the associated FarmEntity instance
+        self.farm_entity.delete()
+        # Call the parent delete method to delete the Supplier instance
+        super().delete(*args, **kwargs)
+
+class Order(models.Model):
+    order_id = models.AutoField(primary_key=True)
+    requested_by = models.ForeignKey(Employee, on_delete=models.CASCADE,null=True, related_name='requested_orders')
+    requested_date = models.DateField(null=True)
+    request_approved = models.CharField(max_length=10, null=True)
+    request_approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='request_approved_orders')
+    request_approved_date = models.DateTimeField(null=True)
+    purchase_approved = models.CharField(max_length=10, null=True)
+    purchase_approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='purchase_approved_orders')
+    purchase_approved_date = models.DateTimeField(null=True)
+    inventory_approved = models.CharField(max_length=10, null=True)
+    inventory_approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='inventory_approved_orders')
+    inventory_approved_date = models.DateTimeField(null=True)
+    status = models.CharField(max_length=45, null=True)
+
+    class Meta:
+        db_table = 'order'
+
+class OrderHasItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    type = models.CharField(max_length=45, null=True)
+    quantity = models.CharField(max_length=45, null=True)
+    measurement = models.CharField(max_length=45, null=True)
+    extra_charges = models.FloatField(null=True)
+    extracharge_reasons = models.CharField(max_length=150, null=True)
+    taxes_in_percent = models.FloatField(null=True)
+    discount = models.FloatField(null=True)
+    modified_date = models.CharField(max_length=45, null=True)
+
+    class Meta:
+        db_table = 'order_has_item'
+        # unique_together = ('order', 'item',)
+
+class OrderHasItemSupplier(models.Model):
+    order = models.ForeignKey(OrderHasItem, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    # order_item = models.ForeignKey(OrderHasItem, on_delete=models.CASCADE)
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
+    price = models.FloatField(null=True)
+    status = models.CharField(max_length=45, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'order_has_item_supplier'
+        # unique_together = ('order', 'item', 'supplier')
+
+class Inventory(models.Model):
+    inventory_id = models.AutoField(primary_key=True)
+    quantity = models.CharField(max_length=45, null=True)
+    unit_price = models.CharField(max_length=45, null=True)
+    measurement = models.CharField(max_length=100, null=True)
+    item_id = models.ForeignKey(Item, on_delete=models.CASCADE)
+    type = models.CharField(max_length=45, null=True)
+    description = models.CharField(max_length=200, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'inventory'
+
+
+
 
 

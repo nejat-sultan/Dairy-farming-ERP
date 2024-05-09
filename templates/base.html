@@ -32,9 +32,9 @@
 <div class="wrapper">
 
   <!-- Preloader -->
-  <div class="preloader flex-column justify-content-center align-items-center">
-    <img class="animation__shake" src="{% static 'dist/img/logo.png' %}" alt="AdminLTELogo" height="60" width="60">
-  </div>
+  {% comment %} <div class="preloader flex-column justify-content-center align-items-center">
+    <img class="animation__shake" src="{% static 'dist/img/cattlecopy.jpg' %}" alt="AdminLTELogo" height="60" width="60">
+  </div> {% endcomment %}
 
   <!-- Navbar -->
   <nav class="main-header navbar navbar-expand navbar-white navbar-light">
@@ -178,7 +178,7 @@
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
     <a href="index3.html" class="brand-link">
-      <img src="{% static 'dist/img/logo.png' %}" alt="Admin Logo" class="brand-image img-circle elevation-3">
+      <img src="{% static 'dist/img/cattlecopy.jpg' %}" alt="Admin Logo" class="brand-image img-circle elevation-3">
       <span class="brand-text font-weight-light">BiloFarm</span>
     </a>
 
@@ -232,7 +232,7 @@
             </a> 
             <ul class="nav nav-treeview">
               <li class="nav-item">
-                <a href="../cattle" class="nav-link">
+                <a href="../../cattle" class="nav-link">
                   <i class="nav-icon fas fa-horse"></i>
                   <p>
                     Basic Information
@@ -252,7 +252,7 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="../../cattle_pregnancy" class="nav-link">
                   <i class="nav-icon fas fa-horse"></i>
                   <p>Reproduction</p>
                 </a>
@@ -272,10 +272,34 @@
 
           <li class="nav-header">Procurement Management</li>
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <a href="../../supplier" class="nav-link">
               <i class="nav-icon fas fa-coins"></i>
               <p>
-                Manage Orders
+                Manage Supplier
+              </p>
+            </a>
+          </li> 
+          <li class="nav-item">
+            <a href="../../request_order" class="nav-link">
+              <i class="nav-icon fas fa-coins"></i>
+              <p>
+                Manage Order Request
+              </p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="../../rfq" class="nav-link">
+              <i class="nav-icon fas fa-coins"></i>
+              <p>
+                Manage RFQ
+              </p>
+            </a>
+          </li> 
+          <li class="nav-item">
+            <a href="../../purchase_order" class="nav-link">
+              <i class="nav-icon fas fa-coins"></i>
+              <p>
+                Manage Purchase Order
               </p>
             </a>
           </li>
@@ -322,7 +346,7 @@
 
           <li class="nav-header">Production Management</li>   
           <li class="nav-item">
-            <a href="#" class="nav-link">
+            <a href="../../milk_production" class="nav-link">
               <i class="nav-icon fas fa-warehouse"></i>
               <p>
                 Milk Production </p>
@@ -411,51 +435,102 @@
               </a> 
               <ul class="nav nav-treeview">
                 <li class="nav-item">
-                  <a href="../cattle_status" class="nav-link">
+                  <a href="../../cattle_breed" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Cattle Breed</p>
+                  </a>
+                </li>
+                <li class="nav-item"> 
+                  <a href="../../cattle_status" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Cattle Status</p>
                   </a>
                 </li>
+                <li class="nav-item"> 
+                  <a href="../../vaccine" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Vaccine</p>
+                  </a>
+                </li>
                 <li class="nav-item">
-                  <a href="../person_type" class="nav-link">
+                  <a href="../../person_type" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Person Type</p>
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a href="../person_title" class="nav-link">
+                  <a href="../../person_title" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Person Title</p>
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a href="../contact_type" class="nav-link">
+                  <a href="../../contact_type" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Contact Type</p>
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a href="../supplier_type" class="nav-link">
+                  <a href="../../supplier_type" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Supplier Type</p>
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a href="../sale_type" class="nav-link">
+                  <a href="../../sale_type" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Sale Type</p>
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a href="../region" class="nav-link">
+                  <a href="../../item" class="nav-link">
+                    <i class="nav-icon fas fa-coins"></i>
+                    <p>
+                      Item
+                    </p>
+                  </a>
+                </li>
+                {% comment %} <li class="nav-item">
+                  <a href="../item_type" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Item Type</p>
+                  </a>
+                </li> {% endcomment %}
+                <li class="nav-item">
+                  <a href="../../region" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Region</p>
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a href="../guarantee_type" class="nav-link">
+                  <a href="../../guarantee_type" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Guarantee Type</p>
+                  </a>
+                </li>
+                <h1>......................</h1>
+                <li class="nav-item">
+                  <a href="../../shift" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Shift</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="../../job" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Job</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="../../feed_time_category" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Feed Time Category</p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="../../feed_formulation" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Feed Formulation</p>
                   </a>
                 </li>
               </ul>

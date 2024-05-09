@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+
+
+{% block content %} 
+
+  <div class="content-wrapper">
+
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Cattle Pregnancy Add</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="../cattle_pregnancy">Home</a></li>
+              <li class="breadcrumb-item active">Cattle Pregnancy Add</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="content">
+    <form action="/cattle_pregnancy_add" method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card card-primary">
+            <div class="card-header">
+              <h3 class="card-title">Basic Information</h3>
+
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="inputName">Pregnancy Type</label>
+                {% comment %} <input type="text" id="inputName" name="pregnancy_type" class="form-control"> {% endcomment %}
+                <select id="inputStatus" name="pregnancy_type" class="form-control custom-select">
+                  <option selected disabled>Select one</option>
+                  <option>Artificial Insemination</option>
+                  <option>Bull</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="inputName">Pregnancy Date</label>
+                <input type="date" id="inputName" name="pregnancy_date" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Cattle</label>
+                {% comment %} <input type="text" id="inputName" name="cattle_id" class="form-control"> {% endcomment %}
+                <select id="inputStatus" name="cattle_id" class="form-control custom-select">
+                  {% for d in data1 %}
+                  <option value="{{d.cattle_id}}">{{ d.cattle_name}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <a href="cattle_pregnancy" class="btn btn-secondary">Back</a>
+          <button type="submit" class="btn btn-success float-right" >Add Cattle Pregnancy</button>
+          {% comment %} <input type="submit" value="Add Cattle" class="btn btn-success float-right"> {% endcomment %}
+        </div>
+      </div>
+    </form>
+    </section>
+
+  </div>
+  
+  {% endblock %}
+
