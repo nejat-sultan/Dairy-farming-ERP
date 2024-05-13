@@ -5,55 +5,6 @@ class Dashboard:
     amount:int
     description: str
 
-class CattleStatus(models.Model):
-    cattle_status_id = models.AutoField(primary_key=True)
-    cattle_status = models.CharField(max_length=100, null=True)
-    modified_date = models.DateTimeField(null=True)
-
-    class Meta:
-        db_table = 'cattle_status'
-
-class PersonType(models.Model):
-    person_type_id = models.AutoField(primary_key=True)
-    person_type = models.CharField(max_length=100, null=True)
-    modified_date = models.DateTimeField(null=True)
-
-    class Meta:
-        db_table = 'person_type'
-
-class PersonTitle(models.Model):
-    person_title_id = models.AutoField(primary_key=True)
-    person_title = models.CharField(max_length=45, null=True)
-    modified_date = models.DateTimeField(null=True)
-
-    class Meta:
-        db_table = 'person_title'
-
-class ContactType(models.Model):
-    contact_id = models.AutoField(primary_key=True)
-    contact_type = models.CharField(max_length=255, null=True)
-    contact_type_desc = models.CharField(max_length=255, null=True)
-    modified_date = models.DateTimeField(null=True)
-
-    class Meta:
-        db_table = 'contact_type'
-
-class SupplierType(models.Model):
-    supplier_type_id = models.AutoField(primary_key=True)
-    supplier_type = models.CharField(max_length=100, null=True)
-    modified_date = models.DateTimeField(null=True)
-
-    class Meta:
-        db_table = 'supplier_type'
-
-class SaleType(models.Model):
-    sale_type_id = models.AutoField(primary_key=True)
-    sale_type = models.CharField(max_length=100, null=True)
-    modified_date = models.DateField(null=True)
-
-    class Meta:
-        db_table = 'sale_type'
-
 # class ItemType(models.Model):
 #     item_type_id = models.AutoField(primary_key=True)
 #     item_type = models.CharField(max_length=100, null=True)
@@ -62,29 +13,14 @@ class SaleType(models.Model):
 #     class Meta:
 #         db_table = 'item_type'
 
-class Item(models.Model):
-    item_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, null=True)
+
+class CattleStatus(models.Model):
+    cattle_status_id = models.AutoField(primary_key=True)
+    cattle_status = models.CharField(max_length=100, null=True)
     modified_date = models.DateTimeField(null=True)
 
     class Meta:
-        db_table = 'item'
-
-class Region(models.Model):
-    region_id = models.AutoField(primary_key=True)
-    region = models.CharField(max_length=100, null=True)
-    modified_date = models.DateTimeField(null=True)
-
-    class Meta:
-        db_table = 'region'
-
-class GuaranteeType(models.Model):
-    guarantee_type_id = models.AutoField(primary_key=True)
-    guarantee_type = models.CharField(max_length=100, null=True)
-    modified_date = models.DateTimeField(null=True)
-
-    class Meta:
-        db_table = 'guarantee_type'
+        db_table = 'cattle_status'
 
 class CattleBreed(models.Model):
     cattle_breed_id = models.AutoField(primary_key=True)
@@ -158,6 +94,42 @@ class MilkProduction(models.Model):
     class Meta:
         db_table = 'milk_production'
 
+
+
+
+class Region(models.Model):
+    region_id = models.AutoField(primary_key=True)
+    region = models.CharField(max_length=100, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'region'
+
+class PersonType(models.Model):
+    person_type_id = models.AutoField(primary_key=True)
+    person_type = models.CharField(max_length=100, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'person_type'
+
+class PersonTitle(models.Model):
+    person_title_id = models.AutoField(primary_key=True)
+    person_title = models.CharField(max_length=45, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'person_title'
+
+class ContactType(models.Model):
+    contact_id = models.AutoField(primary_key=True)
+    contact_type = models.CharField(max_length=255, null=True)
+    contact_type_desc = models.CharField(max_length=255, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'contact_type'
+
 class Job(models.Model):
     job_id = models.AutoField(primary_key=True)
     job_title = models.CharField(max_length=45)
@@ -166,6 +138,103 @@ class Job(models.Model):
 
     class Meta:
         db_table = 'job'
+
+class Department(models.Model):
+    department_id = models.AutoField(primary_key=True)
+    department_name = models.CharField(max_length=45, null=True)
+    # manager = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        db_table = 'department'
+
+class FarmEntity(models.Model):
+    farm_entity_id = models.AutoField(primary_key=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'farm_entity'
+
+class FarmEntityContact(models.Model):
+    farm_entity = models.ForeignKey(FarmEntity, on_delete=models.CASCADE, primary_key=True)
+    contact = models.CharField(max_length=100)
+    contact_type = models.ForeignKey(ContactType, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'farm_entity_contact'
+        # unique_together = ('farm_entity',)
+
+class FarmEntityAddress(models.Model):
+    farm_entity = models.ForeignKey(FarmEntity, on_delete=models.CASCADE, primary_key=True)
+    country = models.CharField(max_length=100, null=True)
+    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    zone_subcity = models.CharField(max_length=100, null=True)
+    woreda = models.CharField(max_length=100, null=True)
+    kebele = models.CharField(max_length=45, null=True)
+    house_number = models.CharField(max_length=45, null=True)
+    street_name = models.CharField(max_length=250, null=True)
+
+    class Meta:
+        db_table = 'farm_entity_address'
+        # unique_together = ('farm_entity',)
+
+class Person(models.Model):
+    farm_entity = models.OneToOneField(FarmEntity, on_delete=models.CASCADE, primary_key=True)
+    person_title = models.ForeignKey(PersonTitle, on_delete=models.SET_NULL, null=True)
+    first_name = models.CharField(max_length=150)
+    middle_name = models.CharField(max_length=150)
+    last_name = models.CharField(max_length=150, null=True)
+    gender = models.CharField(max_length=10, null=True)
+    date_of_birth = models.DateField(null=True)
+    marital_status = models.CharField(max_length=20, null=True)
+    person_type = models.ForeignKey(PersonType, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'person'
+
+class Employee(models.Model):
+    person_farm_entity = models.OneToOneField(Person, on_delete=models.CASCADE, primary_key=True)
+    salary = models.FloatField(null=True)
+    hire_date = models.DateField(null=True)
+    national_id = models.CharField(max_length=100, null=True)
+    available_leave_hours = models.FloatField(null=True)
+    status = models.SmallIntegerField(null=True)
+    modified_date = models.DateTimeField(null=True)
+    contract_type = models.CharField(max_length=30, null=True)
+    contract_period_in_month = models.IntegerField(null=True)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'employee'
+
+class EmployeeExperience(models.Model):
+    experience_id = models.AutoField(primary_key=True)
+    company = models.CharField(max_length=100)
+    title = models.CharField(max_length=100)
+    start_date = models.DateField(null=True)
+    end_date = models.DateField(null=True)
+    salary = models.FloatField(null=True)
+    person_farm_entity = models.ForeignKey(Employee, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'employee_experience'
+
+class GuaranteeType(models.Model):
+    guarantee_type_id = models.AutoField(primary_key=True)
+    guarantee_type = models.CharField(max_length=100, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'guarantee_type'
+
+class Guarantee(models.Model):
+    guarantee_id = models.AutoField(primary_key=True)
+    guarantee_type = models.ForeignKey(GuaranteeType, on_delete=models.CASCADE)
+    salary_evaluation = models.FloatField(null=True)
+    person_farm_entity = models.ForeignKey(Employee, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'guarantee'
 
 class Shift(models.Model):
     shift_id = models.AutoField(primary_key=True)
@@ -176,27 +245,17 @@ class Shift(models.Model):
     class Meta:
         db_table = 'shift'
 
-class Department(models.Model):
-    department_id = models.AutoField(primary_key=True)
-    department_name = models.CharField(max_length=45, null=True)
-    # manager_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'department'
-
-class Employee(models.Model):
-    person_farm_entity_id = models.AutoField(primary_key=True)
-    salary = models.FloatField(null=True)
-    hire_date = models.DateField(null=True)
-    national_id = models.CharField(max_length=100, null=True)
-    availableleavehours = models.FloatField(null=True)
-    status = models.SmallIntegerField(null=True)
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+class JobHistory(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    modified_date = models.DateTimeField(null=True)
+    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    start_date = models.DateField(null=True)
+    end_date = models.DateField(null=True)
+    salary = models.FloatField(null=True)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
 
-    class Meta:
-        db_table = 'employee'
+    class Meta: 
+        db_table = 'job_history'
+        unique_together = [('department', 'job', 'employee')]
 
 class FeedFormulation(models.Model):
     feed_formulation_id = models.AutoField(primary_key=True)
@@ -227,12 +286,24 @@ class FeedTime(models.Model):
         db_table = 'feed_time'
 
 
-class FarmEntity(models.Model):
-    farm_entity_id = models.AutoField(primary_key=True)
+
+
+
+class Item(models.Model):
+    item_id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, null=True)
     modified_date = models.DateTimeField(null=True)
 
     class Meta:
-        db_table = 'farm_entity'
+        db_table = 'item'
+
+class SupplierType(models.Model):
+    supplier_type_id = models.AutoField(primary_key=True)
+    supplier_type = models.CharField(max_length=100, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'supplier_type'
 
 class Supplier(models.Model):
     farm_entity = models.OneToOneField('FarmEntity', primary_key=True, on_delete=models.CASCADE)
@@ -242,12 +313,6 @@ class Supplier(models.Model):
 
     class Meta:
         db_table = 'supplier'
-
-    def delete(self, *args, **kwargs):
-        # Delete the associated FarmEntity instance
-        self.farm_entity.delete()
-        # Call the parent delete method to delete the Supplier instance
-        super().delete(*args, **kwargs)
 
 class Order(models.Model):
     order_id = models.AutoField(primary_key=True)
@@ -301,13 +366,22 @@ class Inventory(models.Model):
     quantity = models.CharField(max_length=45, null=True)
     unit_price = models.CharField(max_length=45, null=True)
     measurement = models.CharField(max_length=100, null=True)
-    item_id = models.ForeignKey(Item, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
     type = models.CharField(max_length=45, null=True)
     description = models.CharField(max_length=200, null=True)
     modified_date = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'inventory'
+
+
+class SaleType(models.Model):
+    sale_type_id = models.AutoField(primary_key=True)
+    sale_type = models.CharField(max_length=100, null=True)
+    modified_date = models.DateField(null=True)
+
+    class Meta:
+        db_table = 'sale_type'
 
 
 

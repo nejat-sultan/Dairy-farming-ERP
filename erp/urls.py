@@ -5,6 +5,11 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('index', views.index),
 
+    path('register', views.register, name='register'),
+    path('login', views.login_page, name='login'),
+    path('logout', views.logout_user, name='logout'),
+    path('user', views.user_page, name='user'),
+
     path('cattle', views.cattle),
     path('cattle_add', views.cattle_add),
     path('cattle_view/<str:cattle_id>', views.cattle_view, name='cattle_view'),
@@ -119,5 +124,21 @@ urlpatterns = [
 
     path('purchase_order', views.purchase_order),
     path('generate_purchase_order/<str:supplier_id>', views.generate_purchase_order, name='generate_purchase_order'),
+
+    path('employee', views.employee),
+    path('employee_add', views.employee_add),
+    path('employee_edit/<int:farm_entity_id>/', views.employee_edit, name='employee_edit'),
+    path('employee_delete/<int:farm_entity_id>', views.employee_delete),
+
+    path('department', views.department),
+    path('department_add', views.department_add),
+    path('department_edit/<int:department_id>', views.department_edit, name='department_edit'),
+    path('department_delete/<int:department_id>', views.department_delete),
+
+    path('add_contact', views.add_contact),
+    path('add_address', views.add_address),
+    path('add_experience', views.add_experience),
+    path('add_guarantee', views.add_guarantee),
+
 
 ]

@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -7,38 +8,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dairy Farming ERP </title>
 
-  <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}">
-  <!-- Ionicons -->
   <link rel="stylesheet" href="{% static 'https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css' %}">
-  <!-- Tempusdominus Bootstrap 4 -->
   <link rel="stylesheet" href="{% static 'plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css' %}">
-  <!-- iCheck -->
   <link rel="stylesheet" href="{% static 'plugins/icheck-bootstrap/icheck-bootstrap.min.css' %}">
-  <!-- JQVMap -->
   <link rel="stylesheet" href="{% static 'plugins/jqvmap/jqvmap.min.css' %}">
-  <!-- Theme style -->
   <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}">
-  <!-- overlayScrollbars -->
   <link rel="stylesheet" href="{% static 'plugins/overlayScrollbars/css/OverlayScrollbars.min.css' %}">
-  <!-- Daterange picker -->
   <link rel="stylesheet" href="{% static 'plugins/daterangepicker/daterangepicker.css' %}">
-  <!-- summernote -->
   <link rel="stylesheet" href="{% static 'plugins/summernote/summernote-bs4.min.css' %}">
 </head>
 <body class="hold-transition sidebar-mini layout-fixed">
 <div class="wrapper">
 
-  <!-- Preloader -->
-  {% comment %} <div class="preloader flex-column justify-content-center align-items-center">
-    <img class="animation__shake" src="{% static 'dist/img/cattlecopy.jpg' %}" alt="AdminLTELogo" height="60" width="60">
-  </div> {% endcomment %}
-
   <!-- Navbar -->
   <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-    <!-- Left navbar links -->
     <ul class="navbar-nav">
       <li class="nav-item">
         <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
@@ -166,9 +151,11 @@
         </a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" data-widget="control-sidebar" data-controlsidebar-slide="true" href="#" role="button">
+
+        <span><a href="logout"> Logout</a></span>
+        {% comment %} <a class="nav-link" data-widget="control-sidebar" data-controlsidebar-slide="true" href="#" role="button">
           <i class="fas fa-th-large"></i>
-        </a>
+        </a> {% endcomment %}
       </li>
     </ul>
   </nav>
@@ -177,7 +164,7 @@
   <!-- Main Sidebar Container -->
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
     <!-- Brand Logo -->
-    <a href="index3.html" class="brand-link">
+    <a href="#" class="brand-link">
       <img src="{% static 'dist/img/cattlecopy.jpg' %}" alt="Admin Logo" class="brand-image img-circle elevation-3">
       <span class="brand-text font-weight-light">BiloFarm</span>
     </a>
@@ -190,7 +177,7 @@
           <img src="{% static 'dist/img/avatar4.png' %}" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-          <a href="#" class="d-block">Admin</a>
+          <a href="#" class="d-block">{{request.user}}</a>
         </div>
       </div>
 
@@ -209,8 +196,6 @@
       <!-- Sidebar Menu -->
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-          <!-- Add icons to the links using the .nav-icon class
-               with font-awesome or any other icon font library -->
           <li class="nav-item menu-open">
             <a href="index" class="nav-link active">
               <i class="nav-icon fas fa-tachometer-alt"></i>
@@ -231,33 +216,42 @@
               </p>
             </a> 
             <ul class="nav nav-treeview">
+              {% if request.user|is_allowed_user:"Admin" %} 
               <li class="nav-item">
                 <a href="../../cattle" class="nav-link">
-                  <i class="nav-icon fas fa-horse"></i>
+                  <i class="nav-icon fas fa-table"></i>
                   <p>
                     Basic Information
                   </p>
                 </a>
               </li>
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Veterinarian" %} 
               <li class="nav-item">
                 <a href="#" class="nav-link">
                   <i class="fas fa-hospital nav-icon"></i>
                   <p>Health CheckUp</p>
                 </a>
               </li>
+              {% endif %} 
+              {% if request.user|is_allowed_user:"Admin, Veterinarian" %} 
               <li class="nav-item">
                 <a href="#" class="nav-link">
                   <i class="fas fa-syringe nav-icon"></i>
                   <p>Vaccination</p>
                 </a>
               </li>
+              {% endif %} 
+              {% if request.user|is_allowed_user:"Admin, Veterinarian" %} 
               <li class="nav-item">
                 <a href="../../cattle_pregnancy" class="nav-link">
                   <i class="nav-icon fas fa-horse"></i>
                   <p>Reproduction</p>
                 </a>
               </li>
+              {% endif %} 
             </ul>
+          
 
           <li class="nav-header">Feed Management</li>
           <li class="nav-item">
@@ -273,7 +267,7 @@
           <li class="nav-header">Procurement Management</li>
           <li class="nav-item">
             <a href="../../supplier" class="nav-link">
-              <i class="nav-icon fas fa-coins"></i>
+              <i class="nav-icon fas fa-user-tie"></i>
               <p>
                 Manage Supplier
               </p>
@@ -281,7 +275,7 @@
           </li> 
           <li class="nav-item">
             <a href="../../request_order" class="nav-link">
-              <i class="nav-icon fas fa-coins"></i>
+              <i class="nav-icon fas fa-question"></i>
               <p>
                 Manage Order Request
               </p>
@@ -289,7 +283,7 @@
           </li>
           <li class="nav-item">
             <a href="../../rfq" class="nav-link">
-              <i class="nav-icon fas fa-coins"></i>
+              <i class="nav-icon fas fa-user-check"></i>
               <p>
                 Manage RFQ
               </p>
@@ -316,8 +310,16 @@
             </a> 
             <ul class="nav nav-treeview">
               <li class="nav-item">
-                <a href="#" class="nav-link">
-                  <i class="nav-icon fas fa-users"></i>
+                <a href="../../department" class="nav-link">
+                  <i class="nav-icon fas fa-building"></i>
+                  <p>
+                    Manage Department
+                  </p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="../../employee" class="nav-link">
+                  <i class="nav-icon fas fa-table"></i>
                   <p>
                     Basic Employee Info
                   </p>
@@ -325,19 +327,19 @@
               </li>
               <li class="nav-item">
                 <a href="#" class="nav-link">
-                  <i class="far fa-circle nav-icon"></i>
+                  <i class="nav-icon fas fa-layer-group"></i>
                   <p>Manage Shift</p>
                 </a>
               </li>
               <li class="nav-item">
                 <a href="#" class="nav-link">
-                  <i class="fas fa-list-check nav-icon"></i>
+                  <i class="nav-icon fas fa-briefcase"></i>
                   <p>Manage Tasks</p>
                 </a>
               </li>
               <li class="nav-item">
                 <a href="#" class="nav-link">
-                  <i class="fas fa-person nav-icon"></i>
+                  <i class="nav-icon fas fa-arrow-right"></i>
                   <p>Leave Management</p>
                 </a>
               </li>    
@@ -366,13 +368,13 @@
             <ul class="nav nav-treeview">
               <li class="nav-item">
                 <a href="#" class="nav-link">
-                  <i class="far fa-circle nav-icon"></i>
+                  <i class="nav-icon fas fa-store"></i>
                   <p>Stock In</p>
                 </a>
               </li>
               <li class="nav-item">
                 <a href="#" class="nav-link">
-                  <i class="far fa-circle nav-icon"></i>
+                  <i class="nav-icon fas fa-store-slash"></i>
                   <p>Stock Out</p>
                 </a>
               </li>
@@ -390,14 +392,6 @@
               </p>
             </a>
             
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-user-tie"></i>
-              <p>
-                Manage Supplier
-              </p>
-            </a>
           </li>
           <li class="nav-item">
             <a href="#" class="nav-link">
@@ -484,7 +478,7 @@
                 </li>
                 <li class="nav-item">
                   <a href="../../item" class="nav-link">
-                    <i class="nav-icon fas fa-coins"></i>
+                    <i class="far fa-circle nav-icon"></i>
                     <p>
                       Item
                     </p>
@@ -508,7 +502,6 @@
                     <p>Guarantee Type</p>
                   </a>
                 </li>
-                <h1>......................</h1>
                 <li class="nav-item">
                   <a href="../../shift" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
@@ -521,12 +514,12 @@
                     <p>Job</p>
                   </a>
                 </li>
-                <li class="nav-item">
+                {% comment %} <li class="nav-item">
                   <a href="../../feed_time_category" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Feed Time Category</p>
                   </a>
-                </li>
+                </li> {% endcomment %}
                 <li class="nav-item">
                   <a href="../../feed_formulation" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>

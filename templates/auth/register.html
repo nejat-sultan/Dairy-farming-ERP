@@ -1,0 +1,125 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registration Page</title>
+
+  <link rel="stylesheet" href="{% static 'https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback' %}">
+  <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}">
+  <link rel="stylesheet" href="{% static 'plugins/icheck-bootstrap/icheck-bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}">
+</head>
+
+<style>
+    .background-image {
+        background-image: url('{% static 'dist/img/cattlerotated.jpg' %}');
+        background-repeat: no-repeat; 
+        background-size: cover; 
+        background-position: bottom;
+    }
+</style>
+
+<body class="hold-transition register-page">
+<div class="row">
+    <div class="col-6 d-flex align-items-stretch background-image">
+    </div>
+    <div class="col-6">
+        <div class="register-box">
+            <div class="card card-outline card-primary">
+                <div class="card-header text-center">
+                <a href="{% static 'dist/img/index2.html' %}" class="h3"><b>Dairy Farming</b> ERP</a>
+                </div>
+                <div class="card-body">
+                <p class="login-box-msg">Create a new account</p>
+                <form action="#" method="post">
+                    {% csrf_token %}
+                    <div class="input-group mb-3"> 
+                    {{form.username}}
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                        <span class="fas fa-user"></span>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="input-group mb-3">
+                    {{form.email}}
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                        <span class="fas fa-envelope"></span>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="input-group mb-3">
+                    {{form.password1}}
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                        <span class="fas fa-lock"></span>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="input-group mb-3">
+                    {{form.password2}}
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                        <span class="fas fa-lock"></span>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="row">
+                    <div class="col-8 mt-3">
+                        
+                    </div>
+                    <div class="col-4 mt-3">
+                        <button type="submit" class="btn btn-primary btn-block">Register</button>
+                    </div>
+                    </div>
+                </form>
+
+                {% comment %} <div class="social-auth-links text-center">
+                    <a href="#" class="btn btn-block btn-primary">
+                    <i class="fab fa-facebook mr-2"></i>
+                    Sign up using Facebook
+                    </a>
+                    <a href="#" class="btn btn-block btn-danger">
+                    <i class="fab fa-google-plus mr-2"></i>
+                    Sign up using Google+
+                    </a>
+                </div> {% endcomment %}
+
+                {{form.errors}}
+
+                <a href="login" class="text-center">I already have an account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'dist/js/adminlte.min.js' %}"></script>
+</body>
+</html>
+
+  
+{% comment %} 
+
+<form method="post" action="">
+    {% csrf_token %}
+    {{form.username.label}}
+    {{form.username}}
+
+    {{form.email.label}}
+    {{form.email}}
+
+    {{form.password1.label}}
+    {{form.password1}}
+
+    {{form.password2.label}}
+    {{form.password2}}
+
+    <input type="submit" name="Create User">
+</form> {% endcomment %}
