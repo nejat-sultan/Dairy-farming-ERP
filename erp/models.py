@@ -351,9 +351,9 @@ class OrderHasItem(models.Model):
 class OrderHasItemSupplier(models.Model):
     order = models.ForeignKey(OrderHasItem, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    # order_item = models.ForeignKey(OrderHasItem, on_delete=models.CASCADE)
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     price = models.FloatField(null=True)
+    quantity = models.CharField(max_length=45, null=True)
     status = models.CharField(max_length=45, null=True)
     modified_date = models.DateTimeField(null=True)
 

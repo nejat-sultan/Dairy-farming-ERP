@@ -206,16 +206,16 @@
           </li>
 
 
-          <li class="nav-header">Cattle Management</li>
+          <li class="nav-header">Livestock Operations</li> 
           <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-horse"></i>
               <p>
-                Cattle Info
+                Cattle Management
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a> 
-            <ul class="nav nav-treeview">
+            <ul class="nav nav-treeview pl-3">
               {% if request.user|is_allowed_user:"Admin" %} 
               <li class="nav-item">
                 <a href="../../cattle" class="nav-link">
@@ -251,64 +251,133 @@
               </li>
               {% endif %} 
             </ul>
+          </li>
           
-
-          <li class="nav-header">Feed Management</li>
           <li class="nav-item">
             <a href="#" class="nav-link">
-              <i class="fas fa-seedling"></i>
+              <i class="nav-icon fas fa-seedling"></i>
               <p>
-                Ration & formulation
+                Feed Management
+                <i class="fas fa-angle-left right"></i>
               </p>
-            </a>
+            </a> 
+            <ul class="nav nav-treeview pl-3">
+              <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="fas fa-seedling"></i>
+                  <p>
+                    Ration & formulation
+                  </p>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-warehouse"></i>
+              <p>
+                Production Mang't
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a> 
+            <ul class="nav nav-treeview pl-3">
+              <li class="nav-item">
+                <a href="../../milk_production" class="nav-link">
+                  <i class="nav-icon fas fa-warehouse"></i>
+                  <p>
+                    Milk Production </p>
+                </a>
+              </li>
+            </ul>
           </li>
 
 
-          <li class="nav-header">Procurement Management</li>
+          <li class="nav-header">Business Operations</li>
           <li class="nav-item">
-            <a href="../../supplier" class="nav-link">
-              <i class="nav-icon fas fa-user-tie"></i>
-              <p>
-                Manage Supplier
-              </p>
-            </a>
-          </li> 
-          <li class="nav-item">
-            <a href="../../request_order" class="nav-link">
-              <i class="nav-icon fas fa-question"></i>
-              <p>
-                Manage Order Request
-              </p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="../../rfq" class="nav-link">
-              <i class="nav-icon fas fa-user-check"></i>
-              <p>
-                Manage RFQ
-              </p>
-            </a>
-          </li> 
-          <li class="nav-item">
-            <a href="../../purchase_order" class="nav-link">
+            <a href="#" class="nav-link">
               <i class="nav-icon fas fa-coins"></i>
               <p>
-                Manage Purchase Order
+                Procurement Mang't
+                <i class="fas fa-angle-left right"></i>
               </p>
-            </a>
+            </a> 
+            <ul class="nav nav-treeview pl-3">
+              <li class="nav-item">
+                <a href="../../supplier" class="nav-link">
+                  <i class="nav-icon fas fa-user-tie"></i>
+                  <p>
+                    Manage Supplier
+                  </p>
+                </a>
+              </li> 
+              <li class="nav-item">
+                <a href="../../request_order" class="nav-link">
+                  <i class="nav-icon fas fa-question"></i>
+                  <p>
+                    Manage Order Request
+                  </p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="../../rfq" class="nav-link">
+                  <i class="nav-icon fas fa-user-check"></i>
+                  <p>
+                    Manage RFQ
+                  </p>
+                </a>
+              </li> 
+              <li class="nav-item">
+                <a href="../../purchase_order" class="nav-link">
+                  <i class="nav-icon fas fa-coins"></i>
+                  <p>
+                    Manage Purchase Order
+                  </p>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <i class="nav-icon fas fa-lightbulb"></i>
+              <p>
+                Sales Management
+                <i class="fas fa-angle-left right"></i>
+              </p>
+            </a> 
+            <ul class="nav nav-treeview pl-3">
+              <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-user-alt"></i>
+                  <p>
+                    Manage Customer
+                  </p>
+                </a>
+                
+              </li>
+              <li class="nav-item">
+                <a href="#" class="nav-link">
+                  <i class="nav-icon fas fa-lightbulb"></i>
+                  <p>
+                    Manage Sales
+                  </p>
+                </a>
+              </li>
+            </ul>
           </li>
 
 
-          <li class="nav-header">Human Resource</li>
+          <li class="nav-header">Resource Management</li>
           <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-users"></i>
               <p>
-                Employee Info
+                Human Resource
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a> 
-            <ul class="nav nav-treeview">
+            <ul class="nav nav-treeview pl-3">
               <li class="nav-item">
                 <a href="../../department" class="nav-link">
                   <i class="nav-icon fas fa-building"></i>
@@ -344,28 +413,17 @@
                 </a>
               </li>    
             </ul>
-
-
-          <li class="nav-header">Production Management</li>   
-          <li class="nav-item">
-            <a href="../../milk_production" class="nav-link">
-              <i class="nav-icon fas fa-warehouse"></i>
-              <p>
-                Milk Production </p>
-            </a>
           </li>
 
-
-          <li class="nav-header">Store Management</li>
           <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-archive"></i>
               <p>
-                Manage Stock
+                Stock Management
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a> 
-            <ul class="nav nav-treeview">
+            <ul class="nav nav-treeview pl-3">
               <li class="nav-item">
                 <a href="#" class="nav-link">
                   <i class="nav-icon fas fa-store"></i>
@@ -381,44 +439,40 @@
             </ul>
           </li>
           
-
-
-          <li class="nav-header">Sales Management</li>
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-user-alt"></i>
-              <p>
-                Manage Customer
-              </p>
-            </a>
-            
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-lightbulb"></i>
-              <p>
-                Manage Sales
-              </p>
-            </a>
-          </li>
-
-          <li class="nav-header">Finance Management</li>
           <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-dollar-sign"></i>
-              <p>.</p>
+              <p>Finance Management</p>
             </a>
           </li>
 
-          <li class="nav-header">Report & Analytics</li>
+          <li class="nav-header">Reports</li>
           <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon 	fas fa-poll"></i>
-              <p>.</p>
+              <p>Report & Analytics</p>
             </a>
           </li>
 
-          <li class="nav-header">Settings
+            <li class="nav-header">Settings
+            <li class="nav-item">
+              <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-user"></i>
+                <p>
+                  User Management
+                  <i class="fas fa-angle-left right"></i>
+                </p>
+              </a> 
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="#" class="nav-link">
+                    <i class="far fa-circle nav-icon"></i>
+                    <p>Users</p>
+                  </a>
+                </li>
+              </ul>
+            </li>
+
             <li class="nav-item">
               <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-archive"></i>
@@ -429,103 +483,135 @@
               </a> 
               <ul class="nav nav-treeview">
                 <li class="nav-item">
-                  <a href="../../cattle_breed" class="nav-link">
+                  <a href="#" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
-                    <p>Cattle Breed</p>
-                  </a>
-                </li>
-                <li class="nav-item"> 
-                  <a href="../../cattle_status" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Cattle Status</p>
-                  </a>
-                </li>
-                <li class="nav-item"> 
-                  <a href="../../vaccine" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Vaccine</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="../../person_type" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Person Type</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="../../person_title" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Person Title</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="../../contact_type" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Contact Type</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="../../supplier_type" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Supplier Type</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="../../sale_type" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Sale Type</p>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a href="../../item" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>
-                      Item
+                    <p>Cattle datas
+                      <i class="fas fa-angle-left right"></i>
                     </p>
                   </a>
+                    <ul class="nav nav-treeview pl-3">
+                      <li class="nav-item">
+                        <a href="../../cattle_breed" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Cattle Breed</p>
+                        </a>
+                      </li>
+                      <li class="nav-item"> 
+                        <a href="../../cattle_status" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Cattle Status</p>
+                        </a>
+                      </li>
+                      <li class="nav-item"> 
+                        <a href="../../vaccine" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Vaccine</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="../../feed_formulation" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Feed Formulation</p>
+                        </a>
+                      </li>
+                    </ul>
                 </li>
-                {% comment %} <li class="nav-item">
-                  <a href="../item_type" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Item Type</p>
-                  </a>
-                </li> {% endcomment %}
+                
                 <li class="nav-item">
-                  <a href="../../region" class="nav-link">
+                  <a href="#" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
-                    <p>Region</p>
+                    <p>Employee datas
+                      <i class="fas fa-angle-left right"></i>
+                    </p>
                   </a>
+                    <ul class="nav nav-treeview pl-3">
+                      <li class="nav-item">
+                        <a href="../../person_type" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Person Type</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="../../person_title" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Person Title</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="../../contact_type" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Contact Type</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="../../region" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Region</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="../../guarantee_type" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Guarantee Type</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="../../shift" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Shift</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="../../job" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Job</p>
+                        </a>
+                      </li>
+                    </ul>
                 </li>
+
                 <li class="nav-item">
-                  <a href="../../guarantee_type" class="nav-link">
+                  <a href="#" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
-                    <p>Guarantee Type</p>
+                    <p>Procurement datas
+                      <i class="fas fa-angle-left right"></i>
+                    </p>
                   </a>
+                    <ul class="nav nav-treeview pl-3">
+                      <li class="nav-item">
+                        <a href="../../supplier_type" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Supplier Type</p>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a href="../../item" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>
+                            Item
+                          </p>
+                        </a>
+                      </li>
+                    </ul>
                 </li>
+
                 <li class="nav-item">
-                  <a href="../../shift" class="nav-link">
+                  <a href="#" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
-                    <p>Shift</p>
+                    <p>Sales datas
+                      <i class="fas fa-angle-left right"></i>
+                    </p>
                   </a>
+                    <ul class="nav nav-treeview pl-3">
+                      <li class="nav-item">
+                        <a href="../../sale_type" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Sale Type</p>
+                        </a>
+                      </li>
+                    </ul>
                 </li>
-                <li class="nav-item">
-                  <a href="../../job" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Job</p>
-                  </a>
-                </li>
-                {% comment %} <li class="nav-item">
-                  <a href="../../feed_time_category" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Feed Time Category</p>
-                  </a>
-                </li> {% endcomment %}
-                <li class="nav-item">
-                  <a href="../../feed_formulation" class="nav-link">
-                    <i class="far fa-circle nav-icon"></i>
-                    <p>Feed Formulation</p>
-                  </a>
-                </li>
+                
               </ul>
             </li>
           </li>

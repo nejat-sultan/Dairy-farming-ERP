@@ -6,6 +6,11 @@ register = template.Library()
 def get_item(dictionary, key):
     return dictionary.get(key)
 
+# @register.filter
+# def get_multiplied_value(multiplied_values, item_id, order_id):
+#     key = (item_id, order_id)
+#     return multiplied_values.get(key, 0)
+
 @register.filter
 def is_allowed_user(user, allowed_roles=[]):
     if user.groups.exists():

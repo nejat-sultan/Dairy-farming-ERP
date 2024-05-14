@@ -83,6 +83,7 @@ def index(request):
 
     return render(request, 'index.html',{'dash1': dash1, 'dash2': dash2, 'dash3': dash3, 'dash4': dash4})
 
+@login_required(login_url='login')
 @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle(request):
     data = Cattle.objects.all()
@@ -90,6 +91,7 @@ def cattle(request):
 
     return render(request, 'cattle/cattle.html', context)
 
+@login_required(login_url='login')
 @allowed_users(allowed_roles=['Admin'])
 def cattle_view(request, cattle_id):
 
@@ -109,6 +111,7 @@ def cattle_view(request, cattle_id):
 
     return render(request, 'cattle/cattle_view.html', context)
 
+@login_required(login_url='login')
 @allowed_users(allowed_roles=['Admin'])
 def cattle_add(request):
     if request.method=="POST":
@@ -137,6 +140,7 @@ def cattle_add(request):
 
     return render(request, 'cattle/cattle_add.html', context)
 
+@login_required(login_url='login')
 @allowed_users(allowed_roles=['Admin'])
 def cattle_edit(request,cattle_id):
 
@@ -175,6 +179,7 @@ def cattle_edit(request,cattle_id):
 
     return render(request, 'cattle/cattle_edit.html', context)
 
+
 @allowed_users(allowed_roles=['Admin'])
 def cattle_delete(request, cattle_id):
     d = Cattle.objects.get(cattle_id=cattle_id)
@@ -183,7 +188,6 @@ def cattle_delete(request, cattle_id):
     return redirect("/cattle")
 
 # Django view function to handle adding a photo
-
 def add_photo(request):
 
     if request.method == 'POST':
@@ -222,12 +226,14 @@ def add_photo(request):
 
     return render(request, 'cattle/cattle_add.html', context)
 
+@login_required(login_url='login')
 def cattle_status(request):
     data = CattleStatus.objects.all()
     context = {"data1":data}
 
     return render(request, 'cattle/cattle_status.html', context)
 
+@login_required(login_url='login')
 def cattle_status_add(request):
     if request.method=="POST":
         cstatus=request.POST.get('status')
@@ -240,6 +246,7 @@ def cattle_status_add(request):
 
     return render(request, 'cattle/cattle_status_add.html')
 
+@login_required(login_url='login')
 def cattle_status_edit(request,cattle_status_id):
     edit = CattleStatus.objects.get(cattle_status_id=cattle_status_id)
     
@@ -258,18 +265,21 @@ def cattle_status_edit(request,cattle_status_id):
 
     return render(request, 'cattle/cattle_status_edit.html', context)
 
+@login_required(login_url='login')
 def cattle_status_delete(request, cattle_status_id):
     d = CattleStatus.objects.get(cattle_status_id=cattle_status_id)
     d.delete()
     messages.error(request, "Cattle Status Deleted Successfully!")
     return redirect("/cattle_status")
 
+@login_required(login_url='login')
 def cattle_breed(request):
     data = CattleBreed.objects.all()
     context = {"data1":data}
 
     return render(request, 'cattle/cattle_breed.html', context)
 
+@login_required(login_url='login')
 def cattle_breed_add(request):
     if request.method=="POST":
         cbreed_type=request.POST.get('breed_type')
@@ -283,6 +293,7 @@ def cattle_breed_add(request):
 
     return render(request, 'cattle/cattle_breed_add.html')
 
+@login_required(login_url='login')
 def cattle_breed_edit(request,cattle_breed_id):
     # Fetch the cattle object by its id
     edit = CattleBreed.objects.get(cattle_breed_id=cattle_breed_id)
@@ -315,6 +326,7 @@ def cattle_breed_delete(request, cattle_breed_id):
     messages.error(request, "Cattle Breed Deleted Successfully!")
     return redirect("/cattle_breed")
 
+@login_required(login_url='login')
 @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy(request):
     data = CattlePregnancy.objects.all()
@@ -324,6 +336,7 @@ def cattle_pregnancy(request):
 
     return render(request, 'cattle/cattle_pregnancy.html', context)
 
+@login_required(login_url='login')
 @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy_add(request):
     if request.method=="POST":
@@ -345,6 +358,7 @@ def cattle_pregnancy_add(request):
 
     return render(request, 'cattle/cattle_pregnancy_add.html', context)
 
+@login_required(login_url='login')
 @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy_edit(request,cattle_pregnancy_id):
     # Fetch the cattle object by its id
@@ -383,14 +397,14 @@ def cattle_pregnancy_delete(request, cattle_pregnancy_id):
     messages.error(request, "Cattle Pregnancy Deleted Successfully!")
     return redirect("/cattle_pregnancy")
 
-
+@login_required(login_url='login')
 def vaccine(request):
     data = Vaccine.objects.all()
     context = {"data1":data}
 
     return render(request, 'cattle/vaccine.html', context)
 
-
+@login_required(login_url='login')
 def vaccine_add(request):
     if request.method=="POST":
         cvaccine_name=request.POST.get('vaccine_name')
@@ -404,7 +418,7 @@ def vaccine_add(request):
 
     return render(request, 'cattle/vaccine_add.html')
 
-
+@login_required(login_url='login')
 def vaccine_edit(request,vaccine_id):
     # Fetch the vaccine object by its id
     edit = Vaccine.objects.get(vaccine_id=vaccine_id)
@@ -437,6 +451,7 @@ def vaccine_delete(request, vaccine_id):
     messages.error(request, "Vaccine Deleted Successfully!")
     return redirect("/vaccine")
 
+@login_required(login_url='login')
 def milk_production(request):
     data = MilkProduction.objects.all()
     cattle = Cattle.objects.all()
@@ -445,6 +460,7 @@ def milk_production(request):
 
     return render(request, 'cattle/milk_production.html', context)
 
+@login_required(login_url='login')
 def milk_production_add(request):
     if request.method=="POST":
         camount_in_liter=request.POST.get('amount_in_liter')
@@ -467,6 +483,7 @@ def milk_production_add(request):
 
     return render(request, 'cattle/milk_production_add.html',context)
 
+@login_required(login_url='login')
 def milk_production_edit(request,milk_production_id):
     # Fetch the vaccine object by its id
     edit = MilkProduction.objects.get(milk_production_id=milk_production_id)
@@ -508,12 +525,14 @@ def milk_production_delete(request, milk_production_id):
     messages.error(request, "Milk Production Deleted Successfully!")
     return redirect("/milk_production")
 
+@login_required(login_url='login')
 def person_type(request):
     data = PersonType.objects.all()
     context = {"data1":data}
 
     return render(request, 'person/person_type.html', context)
 
+@login_required(login_url='login')
 def person_type_add(request):
     if request.method=="POST":
         cperson_type=request.POST.get('person_type')
@@ -526,6 +545,7 @@ def person_type_add(request):
 
     return render(request, 'person/person_type_add.html')
 
+@login_required(login_url='login')
 def person_type_edit(request,person_type_id):
     edit = PersonType.objects.get(person_type_id=person_type_id)
     
@@ -554,12 +574,14 @@ def person_type_delete(request, person_type_id):
     messages.error(request, "Person Type Deleted Successfully!")
     return redirect("/person_type")
 
+@login_required(login_url='login')
 def person_title(request):
     data = PersonTitle.objects.all()
     context = {"data1":data}
 
     return render(request, 'person/person_title.html', context)
 
+@login_required(login_url='login')
 def person_title_add(request):
     if request.method=="POST":
         cperson_title=request.POST.get('person_title')
@@ -572,6 +594,7 @@ def person_title_add(request):
 
     return render(request, 'person/person_title_add.html')
 
+@login_required(login_url='login')
 def person_title_edit(request,person_title_id):
     edit = PersonTitle.objects.get(person_title_id=person_title_id)
     
@@ -600,12 +623,14 @@ def person_title_delete(request, person_title_id):
     messages.error(request, "Person Title Deleted Successfully!")
     return redirect("/person_title")
 
+@login_required(login_url='login')
 def contact_type(request):
     data = ContactType.objects.all()
     context = {"data1":data}
 
     return render(request, 'person/contact_type.html', context)
 
+@login_required(login_url='login')
 def contact_type_add(request):
     if request.method=="POST":
         ccontact_type=request.POST.get('contact_type')
@@ -619,6 +644,7 @@ def contact_type_add(request):
 
     return render(request, 'person/contact_type_add.html')
 
+@login_required(login_url='login')
 def contact_type_edit(request,contact_id):
     edit = ContactType.objects.get(contact_id=contact_id)
     
@@ -649,12 +675,14 @@ def contact_type_delete(request, contact_id):
     messages.error(request, "Contact Type Deleted Successfully!")
     return redirect("/contact_type")
 
+@login_required(login_url='login')
 def sale_type(request):
     data = SaleType.objects.all()
     context = {"data1":data}
 
     return render(request, 'sales/sale_type.html', context)
 
+@login_required(login_url='login')
 def sale_type_add(request):
     if request.method=="POST":
         csale_type=request.POST.get('sale_type')
@@ -667,6 +695,7 @@ def sale_type_add(request):
 
     return render(request, 'sales/sale_type_add.html')
 
+@login_required(login_url='login')
 def sale_type_edit(request,sale_type_id):
     edit = SaleType.objects.get(sale_type_id=sale_type_id)
     
@@ -695,12 +724,14 @@ def sale_type_delete(request, sale_type_id):
     messages.error(request, "Sale Type Deleted Successfully!")
     return redirect("/sale_type")
 
+@login_required(login_url='login')
 def region(request):
     data = Region.objects.all()
     context = {"data1":data}
 
-    return render(request, 'region.html', context)
+    return render(request, 'person/region.html', context)
 
+@login_required(login_url='login')
 def region_add(request):
     if request.method=="POST":
         cregion=request.POST.get('region')
@@ -711,8 +742,9 @@ def region_add(request):
         messages.info(request, "Region Added Successfully!")
         return redirect("/region")
 
-    return render(request, 'region_add.html')
+    return render(request, 'person/region_add.html')
 
+@login_required(login_url='login')
 def region_edit(request,region_id):
     edit = Region.objects.get(region_id=region_id)
     
@@ -733,7 +765,7 @@ def region_edit(request,region_id):
     d = Region.objects.get(region_id=region_id)
     context = {"d": d}
 
-    return render(request, 'region_edit.html', context)
+    return render(request, 'person/region_edit.html', context)
 
 def region_delete(request, region_id):
     d = Region.objects.get(region_id=region_id)
@@ -741,13 +773,14 @@ def region_delete(request, region_id):
     messages.error(request, "Region Deleted Successfully!")
     return redirect("/region")
 
-
+@login_required(login_url='login')
 def guarantee_type(request):
     data = GuaranteeType.objects.all()
     context = {"data1":data}
 
-    return render(request, 'guarantee_type.html', context)
+    return render(request, 'employee/guarantee_type.html', context)
 
+@login_required(login_url='login')
 def guarantee_type_add(request):
     if request.method=="POST":
         cguarantee_type=request.POST.get('guarantee_type')
@@ -758,8 +791,9 @@ def guarantee_type_add(request):
         messages.info(request, "Guarantee Type Added Successfully!")
         return redirect("/guarantee_type")
 
-    return render(request, 'guarantee_type_add.html')
+    return render(request, 'employee/guarantee_type_add.html')
 
+@login_required(login_url='login')
 def guarantee_type_edit(request,guarantee_type_id):
     edit = GuaranteeType.objects.get(guarantee_type_id=guarantee_type_id)
     
@@ -780,7 +814,7 @@ def guarantee_type_edit(request,guarantee_type_id):
     d = GuaranteeType.objects.get(guarantee_type_id=guarantee_type_id)
     context = {"d": d}
 
-    return render(request, 'guarantee_type_edit.html', context)
+    return render(request, 'employee/guarantee_type_edit.html', context)
 
 def guarantee_type_delete(request, guarantee_type_id):
     d = GuaranteeType.objects.get(guarantee_type_id=guarantee_type_id)
@@ -788,12 +822,14 @@ def guarantee_type_delete(request, guarantee_type_id):
     messages.error(request, "Guarantee Type Deleted Successfully!")
     return redirect("/guarantee_type")
 
+@login_required(login_url='login')
 def shift(request):
     data = Shift.objects.all()
     context = {"data1":data}
 
-    return render(request, 'shift.html', context)
+    return render(request, 'employee/shift.html', context)
 
+@login_required(login_url='login')
 def shift_add(request):
     if request.method=="POST":
         cshift_name=request.POST.get('shift_name')
@@ -805,8 +841,9 @@ def shift_add(request):
         messages.info(request, "Shift Added Successfully!")
         return redirect("/shift")
 
-    return render(request, 'shift_add.html')
+    return render(request, 'employee/shift_add.html')
 
+@login_required(login_url='login')
 def shift_edit(request,shift_id):
     edit = Shift.objects.get(shift_id=shift_id)
     
@@ -829,7 +866,7 @@ def shift_edit(request,shift_id):
     d = Shift.objects.get(shift_id=shift_id)
     context = {"d": d}
 
-    return render(request, 'shift_edit.html', context)
+    return render(request, 'employee/shift_edit.html', context)
 
 def shift_delete(request, shift_id):
     d = Shift.objects.get(shift_id=shift_id)
@@ -837,12 +874,14 @@ def shift_delete(request, shift_id):
     messages.error(request, "Shift Deleted Successfully!")
     return redirect("/shift")
 
+@login_required(login_url='login')
 def job(request):
     data = Job.objects.all()
     context = {"data1":data}
 
     return render(request, 'employee/job.html', context)
 
+@login_required(login_url='login')
 def job_add(request):
     if request.method=="POST":
         cjob_title=request.POST.get('job_title')
@@ -856,6 +895,7 @@ def job_add(request):
 
     return render(request, 'employee/job_add.html')
 
+@login_required(login_url='login')
 def job_edit(request,job_id):
     edit = Job.objects.get(job_id=job_id)
     
@@ -886,12 +926,14 @@ def job_delete(request, job_id):
     messages.error(request, "Job Deleted Successfully!")
     return redirect("/job")
 
+@login_required(login_url='login')
 def feed_formulation(request):
     data = FeedFormulation.objects.all()
     context = {"data1":data}
 
     return render(request, 'cattle/feed_formulation.html', context)
 
+@login_required(login_url='login')
 def feed_formulation_add(request):
     if request.method=="POST":
         cfeed_formulation_description=request.POST.get('feed_formulation_description')
@@ -903,6 +945,7 @@ def feed_formulation_add(request):
 
     return render(request, 'cattle/feed_formulation_add.html')
 
+@login_required(login_url='login')
 def feed_formulation_edit(request,feed_formulation_id):
     edit = FeedFormulation.objects.get(feed_formulation_id=feed_formulation_id)
     
@@ -929,12 +972,14 @@ def feed_formulation_delete(request, feed_formulation_id):
     messages.error(request, "Feed Formulation Deleted Successfully!")
     return redirect("/feed_formulation")
 
+@login_required(login_url='login')
 def item(request):
     data = Item.objects.all()
     context = {"data1":data}
 
     return render(request, 'procurement/item.html', context)
 
+@login_required(login_url='login')
 def item_add(request):
     if request.method=="POST":
         cname=request.POST.get('name')
@@ -947,6 +992,7 @@ def item_add(request):
 
     return render(request, 'procurement/item_add.html')
 
+@login_required(login_url='login')
 def item_edit(request,item_id):
     edit = Item.objects.get(item_id=item_id)
     
@@ -975,12 +1021,14 @@ def item_delete(request, item_id):
     messages.error(request, "Item Deleted Successfully!")
     return redirect("/item")
 
+@login_required(login_url='login')
 def supplier_type(request):
     data = SupplierType.objects.all()
     context = {"data1":data}
 
     return render(request, 'procurement/supplier_type.html', context)
 
+@login_required(login_url='login')
 def supplier_type_add(request):
     if request.method=="POST":
         csupplier_type=request.POST.get('supplier_type')
@@ -993,6 +1041,7 @@ def supplier_type_add(request):
 
     return render(request, 'procurement/supplier_type_add.html')
 
+@login_required(login_url='login')
 def supplier_type_edit(request,supplier_type_id):
     edit = SupplierType.objects.get(supplier_type_id=supplier_type_id)
     
@@ -1021,6 +1070,7 @@ def supplier_type_delete(request, supplier_type_id):
     messages.error(request, "Supplier Type Deleted Successfully!")
     return redirect("/supplier_type")
 
+@login_required(login_url='login')
 def supplier(request):
     data = Supplier.objects.all()
     type_data = SupplierType.objects.all()
@@ -1029,6 +1079,7 @@ def supplier(request):
 
     return render(request, 'procurement/supplier.html', context)
 
+@login_required(login_url='login')
 def supplier_add(request):
     if request.method == "POST":
         csupplier_name = request.POST.get('supplier_name')
@@ -1057,6 +1108,7 @@ def supplier_add(request):
 
     return render(request, 'procurement/supplier_add.html', context)
 
+@login_required(login_url='login')
 def supplier_edit(request,farm_entity_id):
     edit = Supplier.objects.get(farm_entity_id=farm_entity_id)
     
@@ -1088,7 +1140,7 @@ def supplier_delete(request, farm_entity_id):
     messages.error(request, "Supplier Deleted Successfully!")
     return redirect("/supplier")
 
-
+@login_required(login_url='login')
 def request_order(request):
     data = OrderHasItem.objects.all()
     orderdatas = Order.objects.all()
@@ -1098,6 +1150,7 @@ def request_order(request):
 
     return render(request, 'procurement/request_order.html', context)
 
+@login_required(login_url='login')
 def request_order_add(request):
     if request.method=="POST":
         order = Order.objects.create()
@@ -1126,6 +1179,7 @@ def request_order_add(request):
 
     return render(request, 'procurement/request_order_add.html', context)
 
+@login_required(login_url='login')
 def request_order_edit(request,order_id):
     edit = OrderHasItem.objects.get(order_id=order_id)
     
@@ -1150,7 +1204,6 @@ def request_order_edit(request,order_id):
     context = {"d": d, "item": edit, "data1": data1}
 
     return render(request, 'procurement/request_order_edit.html', context)
-
 
 def request_order_delete(request, order_id):
     try:
@@ -1187,21 +1240,24 @@ def reject_request(request, order_id):
     except Order.DoesNotExist:
         return JsonResponse({'error': 'Order not found.'}, status=404)
 
+@login_required(login_url='login')
 def rfq(request):
     data = OrderHasItemSupplier.objects.all()
     context = {"data1":data}
 
     return render(request, 'procurement/rfq.html', context)
 
+@login_required(login_url='login')
 def rfq_add(request, order_id):
     if request.method == "POST":
         csupplier_name = request.POST.get('supplier_name')
         citem_id = request.POST.get('item_id')
+        cquantity = request.POST.get('quantity')
         cprice = request.POST.get('price')
         cdate = datetime.now().date()
 
         # Save the RFQ
-        query = OrderHasItemSupplier.objects.create(supplier_id=csupplier_name, item_id=citem_id, order_id=order_id, price=cprice, status='pending', modified_date=cdate)
+        query = OrderHasItemSupplier.objects.create(supplier_id=csupplier_name, item_id=citem_id, order_id=order_id, quantity=cquantity, price=cprice, status='pending', modified_date=cdate)
         messages.info(request, "RFQ Added Successfully!")
         return redirect("/rfq")
 
@@ -1219,18 +1275,21 @@ def rfq_add(request, order_id):
 
     return render(request, 'procurement/rfq_add.html', context)
 
+@login_required(login_url='login')
 def rfq_edit(request,id):
     edit = OrderHasItemSupplier.objects.get(id=id)
     
     if request.method == "POST":
         csupplier_name=request.POST.get('supplier_name')
         citem_id=request.POST.get('item_id')
+        cquantity=request.POST.get('quantity')
         cprice=request.POST.get('price')
         cdate = datetime.now().date()
         
         # Update the attributes
         edit.supplier_id = csupplier_name
         edit.item_id = citem_id
+        edit.quantity = cquantity
         edit.price = cprice
         edit.modified_date = cdate
         
@@ -1276,8 +1335,9 @@ def reject_rfq(request, id):
     except Order.DoesNotExist:
         return JsonResponse({'error': 'Order not found.'}, status=404)
 
+@login_required(login_url='login')
 def purchase_order(request):
-    approved_supp = OrderHasItemSupplier.objects.filter(status='approved').values('supplier_id', 'order_id', 'item_id', 'price', 'status', 'modified_date').distinct()
+    approved_supp = OrderHasItemSupplier.objects.filter(status='approved').values('supplier_id', 'order_id', 'item_id', 'quantity', 'price', 'status', 'modified_date').distinct()
     item_data = Item.objects.all()
     supplier_data = Supplier.objects.all()
     
@@ -1285,10 +1345,11 @@ def purchase_order(request):
 
     return render(request, 'procurement/purchase_order.html', context)
 
+@login_required(login_url='login')
 def generate_purchase_order(request, supplier_id):
     data = OrderHasItemSupplier.objects.filter(supplier_id=supplier_id, status='approved')
     item_data = Item.objects.all()
-    qty_data = OrderHasItem.objects.all()
+    # qty_data = OrderHasItem.objects.all()
     supplier_data = Supplier.objects.all()
     current_date = timezone.now()
 
@@ -1296,19 +1357,34 @@ def generate_purchase_order(request, supplier_id):
     total = Decimal(0) 
     
     for item in data:
-        item_id = item.item_id
-        quantity = qty_data.filter(item_id=item_id).first().quantity
-        price = Decimal(item.price)
-        quantity = Decimal(quantity)
+        quantity = Decimal(item.quantity)  
+        price = Decimal(item.price) 
         multiplied_value = quantity * price
-        multiplied_values[item_id] = multiplied_value
+        multiplied_values[item.item_id] = multiplied_value  
         total += multiplied_value
+
+
+        # quantity = Decimal(item.quantity)  
+        # price = Decimal(item.price)
+        # order_id = item.order_id
+        # multiplied_value = quantity * price
+        # multiplied_values[(item.item_id, order_id)] += multiplied_value
+
+        
+
+        # item_id = item.item_id
+        # quantity = qty_data.filter(item_id=item_id).first().quantity
+        # price = Decimal(item.price)
+        # quantity = Decimal(quantity)
+        # multiplied_value = quantity * price
+        # multiplied_values[item_id] = multiplied_value
+        # total += multiplied_value
   
 
     context = {
         'data': data,
         'item_data': item_data, 
-        'qty_data': qty_data,
+        # 'qty_data': qty_data,
         'supplier_data': supplier_data,
         'multiplied_values': multiplied_values,
         'total': total,  
@@ -1317,12 +1393,14 @@ def generate_purchase_order(request, supplier_id):
 
     return render(request, 'procurement/generate_purchase_order.html', context)
 
+@login_required(login_url='login')
 def department(request):
     data = Department.objects.all()
     context = {"data1":data}
 
     return render(request, 'employee/department.html', context)
 
+@login_required(login_url='login')
 def department_add(request):
     if request.method=="POST":
         cdepartment=request.POST.get('department')
@@ -1334,6 +1412,7 @@ def department_add(request):
 
     return render(request, 'employee/department_add.html')
 
+@login_required(login_url='login')
 def department_edit(request,department_id):
     edit = Department.objects.get(department_id=department_id)
     
@@ -1360,13 +1439,14 @@ def department_delete(request, department_id):
     messages.error(request, "Department Deleted Successfully!")
     return redirect("/department")
 
-
+@login_required(login_url='login')
 def employee(request):
     data = Person.objects.all()
     context = {"data1":data}
 
     return render(request, 'employee/employee.html', context)
 
+@login_required(login_url='login')
 def employee_add(request):
     if request.method=="POST":
         farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
@@ -1439,6 +1519,7 @@ def employee_add(request):
 
     return render(request, 'employee/employee_add.html', context)
 
+@login_required(login_url='login')
 def employee_edit(request, farm_entity_id):
     farm_entity = get_object_or_404(FarmEntity, pk=farm_entity_id)
     person = get_object_or_404(Person, farm_entity=farm_entity)
@@ -1500,6 +1581,7 @@ def employee_delete(request, farm_entity_id):
     
     return redirect("/employee")
 
+@login_required(login_url='login')
 def add_contact(request):
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
@@ -1518,6 +1600,7 @@ def add_contact(request):
 
     return render(request, 'employee/employee_add.html')
 
+@login_required(login_url='login')
 def add_address(request):
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
@@ -1546,6 +1629,7 @@ def add_address(request):
 
     return render(request, 'employee/employee_add.html')
 
+@login_required(login_url='login')
 def add_experience(request):
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
@@ -1570,6 +1654,7 @@ def add_experience(request):
 
     return render(request, 'employee/employee_add.html')
 
+@login_required(login_url='login')
 def add_guarantee(request):
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')

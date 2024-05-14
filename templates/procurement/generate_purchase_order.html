@@ -132,14 +132,16 @@
                             {{d.price}}
                           </td>
                           <td>
-                          {% for item in qty_data %}
-                            {% if item.item_id == d.item_id %}
+                            {{ d.quantity }}
+                        {% comment %} {% for item in qty_data %}
+                            {% if item.item_id == d.item_id %} 
                                 {{ item.quantity }}
                             {% endif %}
-                        {% endfor %}
+                        {% endfor %}  {% endcomment %}
                           </td> 
                           <td>
-                          {{ multiplied_values|get_item:d.item_id }}
+                         
+                            {{ multiplied_values|get_item:d.item_id }} 
                           </td> 
 
                     {% endfor %}
