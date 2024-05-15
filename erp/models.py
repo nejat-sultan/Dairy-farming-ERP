@@ -123,7 +123,7 @@ class PersonTitle(models.Model):
 
 class ContactType(models.Model):
     contact_id = models.AutoField(primary_key=True)
-    contact_type = models.CharField(max_length=255, null=True)
+    contact_type = models.CharField(max_length=255)
     contact_type_desc = models.CharField(max_length=255, null=True)
     modified_date = models.DateTimeField(null=True)
 
@@ -155,16 +155,17 @@ class FarmEntity(models.Model):
         db_table = 'farm_entity'
 
 class FarmEntityContact(models.Model):
-    farm_entity = models.ForeignKey(FarmEntity, on_delete=models.CASCADE, primary_key=True)
+    id = models.AutoField(primary_key=True)
+    farm_entity = models.ForeignKey(FarmEntity, on_delete=models.CASCADE)
     contact = models.CharField(max_length=100)
     contact_type = models.ForeignKey(ContactType, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'farm_entity_contact'
-        # unique_together = ('farm_entity',)
 
 class FarmEntityAddress(models.Model):
-    farm_entity = models.ForeignKey(FarmEntity, on_delete=models.CASCADE, primary_key=True)
+    id = models.AutoField(primary_key=True)
+    farm_entity = models.ForeignKey(FarmEntity, on_delete=models.CASCADE)
     country = models.CharField(max_length=100, null=True)
     region = models.ForeignKey(Region, on_delete=models.CASCADE)
     zone_subcity = models.CharField(max_length=100, null=True)
@@ -175,7 +176,6 @@ class FarmEntityAddress(models.Model):
 
     class Meta:
         db_table = 'farm_entity_address'
-        # unique_together = ('farm_entity',)
 
 class Person(models.Model):
     farm_entity = models.OneToOneField(FarmEntity, on_delete=models.CASCADE, primary_key=True)
@@ -183,7 +183,7 @@ class Person(models.Model):
     first_name = models.CharField(max_length=150)
     middle_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150, null=True)
-    gender = models.CharField(max_length=10, null=True)
+    gender = models.CharField(max_length=10)
     date_of_birth = models.DateField(null=True)
     marital_status = models.CharField(max_length=20, null=True)
     person_type = models.ForeignKey(PersonType, on_delete=models.CASCADE)

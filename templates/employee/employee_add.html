@@ -39,6 +39,16 @@
               </div>
           
               <div class="card-body">
+                {% if errors %}
+              <div class="alert alert-danger">
+                <ul>
+                  {% for error in errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            
                 <div class="form-group">
                       <label for="inputStatus">Title</label>
                       <select id="inputStatus" name="title" class="form-control custom-select">
@@ -49,11 +59,11 @@
                 </div>
                 <div class="form-group">
                   <label for="inputName">First Name</label>
-                  <input type="text" id="inputName" name="fname" class="form-control">
+                  <input type="text" id="inputName" name="fname" class="form-control" required>
                 </div>
                 <div class="form-group">
                   <label for="inputName">Middle Name</label>
-                  <input type="text" id="inputName" name="mname" class="form-control">
+                  <input type="text" id="inputName" name="mname" class="form-control" required>
                 </div>
                 <div class="form-group">
                   <label for="inputName">Last Name</label>
@@ -73,7 +83,7 @@
                 </div>
                 <div class="form-group">
                   <label for="inputClientCompany">Gender</label>
-                  <select id="inputStatus" name="gender" class="form-control custom-select">
+                  <select id="inputStatus" name="gender" class="form-control custom-select" required>
                     <option selected disabled>Select one</option>
                     <option>Male</option>
                     <option>Female</option>
@@ -152,252 +162,14 @@
         </div>
         <div class="row">
           <div class="col-12">
-            <a href="employee" class="btn btn-secondary">Back</a>
+            <a href="employee" class="btn btn-secondary">Back</a> 
             <button type="submit" class="btn btn-success float-right" >Add Employee</button>
           </div>
         </div>
+        <br><br>
+        
       </form>
-      <br>
+    </section>
+  </div>
 
-        <button type="button" class="btn btn-primary mr-3" id="addcontactBtn">Add Contact</button>
-        <button type="button" class="btn btn-success mr-3" id="addaddressBtn">Add Address</button>
-        <button type="button" class="btn btn-info mr-3" id="addexperienceBtn">Add Experience</button>
-        <button type="button" class="btn btn-warning" id="addguaranteeBtn">Add Guarantee</button>
-
-      <br><br>
-
-      <!-- Hidden section for contact form -->
-      <div class="card" id="contactFormSection" style="display: none;">
-        <div class="card-body">
-            <form action="/add_contact" method="post" id="contactForm" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputStatus">Employee</label>
-                            <select id="inputStatus" name="employee_id" class="form-control custom-select">
-                                {% for d in data1 %}
-                                <option value="{{d.farm_entity_id}}">{{d.first_name}}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Contact Type</label>
-                            <select id="inputStatus" name="contact_type" class="form-control custom-select">
-                                {% for d in data6 %}
-                                <option value="{{ d.contact_id }}">{{ d.contact_type }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Contact</label>
-                            <input type="text" id="inputPhotoDescription" name="contact" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn btn-success float-right" >Add Contact</button>
-                  </div>
-                </div>
-                <br>
-            </form>
-        </div>
-      </div>
-
-      <!-- Hidden section for Address form -->
-      <div class="card" id="addressFormSection" style="display: none;">
-        <div class="card-body">
-            <form action="/add_address" method="post" id="addressForm" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputStatus">Employee</label>
-                            <select id="inputStatus" name="employee_id" class="form-control custom-select">
-                                {% for d in data1 %}
-                                    <option value="{{d.farm_entity_id}}">{{d.first_name}}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Region</label>
-                            <select id="inputStatus" name="region" class="form-control custom-select">
-                                {% for d in data7 %}
-                                    <option value="{{ d.region_id }}">{{ d.region }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Woreda</label>
-                            <input type="text" id="inputPhotoDescription" name="woreda" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">House No</label>
-                            <input type="text" id="inputPhotoDescription" name="house_no" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Country</label>
-                            <input type="text" id="inputPhotoDescription" name="country" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Zone/Subcity</label>
-                            <input type="text" id="inputPhotoDescription" name="zone_subcity" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Kebele</label>
-                            <input type="text" id="inputPhotoDescription" name="kebele" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Street Name</label>
-                            <input type="text" id="inputPhotoDescription" name="street" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn btn-success float-right" >Add Address</button>
-                  </div>
-                </div>
-                <br>
-            </form>
-        </div>
-      </div>
-    
-      <!-- Hidden section for Experience form -->
-      <div class="card" id="experienceFormSection" style="display: none;">
-        <div class="card-body">
-            <form action="/add_experience" method="post" id="experienceForm" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputStatus">Employee</label>
-                            <select id="inputStatus" name="employee_id" class="form-control custom-select">
-                                {% comment %} {% for d in data8 %}
-                                <option value="{{d.person_farm_entity_id}}">{{d.person_farm_entity_id}}</option>
-                                {% endfor %} {% endcomment %}
-                                {% for d in data8 %}
-                                <option value="{{ d.person_farm_entity_id }}">{{ d.person_farm_entity.first_name }}</option>
-                                {% endfor %}
-                        
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Start Date</label>
-                            <input type="date" id="inputPhotoDescription" name="start_date" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">End Date</label>
-                            <input type="date" id="inputPhotoDescription" name="end_date" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Company</label>
-                            <input type="text" id="inputPhotoDescription" name="company" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Title</label>
-                            <input type="text" id="inputPhotoDescription" name="title" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Salary</label>
-                            <input type="text" id="inputPhotoDescription" name="salary" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn btn-success float-right" >Add Experience</button>
-                  </div>
-                </div>
-                <br>
-            </form>
-        </div>
-      </div>
-
-      <!-- Hidden section for guarantee form -->
-      <div class="card" id="guaranteeFormSection" style="display: none;">
-        <div class="card-body">
-            <form action="/add_guarantee" method="post" id="guaranteeForm" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputStatus">Employee</label>
-                            <select id="inputStatus" name="employee_id" class="form-control custom-select">
-                              {% for d in data8 %}
-                              <option value="{{ d.person_farm_entity_id }}">{{ d.person_farm_entity.first_name }}</option>
-                              {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Salary</label>
-                            <input type="text" id="inputPhotoDescription" name="salary_evaluation" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Guarantee Type</label>
-                            <select id="inputStatus" name="guarantee_type" class="form-control custom-select">
-                                {% for d in data9 %}
-                                <option value="{{ d.guarantee_type_id }}">{{ d.guarantee_type }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn btn-success float-right" >Add Guarantee</button>
-                  </div>
-                </div>
-                <br>
-            </form>
-        </div>
-    </div>
-
-  </section>
-</div>
-
-
-<script>
-
-  document.getElementById('addcontactBtn').addEventListener('click', function() {
-    document.getElementById('contactFormSection').style.display = 'block';
-    document.getElementById('addressFormSection').style.display = 'none';
-    document.getElementById('experienceFormSection').style.display = 'none';
-    document.getElementById('guaranteeFormSection').style.display = 'none';
-  });
-
-  document.getElementById('addaddressBtn').addEventListener('click', function() {
-    document.getElementById('contactFormSection').style.display = 'none';
-    document.getElementById('addressFormSection').style.display = 'block';
-    document.getElementById('experienceFormSection').style.display = 'none';
-    document.getElementById('guaranteeFormSection').style.display = 'none';
-  });
-
-  document.getElementById('addexperienceBtn').addEventListener('click', function() {
-    document.getElementById('contactFormSection').style.display = 'none';
-    document.getElementById('addressFormSection').style.display = 'none';
-    document.getElementById('experienceFormSection').style.display = 'block';
-    document.getElementById('guaranteeFormSection').style.display = 'none';
-  });
-
-  document.getElementById('addguaranteeBtn').addEventListener('click', function() {
-    document.getElementById('contactFormSection').style.display = 'none';
-    document.getElementById('addressFormSection').style.display = 'none';
-    document.getElementById('experienceFormSection').style.display = 'none';
-    document.getElementById('guaranteeFormSection').style.display = 'block';
-  });
-</script>
-
-  
-  
-  
-  {% endblock %}
+{% endblock %}

@@ -109,6 +109,7 @@ urlpatterns = [
     path('supplier_delete/<str:farm_entity_id>', views.supplier_delete),
 
     path('request_order', views.request_order),
+    path('request_order_view/<str:order_id>', views.request_order_view, name='request_order_view'),
     path('request_order_add', views.request_order_add),
     path('request_order_edit/<str:order_id>', views.request_order_edit, name='request_order_edit'),
     path('request_order_delete/<str:order_id>', views.request_order_delete),

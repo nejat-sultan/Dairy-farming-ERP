@@ -216,7 +216,7 @@
               </p>
             </a> 
             <ul class="nav nav-treeview pl-3">
-              {% if request.user|is_allowed_user:"Admin" %} 
+              {% comment %} {% if request.user|is_allowed_user:"Admin" %}  {% endcomment %}
               <li class="nav-item">
                 <a href="../../cattle" class="nav-link">
                   <i class="nav-icon fas fa-table"></i>
@@ -225,31 +225,31 @@
                   </p>
                 </a>
               </li>
-              {% endif %}
-              {% if request.user|is_allowed_user:"Admin, Veterinarian" %} 
+              {% comment %} {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Veterinarian" %}  {% endcomment %}
               <li class="nav-item">
                 <a href="#" class="nav-link">
                   <i class="fas fa-hospital nav-icon"></i>
                   <p>Health CheckUp</p>
                 </a>
               </li>
-              {% endif %} 
-              {% if request.user|is_allowed_user:"Admin, Veterinarian" %} 
+              {% comment %} {% endif %} 
+              {% if request.user|is_allowed_user:"Admin, Veterinarian" %}  {% endcomment %}
               <li class="nav-item">
                 <a href="#" class="nav-link">
                   <i class="fas fa-syringe nav-icon"></i>
                   <p>Vaccination</p>
                 </a>
               </li>
-              {% endif %} 
-              {% if request.user|is_allowed_user:"Admin, Veterinarian" %} 
+              {% comment %} {% endif %} 
+              {% if request.user|is_allowed_user:"Admin, Veterinarian" %}  {% endcomment %}
               <li class="nav-item">
                 <a href="../../cattle_pregnancy" class="nav-link">
                   <i class="nav-icon fas fa-horse"></i>
                   <p>Reproduction</p>
                 </a>
               </li>
-              {% endif %} 
+              {% comment %} {% endif %}  {% endcomment %}
             </ul>
           </li>
           
@@ -319,14 +319,14 @@
                   </p>
                 </a>
               </li>
-              <li class="nav-item">
+              {% comment %} <li class="nav-item">
                 <a href="../../rfq" class="nav-link">
                   <i class="nav-icon fas fa-user-check"></i>
                   <p>
                     Manage RFQ
                   </p>
                 </a>
-              </li> 
+              </li>  {% endcomment %}
               <li class="nav-item">
                 <a href="../../purchase_order" class="nav-link">
                   <i class="nav-icon fas fa-coins"></i>

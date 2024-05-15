@@ -38,9 +38,19 @@
               </div>
             </div>
             <div class="card-body">
+              {% if errors %}
+                <div class="alert alert-danger">
+                  <ul>
+                    {% for error in errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+              
               <div class="form-group">
                 <label for="inputName">Id</label>
-                <input type="text" id="inputName" name="id" class="form-control">
+                <input type="text" id="inputName" name="id" class="form-control" required> 
               </div>
               <div class="form-group">
                 <label for="inputDescription">Date of Birth</label>
@@ -110,56 +120,8 @@
     </form>
     <br>
 
-    <button type="button" class="btn btn-success" id="addPhotoBtn">Add Photo</button>
-
-    <!-- Hidden section for photo form -->
-    <div class="card" id="photoFormSection" style="display: none;">
-      <div class="card-body">
-        <form action="/add_photo" method="post" id="photoForm" enctype="multipart/form-data">
-          {% csrf_token %}
-          <div class="row">
-            <div class="col-md-6">
-              <div class="form-group">
-                <label for="inputStatus">Cattle id</label>
-                <select id="inputStatus" name="cattle_id" class="form-control custom-select">
-                  {% for d in data2 %}
-                  <option value="{{d.cattle_id}}">{{ d.cattle_name}}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="inputPhotoUrl">Photo</label>
-                <input type="file" id="inputPhotoUrl" name="photo_url" class="form-control" required>
-              </div> 
-            </div>
-            <div class="col-md-6">
-              <div class="form-group">
-                <label for="inputPhotoDescription">Photo Description</label>
-                <input type="text" id="inputPhotoDescription" name="photo_description" class="form-control">
-              </div>
-            </div>
-          </div>
-          <div class="row">
-            <div class="col-12">
-              <button type="submit" class="btn btn-success float-right" >Add Photo</button>
-            </div>
-          </div>
-          <br>
-        </form>
-      </div>
-    </div>
-
   </section>
-
 </div>
 
-  <script>
-  // JavaScript code
-  document.getElementById('addPhotoBtn').addEventListener('click', function() {
-    document.getElementById('photoFormSection').style.display = 'block';
-  });
-</script>
-  
-  
   
   {% endblock %}

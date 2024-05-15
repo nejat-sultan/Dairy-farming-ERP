@@ -13,7 +13,7 @@
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="../employee">Home</a></li>
+              <li class="breadcrumb-item"><a href="../../employee">Home</a></li>
               <li class="breadcrumb-item active">Employee Edit</li>
             </ol>
           </div>
@@ -22,7 +22,7 @@
     </section>
 
     <section class="content">
-        <form action="/employee_edit/{{ farm_entity_id }}/" method="post">
+      <form action="/employee_edit/{{ farm_entity_id }}/" method="post">
         {% csrf_token %}
         <div class="row">
           <div class="col-md-6">
@@ -37,6 +37,16 @@
                 </div>
               </div>
               <div class="card-body">
+                {% if errors %}
+              <div class="alert alert-danger">
+                <ul>
+                  {% for error in errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+
                 <div class="form-group">
                       <label for="inputStatus">Title</label>
                       <select id="inputStatus" name="title" class="form-control custom-select">
@@ -50,11 +60,11 @@
                 </div>
                 <div class="form-group">
                   <label for="inputName">First Name</label>
-                  <input type="text" id="inputName" name="fname" value="{{person.first_name}}" class="form-control">
+                  <input type="text" id="inputName" name="fname" value="{{person.first_name}}" class="form-control" required>
                 </div>
                 <div class="form-group">
                   <label for="inputName">Middle Name</label>
-                  <input type="text" id="inputName" name="mname" value="{{person.middle_name}}" class="form-control">
+                  <input type="text" id="inputName" name="mname" value="{{person.middle_name}}" class="form-control" required>
                 </div>
                 <div class="form-group">
                   <label for="inputName">Last Name</label>
@@ -64,22 +74,32 @@
                   <label for="inputDescription">Date of Birth</label>
                   <input type="date" id="inputName" name="dob" value="{{ person.date_of_birth|date:'Y-m-d' }}" class="form-control">
                 </div>
-                <div class="form-group">
+                {% comment %} <div class="form-group">
                   <label for="inputName">Marital Status</label>
                   <select id="inputStatus" name="marital_status" class="form-control custom-select">
                       <option selected disabled>{{person.marital_status}}</option>
                       <option>Married</option>
                       <option>Single</option>
                     </select>
-                </div>
+                </div> {% endcomment %}
                 <div class="form-group">
-                  <label for="inputClientCompany">Gender</label>
-                  <select id="inputStatus" name="gender" class="form-control custom-select">
-                    <option selected disabled>{{person.gender}}</option>
-                    <option>Male</option>
-                    <option>Female</option>
+                  <label for="inputName">Marital Status</label>
+                  <select id="inputStatus" name="marital_status" class="form-control custom-select">
+                      <option disabled>Select Marital Status</option>
+                      <option value="Married" {% if person.marital_status == 'Married' %} selected {% endif %}>Married</option>
+                      <option value="Single" {% if person.marital_status == 'Single' %} selected {% endif %}>Single</option>
                   </select>
-                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="inputClientCompany">Gender</label>
+                <select id="inputStatus" name="gender" class="form-control custom-select" required>
+                    <option disabled>Select Gender</option>
+                    <option value="Male" {% if person.gender == 'Male' %} selected {% endif %}>Male</option>
+                    <option value="Female" {% if person.gender == 'Female' %} selected {% endif %}>Female</option>
+                </select>
+            </div>
+            
                 <div class="form-group">
                   <label for="inputStatus">Employee Type</label>
                   <select id="inputStatus" name="type" class="form-control custom-select">
@@ -131,13 +151,14 @@
                       <input type="text" id="inputName" name="national_id" value="{{employee.national_id}}"  class="form-control">
                   </div>
                   <div class="form-group">
-                      <label for="inputName">Contract Type</label>
-                      <select id="inputStatus" name="contract_type" class="form-control custom-select">
-                          <option selected disabled>{{employee.contract_type}}</option>
-                          <option>Permanent</option>
-                          <option>Contractual</option>
-                      </select>
-                  </div>
+                    <label for="inputName">Contract Type</label>
+                    <select id="inputStatus" name="contract_type" class="form-control custom-select">
+                        <option disabled>Select Contract Type</option>
+                        <option value="Permanent" {% if employee.contract_type == 'Permanent' %} selected {% endif %}>Permanent</option>
+                        <option value="Contractual" {% if employee.contract_type == 'Contractual' %} selected {% endif %}>Contractual</option>
+                    </select>
+                </div>
+                
                   <div class="form-group">
                       <label for="inputDescription">Contract Period(In month)</label>
                       <input type="text" id="inputName" name="contract_period" value="{{employee.contract_period_in_month}}"  class="form-control">
@@ -166,8 +187,226 @@
           </div>
         </div>
       </form>
-      </section>
+      <br>
+
+        <button type="button" class="btn btn-primary mr-3" id="addcontactBtn">Add Contact</button>
+        <button type="button" class="btn btn-success mr-3" id="addaddressBtn">Add Address</button>
+        <button type="button" class="btn btn-info mr-3" id="addexperienceBtn">Add Experience</button>
+        <button type="button" class="btn btn-warning" id="addguaranteeBtn">Add Guarantee</button>
+
+      <br><br>
+
+      <!-- Hidden section for contact form -->
+      <div class="card" id="contactFormSection" style="display: none;">
+        <div class="card-body">
+            <form action="/add_contact" method="post" id="contactForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputStatus">Employee</label>
+                            <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Contact Type</label>
+                            <select id="inputStatus" name="contact_type" class="form-control custom-select" >
+                              {% for d in data6 %}
+                              <option value="{{ d.contact_id }}">{{ d.contact_type }}</option>
+                              {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Contact</label>
+                            <input type="text" id="inputPhotoDescription" name="contact" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-success float-right" >Add Contact</button>
+                  </div>
+                </div>
+                <br>
+            </form>
+        </div>
+      </div>
+
+      <!-- Hidden section for Address form -->
+      <div class="card" id="addressFormSection" style="display: none;">
+        <div class="card-body">
+            <form action="/add_address" method="post" id="addressForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputStatus">Employee</label>
+                            <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Region</label>
+                            <select id="inputStatus" name="region" class="form-control custom-select">
+                                {% for d in data7 %}
+                                    <option value="{{ d.region_id }}">{{ d.region }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Woreda</label>
+                            <input type="text" id="inputPhotoDescription" name="woreda" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">House No</label>
+                            <input type="text" id="inputPhotoDescription" name="house_no" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Country</label>
+                            <input type="text" id="inputPhotoDescription" name="country" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Zone/Subcity</label>
+                            <input type="text" id="inputPhotoDescription" name="zone_subcity" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Kebele</label>
+                            <input type="text" id="inputPhotoDescription" name="kebele" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Street Name</label>
+                            <input type="text" id="inputPhotoDescription" name="street" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-success float-right" >Add Address</button>
+                  </div>
+                </div>
+                <br>
+            </form>
+        </div>
+      </div>
+    
+      <!-- Hidden section for Experience form -->
+      <div class="card" id="experienceFormSection" style="display: none;">
+        <div class="card-body">
+            <form action="/add_experience" method="post" id="experienceForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputStatus">Employee</label>
+                            <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Start Date</label>
+                            <input type="date" id="inputPhotoDescription" name="start_date" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">End Date</label>
+                            <input type="date" id="inputPhotoDescription" name="end_date" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Company</label>
+                            <input type="text" id="inputPhotoDescription" name="company" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Title</label>
+                            <input type="text" id="inputPhotoDescription" name="title" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Salary</label>
+                            <input type="text" id="inputPhotoDescription" name="salary" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-success float-right" >Add Experience</button>
+                  </div>
+                </div>
+                <br>
+            </form>
+        </div>
+      </div>
+
+      <!-- Hidden section for guarantee form -->
+      <div class="card" id="guaranteeFormSection" style="display: none;">
+        <div class="card-body">
+            <form action="/add_guarantee" method="post" id="guaranteeForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputStatus">Employee</label>
+                            <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Salary</label>
+                            <input type="text" id="inputPhotoDescription" name="salary_evaluation" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Guarantee Type</label>
+                            <select id="inputStatus" name="guarantee_type" class="form-control custom-select">
+                                {% for d in data9 %}
+                                <option value="{{ d.guarantee_type_id }}">{{ d.guarantee_type }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-success float-right" >Add Guarantee</button>
+                  </div>
+                </div>
+                <br>
+            </form>
+        </div>
+      </div>
+    </section>
   
   </div>
+
+  
+<script>
+
+  document.getElementById('addcontactBtn').addEventListener('click', function() {
+    document.getElementById('contactFormSection').style.display = 'block';
+    document.getElementById('addressFormSection').style.display = 'none';
+    document.getElementById('experienceFormSection').style.display = 'none';
+    document.getElementById('guaranteeFormSection').style.display = 'none';
+  });
+
+  document.getElementById('addaddressBtn').addEventListener('click', function() {
+    document.getElementById('contactFormSection').style.display = 'none';
+    document.getElementById('addressFormSection').style.display = 'block';
+    document.getElementById('experienceFormSection').style.display = 'none';
+    document.getElementById('guaranteeFormSection').style.display = 'none';
+  });
+
+  document.getElementById('addexperienceBtn').addEventListener('click', function() {
+    document.getElementById('contactFormSection').style.display = 'none';
+    document.getElementById('addressFormSection').style.display = 'none';
+    document.getElementById('experienceFormSection').style.display = 'block';
+    document.getElementById('guaranteeFormSection').style.display = 'none';
+  });
+
+  document.getElementById('addguaranteeBtn').addEventListener('click', function() {
+    document.getElementById('contactFormSection').style.display = 'none';
+    document.getElementById('addressFormSection').style.display = 'none';
+    document.getElementById('experienceFormSection').style.display = 'none';
+    document.getElementById('guaranteeFormSection').style.display = 'block';
+  });
+</script>
+
+
   
   {% endblock %}

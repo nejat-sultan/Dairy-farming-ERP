@@ -14,6 +14,7 @@ from django.contrib.auth.forms import UserCreationForm
 from .forms import CreateUserForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 
 
 # Create your views here.
@@ -84,7 +85,7 @@ def index(request):
     return render(request, 'index.html',{'dash1': dash1, 'dash2': dash2, 'dash3': dash3, 'dash4': dash4})
 
 @login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin','Veterinarian'])
+# @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle(request):
     data = Cattle.objects.all()
     context = {"data":data}
@@ -92,7 +93,7 @@ def cattle(request):
     return render(request, 'cattle/cattle.html', context)
 
 @login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin'])
+# @allowed_users(allowed_roles=['Admin'])
 def cattle_view(request, cattle_id):
 
     cattle = get_object_or_404(Cattle, cattle_id=cattle_id)
@@ -111,18 +112,49 @@ def cattle_view(request, cattle_id):
 
     return render(request, 'cattle/cattle_view.html', context)
 
+from django.utils.dateparse import parse_date
 @login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin'])
+# @allowed_users(allowed_roles=['Admin'])
 def cattle_add(request):
-    if request.method=="POST":
-        cid=request.POST.get('id')
-        cdob=request.POST.get('dob')
-        cname=request.POST.get('name')
-        cgender=request.POST.get('gender')
-        cestimatedprice=request.POST.get('estimated_price')
-        cbreed=request.POST.get('breed')
-        cstatus=request.POST.get('status')
+    if request.method == "POST":
+        cid = request.POST.get('id')
+        cdob = request.POST.get('dob')
+        cname = request.POST.get('name')
+        cgender = request.POST.get('gender')
+        cestimatedprice = request.POST.get('estimated_price')
+        cbreed = request.POST.get('breed')
+        cstatus = request.POST.get('status')
 
+        errors = []
+        if not cid:
+            errors.append('Cattle ID is required.')
+
+        if cdob:
+            parsed_dob = parse_date(cdob)
+            if not parsed_dob:
+                errors.append('Date of Birth must be in YYYY-MM-DD format.')
+            else:
+                cdob = parsed_dob
+        else:
+            cdob = None 
+
+        if cestimatedprice:
+            try:
+                cestimatedprice = float(cestimatedprice)
+            except ValueError:
+                errors.append('Estimated price must be a number.')
+        else:
+            cestimatedprice = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': CattleStatus.objects.all(),
+                'data2': Cattle.objects.all(),
+                'data3': CattleBreed.objects.all(),
+            }
+            return render(request, 'cattle/cattle_add.html', context)
+        
         query = Cattle(cattle_id=cid, cattle_date_of_birth=cdob, cattle_name=cname, cattle_gender=cgender, estimated_price=cestimatedprice, cattle_breed_id=cbreed, cattle_status_id=cstatus)
         query.save()
         messages.info(request, "Cattle Added Successfully!")
@@ -141,9 +173,8 @@ def cattle_add(request):
     return render(request, 'cattle/cattle_add.html', context)
 
 @login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin'])
+# @allowed_users(allowed_roles=['Admin'])
 def cattle_edit(request,cattle_id):
-
     # Fetch the cattle object by its id
     edit = Cattle.objects.get(cattle_id=cattle_id)
     
@@ -155,6 +186,37 @@ def cattle_edit(request,cattle_id):
         cestimatedprice=request.POST.get('estimated_price')
         cbreed=request.POST.get('breed')
         cstatus=request.POST.get('status')
+
+        errors = []
+        if not cid:
+            errors.append('Cattle ID is required.')
+
+        if cdob:
+            parsed_dob = parse_date(cdob)
+            if not parsed_dob:
+                errors.append('Date of Birth must be in YYYY-MM-DD format.')
+            else:
+                cdob = parsed_dob
+        else:
+            cdob = None 
+
+        if cestimatedprice:
+            try:
+                cestimatedprice = float(cestimatedprice)
+            except ValueError:
+                errors.append('Estimated price must be a number.')
+        else:
+            cestimatedprice = None 
+
+        if errors:
+            context = {
+                'cattle': edit,
+                'errors': errors,
+                'cattle_statuses': CattleStatus.objects.all(),
+                'cattle_breed': CattleBreed.objects.all(),
+                'data2': Cattle.objects.all()
+            }
+            return render(request, 'cattle/cattle_edit.html', context)
         
         # Update the attributes
         edit.cattle_id = cid
@@ -170,17 +232,19 @@ def cattle_edit(request,cattle_id):
         messages.warning(request, "Cattle Updated Successfully!")
         # Optionally, redirect to a success page or another view
         return redirect("/cattle")
+        
     
     # Fetch all cattle statuses
     cattle_statuses = CattleStatus.objects.all()
-
     cattle_breed = CattleBreed.objects.all()
-    context = {"cattle": edit, "cattle_statuses": cattle_statuses, "cattle_breed": cattle_breed}
+    cattle_data = Cattle.objects.all()
+    
+    context = {"cattle": edit, "cattle_statuses": cattle_statuses, "cattle_breed": cattle_breed, 'data2': cattle_data,}
 
     return render(request, 'cattle/cattle_edit.html', context)
 
 
-@allowed_users(allowed_roles=['Admin'])
+# @allowed_users(allowed_roles=['Admin'])
 def cattle_delete(request, cattle_id):
     d = Cattle.objects.get(cattle_id=cattle_id)
     d.delete()
@@ -189,13 +253,11 @@ def cattle_delete(request, cattle_id):
 
 # Django view function to handle adding a photo
 def add_photo(request):
-
     if request.method == 'POST':
-        # Retrieve photo form data
         cattle_id = request.POST.get('cattle_id')
         photo_description = request.POST.get('photo_description')
 
-        # Handle file upload
+
         if 'photo_url' in request.FILES:
             photo_file = request.FILES['photo_url']
 
@@ -327,7 +389,7 @@ def cattle_breed_delete(request, cattle_breed_id):
     return redirect("/cattle_breed")
 
 @login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin','Veterinarian'])
+# @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy(request):
     data = CattlePregnancy.objects.all()
     cattle = Cattle.objects.all()
@@ -337,7 +399,7 @@ def cattle_pregnancy(request):
     return render(request, 'cattle/cattle_pregnancy.html', context)
 
 @login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin','Veterinarian'])
+# @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy_add(request):
     if request.method=="POST":
         cpregnancy_type=request.POST.get('pregnancy_type')
@@ -359,7 +421,7 @@ def cattle_pregnancy_add(request):
     return render(request, 'cattle/cattle_pregnancy_add.html', context)
 
 @login_required(login_url='login')
-@allowed_users(allowed_roles=['Admin','Veterinarian'])
+# @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy_edit(request,cattle_pregnancy_id):
     # Fetch the cattle object by its id
     edit = CattlePregnancy.objects.get(cattle_pregnancy_id=cattle_pregnancy_id)
@@ -390,7 +452,7 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
 
     return render(request, 'cattle/cattle_pregnancy_edit.html', context)
 
-@allowed_users(allowed_roles=['Admin','Veterinarian'])
+# @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy_delete(request, cattle_pregnancy_id):
     d = CattlePregnancy.objects.get(cattle_pregnancy_id=cattle_pregnancy_id)
     d.delete()
@@ -471,6 +533,63 @@ def milk_production_add(request):
         cduration_in_min=request.POST.get('duration_in_min')
         ccattle_id=request.POST.get('cattle_id')
 
+        errors = []
+ 
+        if cmilk_time:
+            try:
+                cmilk_time = datetime.strptime(cmilk_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Milk Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cmilk_time = None 
+
+        if camount_in_liter:
+            try:
+                camount_in_liter = float(camount_in_liter)
+            except ValueError:
+                errors.append('Amount in liter must be a number.')
+        else:
+            camount_in_liter = None 
+
+        if cfat_content:
+            try:
+                cfat_content = float(cfat_content)
+            except ValueError:
+                errors.append('Fat content must be a number.')
+        else:
+            cfat_content = None 
+
+        if cprotein_content:
+            try:
+                cprotein_content = float(cprotein_content)
+            except ValueError:
+                errors.append('Protein content must be a number.')
+        else:
+            cprotein_content = None 
+
+        if csomatic_cell_count:
+            try:
+                csomatic_cell_count = float(csomatic_cell_count)
+            except ValueError:
+                errors.append('Somatic cell count content must be a number.')
+        else:
+            csomatic_cell_count = None 
+
+        if cduration_in_min:
+            try:
+                cduration_in_min = float(cduration_in_min)
+            except ValueError:
+                errors.append('Duration in min count content must be a number.')
+        else:
+            cduration_in_min = None 
+            
+        if errors:
+            context = {
+                'errors': errors,
+                'data2': Cattle.objects.all(),
+            }
+            return render(request, 'cattle/milk_production_add.html', context)
+
         query = MilkProduction(amount_in_liter=camount_in_liter, milk_time=cmilk_time, fat_content=cfat_content, protein_content=cprotein_content, somatic_cell_count=csomatic_cell_count, duration_in_min=cduration_in_min, cattle_id=ccattle_id)
         query.save()
         messages.info(request, "Milk Production Added Successfully!")
@@ -496,6 +615,66 @@ def milk_production_edit(request,milk_production_id):
         csomatic_cell_count=request.POST.get('somatic_cell_count')
         cduration_in_min=request.POST.get('duration_in_min')
         ccattle_id=request.POST.get('cattle_id')
+
+        errors = []
+
+        if cmilk_time:
+            try:
+                cmilk_time = datetime.strptime(cmilk_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Milk Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cmilk_time = None 
+            
+        if camount_in_liter:
+            try:
+                camount_in_liter = float(camount_in_liter)
+            except ValueError:
+                errors.append('Amount in liter must be a number.')
+        else:
+            camount_in_liter = None 
+
+        if cfat_content:
+            try:
+                cfat_content = float(cfat_content)
+            except ValueError:
+                errors.append('Fat content must be a number.')
+        else:
+            cfat_content = None 
+
+        if cprotein_content:
+            try:
+                cprotein_content = float(cprotein_content)
+            except ValueError:
+                errors.append('Protein content must be a number.')
+        else:
+            cprotein_content = None 
+
+        if csomatic_cell_count:
+            try:
+                csomatic_cell_count = float(csomatic_cell_count)
+            except ValueError:
+                errors.append('Somatic cell count content must be a number.')
+        else:
+            csomatic_cell_count = None 
+
+        if cduration_in_min:
+            try:
+                cduration_in_min = float(cduration_in_min)
+            except ValueError:
+                errors.append('Duration in min count content must be a number.')
+        else:
+            cduration_in_min = None 
+            
+        if errors:
+            context = {
+                'cattle': edit,
+                'errors': errors,
+                'cattles': Cattle.objects.all(),
+                'd': MilkProduction.objects.get(milk_production_id=milk_production_id)
+
+            }
+            return render(request, 'cattle/milk_production_edit.html', context)
         
         # Update the attributes
         edit.amount_in_liter = camount_in_liter
@@ -1150,6 +1329,16 @@ def request_order(request):
 
     return render(request, 'procurement/request_order.html', context)
 
+def request_order_view(request, order_id):
+    order = get_object_or_404(OrderHasItem, order_id=order_id)
+    orderdatas = Order.objects.filter(order_id=order_id)
+    rfq_data = OrderHasItemSupplier.objects.filter(order_id=order_id)
+
+    context = {"order":order, 'orderdatas': orderdatas, "rfq_data": rfq_data}
+
+    return render(request, 'procurement/request_order_view.html', context)
+
+
 @login_required(login_url='login')
 def request_order_add(request):
     if request.method=="POST":
@@ -1259,10 +1448,10 @@ def rfq_add(request, order_id):
         # Save the RFQ
         query = OrderHasItemSupplier.objects.create(supplier_id=csupplier_name, item_id=citem_id, order_id=order_id, quantity=cquantity, price=cprice, status='pending', modified_date=cdate)
         messages.info(request, "RFQ Added Successfully!")
-        return redirect("/rfq")
+        return redirect(f"/request_order_view/{order_id}")
 
-    # Get orders and items with request_approved = 'approved'
-    order_data = OrderHasItem.objects.filter(order__request_approved='approved')
+    # order_data = OrderHasItem.objects.filter(order__request_approved='approved')
+    order_data = OrderHasItem.objects.filter(order__request_approved='approved').values('item_id').distinct()
     supplier_data = Supplier.objects.all()
     existing_rfq = OrderHasItemSupplier.objects.filter(order_id=order_id)
     
@@ -1296,11 +1485,11 @@ def rfq_edit(request,id):
         # Save the changes
         edit.save()
         messages.warning(request, "RFQ Updated Successfully!")
-        # Optionally, redirect to a success page or another view
-        return redirect("/rfq")
+        return redirect(reverse('request_order_view', args=[edit.order_id]))
 
     d = OrderHasItemSupplier.objects.get(id=id)
-    order_data = OrderHasItem.objects.filter(order__request_approved='approved')
+    # order_data = OrderHasItem.objects.filter(order__request_approved='approved')
+    order_data = OrderHasItem.objects.filter(order__request_approved='approved').values('item_id').distinct()
     supplier_data = Supplier.objects.all()
     
     context = {
@@ -1313,9 +1502,10 @@ def rfq_edit(request,id):
 
 def rfq_delete(request, id):
     d = OrderHasItemSupplier.objects.get(id=id)
+    order_id = d.order_id
     d.delete()
     messages.error(request, "RFQ Deleted Successfully!")
-    return redirect("/rfq")
+    return redirect(reverse('request_order_view', args=[order_id]))
 
 def approve_rfq(request, id):
     try:
@@ -1448,9 +1638,7 @@ def employee(request):
 
 @login_required(login_url='login')
 def employee_add(request):
-    if request.method=="POST":
-        farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
-
+    if request.method == "POST":
         ctitle = request.POST.get('title')
         ctype = request.POST.get('type')
         cfname = request.POST.get('fname')
@@ -1467,6 +1655,62 @@ def employee_add(request):
         ccontract_period = request.POST.get('contract_period')
         cjob = request.POST.get('job')
         cdate = datetime.now().date()
+
+        errors = []
+        if cdob:
+            parsed_dob = parse_date(cdob)
+            if not parsed_dob:
+                errors.append('Date of Birth must be in YYYY-MM-DD format.')
+            else:
+                cdob = parsed_dob
+        else:
+            cdob = None 
+
+        if chire_data:
+            parsed_hire_data = parse_date(chire_data)
+            if not parsed_hire_data:
+                errors.append('Hire date must be in YYYY-MM-DD format.')
+            else:
+                chire_data = parsed_hire_data
+        else:
+            chire_data = None 
+
+        if not cgender:
+            errors.append('Gender is required.')
+
+        if csalary:
+            try:
+                csalary = float(csalary)
+            except ValueError:
+                errors.append('Salary must be a number.')
+        else:
+            csalary = None 
+
+        if ccontract_period:
+            try:
+                ccontract_period = float(ccontract_period)
+            except ValueError:
+                errors.append('Contract Period must be a number.')
+        else:
+            ccontract_period = None 
+
+        
+        if errors:
+            context = {
+                'errors': errors,
+                'data2': PersonTitle.objects.all(),
+                'data3': PersonType.objects.all(),
+                'data1': Person.objects.all(),
+                'data4': Job.objects.all(),
+                'data5': Department.objects.all(),
+                'data6': ContactType.objects.all(),
+                'data7': Region.objects.all(),
+                'data8': Employee.objects.all(),
+                'data9': GuaranteeType.objects.all() 
+            }
+            return render(request, 'employee/employee_add.html', context)
+
+        farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
 
         person = Person.objects.create(
             farm_entity=farm_entity,
@@ -1543,16 +1787,75 @@ def employee_edit(request, farm_entity_id):
         employee.contract_period_in_month = request.POST.get('contract_period')
         employee.job_id = request.POST.get('job')
 
+        errors = []
+        if person.date_of_birth:
+            parsed_dob = parse_date(person.date_of_birth)
+            if not parsed_dob:
+                errors.append('Date of Birth must be in YYYY-MM-DD format.')
+            else:
+                person.date_of_birth = parsed_dob
+        else:
+            person.date_of_birth = None 
+
+        if employee.hire_date:
+            parsed_hire_data = parse_date(employee.hire_date)
+            if not parsed_hire_data:
+                errors.append('Hire date must be in YYYY-MM-DD format.')
+            else:
+                employee.hire_date = parsed_hire_data
+        else:
+            employee.hire_date = None 
+
+        if not person.gender:
+            errors.append('Gender is required.')
+
+        if employee.salary:
+            try:
+                employee.salary = float(employee.salary)
+            except ValueError:
+                errors.append('Salary must be a number.')
+        else:
+            employee.salary = None 
+
+        if employee.contract_period_in_month:
+            try:
+                employee.contract_period_in_month = float(employee.contract_period_in_month)
+            except ValueError:
+                errors.append('Contract Period must be a number.')
+        else:
+            employee.contract_period_in_month = None
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data2': PersonTitle.objects.all(),
+                'data3': PersonType.objects.all(),
+                'data4': Job.objects.all(),
+                'data5': Department.objects.all(),
+                'data6': ContactType.objects.all(),
+                'data7': Region.objects.all(),
+                'data9': GuaranteeType.objects.all(),
+                'farm_entity_id': farm_entity_id,
+                'person': person,  
+                'employee': employee,  
+            }
+            return render(request, 'employee/employee_edit.html', context)
+
         person.save()
         employee.save()
 
         messages.info(request, "Employee Updated Successfully!")
-        return redirect("/employee")  # Redirect to the employee list page after editing
+        return redirect("/employee")
 
     title_data = PersonTitle.objects.all()
     type_data = PersonType.objects.all()
     job_data = Job.objects.all()
     dep_data = Department.objects.all()
+
+    contact_data = ContactType.objects.all() 
+    region_data = Region.objects.all() 
+    employee_data = Employee.objects.all() 
+    guarantee_data = GuaranteeType.objects.all() 
 
     context = {
         'data2': title_data,
@@ -1562,9 +1865,16 @@ def employee_edit(request, farm_entity_id):
         'person': person,
         'employee': employee,
         'farm_entity_id': farm_entity_id, 
+        
+        'data6': contact_data, 
+        'data7': region_data,   
+        'data8': employee_data,  
+        'data9': guarantee_data,  
+
     }
 
     return render(request, 'employee/employee_edit.html', context)
+
 
 def employee_delete(request, farm_entity_id):
     farm_entity = get_object_or_404(FarmEntity, farm_entity_id=farm_entity_id)
@@ -1588,6 +1898,7 @@ def add_contact(request):
         ccontact_type = request.POST.get('contact_type')
         ccontact = request.POST.get('contact')
             
+        # Create a new contact
         contact = FarmEntityContact(
             farm_entity_id=cemployee_id,
             contact_type_id=ccontact_type,
