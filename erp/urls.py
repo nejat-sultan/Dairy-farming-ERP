@@ -36,6 +36,26 @@ urlpatterns = [
     path('vaccine_edit/<str:vaccine_id>', views.vaccine_edit, name='vaccine_edit'),
     path('vaccine_delete/<str:vaccine_id>', views.vaccine_delete),
 
+    path('cattle_has_vaccine', views.cattle_has_vaccine),
+    path('cattle_has_vaccine_add', views.cattle_has_vaccine_add),
+    path('cattle_has_vaccine_edit/<str:id>', views.cattle_has_vaccine_edit, name='cattle_has_vaccine_edit'),
+    path('cattle_has_vaccine_delete/<str:id>', views.cattle_has_vaccine_delete),
+
+    path('medicine', views.medicine),
+    path('medicine_add', views.medicine_add),
+    path('medicine_edit/<str:id>', views.medicine_edit, name='medicine_edit'),
+    path('medicine_delete/<str:id>', views.medicine_delete),
+
+    path('cattle_health_checkup', views.cattle_health_checkup),
+    path('cattle_health_checkup_add', views.cattle_health_checkup_add),
+    path('cattle_health_checkup_edit/<str:id>', views.cattle_health_checkup_edit, name='cattle_health_checkup_edit'),
+    path('cattle_health_checkup_delete/<str:id>', views.cattle_health_checkup_delete), 
+
+    path('checkup_medicine', views.checkup_medicine),
+    path('checkup_medicine_add/<int:id>/', views.checkup_medicine_add, name='checkup_medicine_add'),
+    # path('checkup_medicine_edit/<str:id>', views.checkup_medicine_edit, name='checkup_medicine_edit'),
+    # path('checkup_medicine_delete/<str:id>', views.checkup_medicine_delete), 
+
     path('milk_production', views.milk_production),
     path('milk_production_add', views.milk_production_add),
     path('milk_production_edit/<str:milk_production_id>', views.milk_production_edit, name='milk_production_edit'),
@@ -124,12 +144,13 @@ urlpatterns = [
     path('reject_rfq/<int:id>/', views.reject_rfq, name='reject_rfq'),
 
     path('purchase_order', views.purchase_order),
-    path('generate_purchase_order/<str:supplier_id>', views.generate_purchase_order, name='generate_purchase_order'),
+    path('generate_purchase_order/<str:order_id>', views.generate_purchase_order, name='generate_purchase_order'),
 
     path('employee', views.employee),
     path('employee_add', views.employee_add),
     path('employee_edit/<int:farm_entity_id>/', views.employee_edit, name='employee_edit'),
     path('employee_delete/<int:farm_entity_id>', views.employee_delete),
+    path('employee_view/<str:farm_entity_id>', views.employee_view, name='employee_view'),
 
     path('department', views.department),
     path('department_add', views.department_add),

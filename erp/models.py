@@ -64,8 +64,8 @@ class Vaccine(models.Model):
 class CattleHasVaccine(models.Model):
     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
     vaccine = models.ForeignKey(Vaccine, on_delete=models.CASCADE)
-    cattle_given_time = models.DateField(null=True)
-
+    cattle_given_time = models.DateTimeField(null=True)
+    
     class Meta:
         db_table = 'cattle_has_vaccine'
         # unique_together = ['cattle_id', 'vaccine_id']
@@ -257,6 +257,35 @@ class JobHistory(models.Model):
         db_table = 'job_history'
         unique_together = [('department', 'job', 'employee')]
 
+class Medicine(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=200, null=True) 
+    benefit = models.CharField(max_length=200, null=True) 
+    modified_date = models.DateTimeField(null=True) 
+
+    class Meta:
+        db_table = 'medicine' 
+
+class CattleHealthCheckup(models.Model):
+    id = models.AutoField(primary_key=True)
+    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
+    findings = models.CharField(max_length=255, null=True)
+    checked_by = models.ForeignKey(Person, on_delete=models.CASCADE)
+    data_encoded_by = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True)
+
+    class Meta:
+        db_table = 'cattle_health_checkup'
+
+class CattleHealthCheckupHasMedicine(models.Model):
+    cattle_health_checkup = models.ForeignKey(CattleHealthCheckup, on_delete=models.CASCADE)
+    medicine = models.ForeignKey(Medicine, on_delete=models.CASCADE)
+    giving_instruction = models.CharField(max_length=250, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'cattle_health_checkup_has_medicine'
+        # unique_together = (('cattle_health_checkup', 'medicine'),)
+
 class FeedFormulation(models.Model):
     feed_formulation_id = models.AutoField(primary_key=True)
     feed_formulation_description = models.CharField(max_length=255)
@@ -342,7 +371,7 @@ class OrderHasItem(models.Model):
     extracharge_reasons = models.CharField(max_length=150, null=True)
     taxes_in_percent = models.FloatField(null=True)
     discount = models.FloatField(null=True)
-    modified_date = models.CharField(max_length=45, null=True)
+    modified_date = models.DateTimeField(max_length=45, null=True)
 
     class Meta:
         db_table = 'order_has_item'

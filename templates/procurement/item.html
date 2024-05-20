@@ -30,7 +30,7 @@
           <h3 class="card-title">Manage Item</h3>
 
           <div class="card-tools">
-            <a class="btn btn-primary" href="item_add">
+            <a class="btn" href="item_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -74,12 +74,10 @@
                           <a class="btn btn-info btn-sm" href="/item_edit/{{d.item_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
-                              Edit
                           </a>
                           <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.item_id }}')">
                             <i class="fas fa-trash">
                             </i>
-                            Delete
                           </a>
 
                           <script>

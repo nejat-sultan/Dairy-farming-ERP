@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+
+{% block content %} 
+
+  <div class="content-wrapper">
+
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Cattle Vaccination Add</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="../cattle_has_vaccine">Home</a></li>
+              <li class="breadcrumb-item active">Cattle Vaccination Add</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="content">
+    <form action="/cattle_has_vaccine_add" method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card card-primary">
+            <div class="card-header" style="background-color: #007f5c;color: #fff;">
+              <h3 class="card-title">Basic Information</h3>
+
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="inputName">Vaccine</label>
+                <select id="inputStatus" name="vaccine_name" class="form-control custom-select">
+                    {% for d in data2 %}
+                    <option value="{{d.vaccine_id}}">{{ d.vaccine_name}}</option>
+                    {% endfor %}
+                  </select>
+              </div>
+              <div class="form-group">
+                <label for="inputName">Vaccination Time</label>
+                <input type="datetime-local" id="inputName" name="given_time" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputName">Cattle</label>
+                <select id="inputStatus" name="cattle_id" class="form-control custom-select">
+                  {% for d in data1 %}
+                  <option value="{{d.cattle_id}}">{{ d.cattle_name}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <a href="cattle_has_vaccine" class="btn btn-secondary">Back</a>
+          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Cattle Vaccination</button>
+        </div>
+      </div>
+    </form>
+    </section>
+
+  </div>
+  
+  {% endblock %}
+

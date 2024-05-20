@@ -27,7 +27,7 @@
         <div class="row">
           <div class="col-md-6">
             <div class="card card-primary">
-              <div class="card-header">
+              <div class="card-header" style="background-color: #007f5c;color: #fff;">
                 <h3 class="card-title">Basic Information</h3>
   
                 <div class="card-tools">
@@ -37,7 +37,7 @@
                 </div>
               </div>
               <div class="card-body">
-                {% if errors %}
+              {% if errors %}
               <div class="alert alert-danger">
                 <ul>
                   {% for error in errors %}
@@ -183,7 +183,7 @@
         <div class="row">
           <div class="col-12">
             <a href="../../employee" class="btn btn-secondary">Back</a>
-            <button type="submit" class="btn btn-success float-right" >Update Employee</button>
+            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Employee</button>
           </div>
         </div>
       </form>
@@ -225,7 +225,7 @@
                 </div>
                 <div class="row">
                   <div class="col-12">
-                    <button type="submit" class="btn btn-success float-right" >Add Contact</button>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Contact</button>
                   </div>
                 </div>
                 <br>
@@ -264,7 +264,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="inputPhotoDescription">Country</label>
-                            <input type="text" id="inputPhotoDescription" name="country" class="form-control">
+                            <input type="text" id="inputPhotoDescription" name="country" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label for="inputPhotoDescription">Zone/Subcity</label>
@@ -282,7 +282,7 @@
                 </div>
                 <div class="row">
                   <div class="col-12">
-                    <button type="submit" class="btn btn-success float-right" >Add Address</button>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Address</button>
                   </div>
                 </div>
                 <br>
@@ -293,6 +293,7 @@
       <!-- Hidden section for Experience form -->
       <div class="card" id="experienceFormSection" style="display: none;">
         <div class="card-body">
+          
             <form action="/add_experience" method="post" id="experienceForm" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="row">
@@ -303,11 +304,11 @@
                         </div>
                         <div class="form-group">
                             <label for="inputPhotoDescription">Start Date</label>
-                            <input type="date" id="inputPhotoDescription" name="start_date" class="form-control">
+                            <input type="date" id="inputPhotoDescription" name="start_date" class="form-control" required>
                         </div>
                         <div class="form-group">
                             <label for="inputPhotoDescription">End Date</label>
-                            <input type="date" id="inputPhotoDescription" name="end_date" class="form-control">
+                            <input type="date" id="inputPhotoDescription" name="end_date" class="form-control" required>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -327,7 +328,7 @@
                 </div>
                 <div class="row">
                   <div class="col-12">
-                    <button type="submit" class="btn btn-success float-right" >Add Experience</button>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Experience</button>
                   </div>
                 </div>
                 <br>
@@ -364,7 +365,7 @@
                 </div>
                 <div class="row">
                   <div class="col-12">
-                    <button type="submit" class="btn btn-success float-right" >Add Guarantee</button>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Guarantee</button>
                   </div>
                 </div>
                 <br>

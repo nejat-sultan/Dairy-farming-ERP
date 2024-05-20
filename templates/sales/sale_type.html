@@ -30,7 +30,7 @@
           <h3 class="card-title">Manage Sale Type</h3>
 
           <div class="card-tools">
-            <a class="btn btn-primary" href="sale_type_add">
+            <a class="btn" href="sale_type_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -74,12 +74,10 @@
                           <a class="btn btn-info btn-sm" href="/sale_type_edit/{{d.sale_type_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
-                              Edit
                           </a>
                           <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.sale_type_id }}')">
                             <i class="fas fa-trash">
                             </i>
-                            Delete
                           </a>
 
                           <script>

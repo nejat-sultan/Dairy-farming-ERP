@@ -30,7 +30,7 @@
           <h3 class="card-title">Manage Employee</h3>
 
           <div class="card-tools">
-            <a class="btn btn-primary" href="employee_add">
+            <a class="btn" href="employee_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -57,7 +57,7 @@
                           First Name
                       </th> 
                       <th style="width: 15%">
-                        Last Name
+                        Middle Name
                     </th>
                       <th style="width: 20%">
                         Date of Birth
@@ -79,7 +79,7 @@
                         {{d.first_name}}
                       </td>
                       <td>
-                        {{d.last_name}}
+                        {{d.middle_name}}
                       </td>
                       <td>
                         {{d.date_of_birth}}
@@ -88,21 +88,18 @@
                         {{d.gender}}
                       </td>
 
-                      <td class="project-actions text-right">
-                          <a class="btn btn-primary btn-sm" href="/employee_view/{{d.farm_entity_id}}">
-                              <i class="fas fa-folder">
+                      <td class="project-actions">
+                          <a class="btn btn-sm" href="/employee_view/{{d.farm_entity_id}}" style="background-color: #007f5c;color: #fff;">
+                              <i class="fas fa-eye">
                               </i>
-                              View
                           </a>
                           <a class="btn btn-info btn-sm" href="/employee_edit/{{d.farm_entity_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
-                              Edit
                           </a>
                           <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.farm_entity_id }}')">
                               <i class="fas fa-trash">
                               </i>
-                              Delete
                           </a>
 
                           <script>

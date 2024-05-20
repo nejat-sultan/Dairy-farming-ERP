@@ -27,7 +27,7 @@
         <div class="row">
           <div class="col-md-12">
             <div class="card card-primary">
-              <div class="card-header">
+              <div class="card-header" style="background-color: #007f5c;color: #fff;">
                 <h3 class="card-title">Basic Information</h3>
   
                 <div class="card-tools">
@@ -37,9 +37,19 @@
                 </div>
               </div>
               <div class="card-body">
+                {% if errors %}
+                <div class="alert alert-danger">
+                  <ul>
+                    {% for error in errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+
                 <div class="form-group">
                   <label for="inputName">Shift</label>
-                  <input type="text" id="inputName" name="shift_name" value="{{ d.shift_name }}" class="form-control">
+                  <input type="text" id="inputName" name="shift_name" value="{{ d.shift_name }}" class="form-control" required>
                 </div>
                 <div class="form-group">
                   <label for="inputName">Start Time</label>
@@ -57,7 +67,7 @@
         <div class="row">
           <div class="col-12">
             <a href="../shift" class="btn btn-secondary">Back</a>
-            <button type="submit" class="btn btn-success float-right" >Update Shift</button>
+            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Shift</button>
           </div>
         </div>
       </form>

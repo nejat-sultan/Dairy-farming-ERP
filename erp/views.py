@@ -7,7 +7,7 @@ from django.http import JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, Employee, EmployeeExperience, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, Job, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, Region, SaleType, Shift, Supplier, SupplierType, Vaccine
+from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, Employee, EmployeeExperience, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, Job, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, Region, SaleType, Shift, Supplier, SupplierType, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -15,6 +15,7 @@ from .forms import CreateUserForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.contrib.auth.models import User
 
 
 # Create your views here.
@@ -45,7 +46,7 @@ def login_page(request):
             login(request, user)
             return redirect("/index")
         else:
-            messages.info(request, "Username or password is incorrect!")
+            messages.error(request, "Username or password is incorrect!")
             return render(request, 'auth/login.html')
 
     context = {}
@@ -65,24 +66,63 @@ def user_page(request):
 def index(request):
    
     dash1 = Dashboard()
-    dash1.amount = 100
+    dash1.amount =  OrderHasItemSupplier.objects.filter(status='approved').count()
     dash1.description = 'Purchase Orders'
 
     dash2 = Dashboard()
-    dash2.amount = 50
+    dash2.amount = 0
     dash2.description = 'Stock Available'
 
     dash3 = Dashboard()
-    dash3.amount = 300
-    dash3.description = 'Users'
+    dash3.amount = 0
+    dash3.description = 'Sales'
 
     dash4 = Dashboard()
-    dash4.amount = 400
-    dash4.description = 'Unique Visitors'
+    dash4.amount = User.objects.count()
+    dash4.description = 'System Users'
 
-    # dashs = [dash1, dash2, dash3, dash4]
+    dash5 = Dashboard()
+    dash5.amount = Supplier.objects.all().count()
+    dash5.description = 'Supplier'
 
-    return render(request, 'index.html',{'dash1': dash1, 'dash2': dash2, 'dash3': dash3, 'dash4': dash4})
+    dash6 = Dashboard()
+    dash6.amount = Employee.objects.all().count()
+    dash6.description = 'Employees'
+
+    dash7 = Dashboard()
+    dash7.amount = 0
+    dash7.description = 'Customers'
+
+    data = OrderHasItem.objects.all()[:10]
+    orderdatas = Order.objects.all()
+    item_data = Item.objects.all()
+    cattle = Cattle.objects.all()[:10]
+    # photos = CattlePhoto.objects.all()
+    breeds = CattleBreed.objects.all()
+
+    cattle_photos = {}
+    for cow in cattle:
+        photo = CattlePhoto.objects.filter(cattle=cow).first()
+        cattle_photos[cow.cattle_id] = photo.cattle_photo_url if photo else None
+
+    print("Cattle Photos Dictionary:", cattle_photos)  # Debug statement
+
+
+
+    context = {
+        'dash1': dash1, 
+        'dash2': dash2, 
+        'dash3': dash3, 
+        'dash4': dash4,
+        'dash5': dash5, 
+        'dash6': dash6, 
+        'dash7': dash7,
+
+        "data1":data,'orderdatas': orderdatas,'item_data': item_data,
+        'cattle': cattle,'cattle_photos': cattle_photos,'breeds': breeds,
+    }
+
+    return render(request, 'index.html',context)
 
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin','Veterinarian'])
@@ -95,22 +135,30 @@ def cattle(request):
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin'])
 def cattle_view(request, cattle_id):
-
     cattle = get_object_or_404(Cattle, cattle_id=cattle_id)
     photos = CattlePhoto.objects.filter(cattle=cattle)
     breeds = CattleBreed.objects.filter(cattle=cattle)
-    statuses = CattlePregnancy.objects.filter(cattle=cattle).order_by('-cattle_id')[:1]
-    productions = MilkProduction.objects.filter(cattle=cattle).order_by('-cattle_id')[:1]
-
+    statuses = CattlePregnancy.objects.filter(cattle=cattle).order_by('-cattle_id').first()
+    
+    productions = MilkProduction.objects.filter(cattle=cattle).order_by('-milk_time')[:5]
+    vaccinations = CattleHasVaccine.objects.filter(cattle=cattle).order_by('-cattle_given_time')[:5]
+    healths = CattleHealthCheckup.objects.filter(cattle=cattle).order_by('-cattle_id')[:5]
+    medicines = CattleHealthCheckupHasMedicine.objects.filter(cattle_health_checkup__in=healths).order_by('-modified_date')[:5]
+    
+    
     context = {
         'cattle': cattle,
         'photos': photos,
         'breeds': breeds,
         'statuses': statuses,
-        'productions': productions
+        'productions': productions,
+        'vaccinations': vaccinations,
+        'healths': healths,
+        'medicines': medicines,
     }
 
     return render(request, 'cattle/cattle_view.html', context)
+
 
 from django.utils.dateparse import parse_date
 @login_required(login_url='login')
@@ -130,11 +178,10 @@ def cattle_add(request):
             errors.append('Cattle ID is required.')
 
         if cdob:
-            parsed_dob = parse_date(cdob)
-            if not parsed_dob:
-                errors.append('Date of Birth must be in YYYY-MM-DD format.')
-            else:
-                cdob = parsed_dob
+            try:
+                cdob = datetime.strptime(cdob, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Date of Birth must be in YYYY-MM-DDTHH:MM format.')
         else:
             cdob = None 
 
@@ -157,7 +204,7 @@ def cattle_add(request):
         
         query = Cattle(cattle_id=cid, cattle_date_of_birth=cdob, cattle_name=cname, cattle_gender=cgender, estimated_price=cestimatedprice, cattle_breed_id=cbreed, cattle_status_id=cstatus)
         query.save()
-        messages.info(request, "Cattle Added Successfully!")
+        messages.success(request, "Cattle Added Successfully!")
         return redirect("/cattle")
 
     breed_data = CattleBreed.objects.all()
@@ -175,7 +222,6 @@ def cattle_add(request):
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin'])
 def cattle_edit(request,cattle_id):
-    # Fetch the cattle object by its id
     edit = Cattle.objects.get(cattle_id=cattle_id)
     
     if request.method == "POST":
@@ -192,11 +238,10 @@ def cattle_edit(request,cattle_id):
             errors.append('Cattle ID is required.')
 
         if cdob:
-            parsed_dob = parse_date(cdob)
-            if not parsed_dob:
-                errors.append('Date of Birth must be in YYYY-MM-DD format.')
-            else:
-                cdob = parsed_dob
+            try:
+                cdob = datetime.strptime(cdob, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Date of Birth must be in YYYY-MM-DDTHH:MM format.')
         else:
             cdob = None 
 
@@ -217,8 +262,7 @@ def cattle_edit(request,cattle_id):
                 'data2': Cattle.objects.all()
             }
             return render(request, 'cattle/cattle_edit.html', context)
-        
-        # Update the attributes
+
         edit.cattle_id = cid
         edit.cattle_date_of_birth = cdob
         edit.cattle_name = cname
@@ -226,15 +270,12 @@ def cattle_edit(request,cattle_id):
         edit.estimated_price = cestimatedprice
         edit.cattle_breed_id = cbreed
         edit.cattle_status_id = cstatus
-        
-        # Save the changes
+
         edit.save()
         messages.warning(request, "Cattle Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/cattle")
         
     
-    # Fetch all cattle statuses
     cattle_statuses = CattleStatus.objects.all()
     cattle_breed = CattleBreed.objects.all()
     cattle_data = Cattle.objects.all()
@@ -266,8 +307,7 @@ def add_photo(request):
             # Construct the photo URL including the 'photos' directory
             photo_url = settings.MEDIA_URL + 'photos/' + filename
             
-            
-            # Create a new CattlePhoto instance
+
             photo = CattlePhoto(
                 cattle_id=cattle_id,
                 cattle_photo_url=photo_url,
@@ -275,7 +315,7 @@ def add_photo(request):
             )
             photo.save()
 
-            messages.info(request, "Cattle Photo Added Successfully!")
+            messages.success(request, "Cattle Photo Added Successfully!")
             return redirect("/cattle")
         
     data = CattleStatus.objects.all()
@@ -303,7 +343,7 @@ def cattle_status_add(request):
 
         query = CattleStatus(cattle_status=cstatus, modified_date=cdate)
         query.save()
-        messages.info(request, "Cattle Status Added Successfully!")
+        messages.success(request, "Cattle Status Added Successfully!")
         return redirect("/cattle_status")
 
     return render(request, 'cattle/cattle_status_add.html')
@@ -350,14 +390,13 @@ def cattle_breed_add(request):
 
         query = CattleBreed(cattle_breed_type=cbreed_type, cattle_breed_description=cbreed_description, modified_date=cdate)
         query.save()
-        messages.info(request, "Cattle Breed Added Successfully!")
+        messages.success(request, "Cattle Breed Added Successfully!")
         return redirect("/cattle_breed")
 
     return render(request, 'cattle/cattle_breed_add.html')
 
 @login_required(login_url='login')
 def cattle_breed_edit(request,cattle_breed_id):
-    # Fetch the cattle object by its id
     edit = CattleBreed.objects.get(cattle_breed_id=cattle_breed_id)
     
     if request.method == "POST":
@@ -365,18 +404,14 @@ def cattle_breed_edit(request,cattle_breed_id):
         cbreed_description=request.POST.get('breed_description')
         cdate = datetime.now().date()
         
-        # Update the attributes
         edit.cattle_breed_type = cbreed_type
         edit.cattle_breed_description = cbreed_description
         edit.modified_date = cdate
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Cattle Breed Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/cattle_breed")
 
-    # Fetch the cattle object again for rendering the form
     d = CattleBreed.objects.get(cattle_breed_id=cattle_breed_id)
     context = {"d": d}
 
@@ -407,9 +442,30 @@ def cattle_pregnancy_add(request):
         ccattle_id=request.POST.get('cattle_id')
         cpregnancy_status = "Pregnant"
 
+        errors = []
+
+        if cpregnancy_date:
+            parsed_pregnancy_date = parse_date(cpregnancy_date)
+            if not parsed_pregnancy_date:
+                errors.append('Pregnancy date must be in YYYY-MM-DD format.')
+            else:
+                cpregnancy_date = parsed_pregnancy_date
+        else:
+            errors.append('Pregnancy date is required.')
+
+        if not cpregnancy_type:
+            errors.append('Pregnancy type is required.')
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Cattle.objects.all(),
+            }
+            return render(request, 'cattle/cattle_pregnancy_add.html', context)
+
         query = CattlePregnancy(cattle_pregnancy_type=cpregnancy_type, cattle_pregnancy_date=cpregnancy_date, cattle_id=ccattle_id, cattle_pregnancy_status=cpregnancy_status)
         query.save()
-        messages.info(request, "Cattle Pregnancy Added Successfully!")
+        messages.success(request, "Cattle Pregnancy Added Successfully!")
         return redirect("/cattle_pregnancy")
     
     cattle_data = Cattle.objects.all()
@@ -423,7 +479,6 @@ def cattle_pregnancy_add(request):
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy_edit(request,cattle_pregnancy_id):
-    # Fetch the cattle object by its id
     edit = CattlePregnancy.objects.get(cattle_pregnancy_id=cattle_pregnancy_id)
     
     if request.method == "POST":
@@ -431,21 +486,39 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
         cpregnancy_date=request.POST.get('pregnancy_date')
         ccattle_id=request.POST.get('cattle_id')
         cpregnancy_status=request.POST.get('pregnancy_status')
+
+        errors = []
+        if cpregnancy_date:
+            parsed_pregnancy_date = parse_date(cpregnancy_date)
+            if not parsed_pregnancy_date:
+                errors.append('Pregnancy date must be in YYYY-MM-DD format.')
+            else:
+                cpregnancy_date = parsed_pregnancy_date
+        else:
+            errors.append('Pregnancy date is required.')
+
+        if not cpregnancy_type:
+            errors.append('Pregnancy type is required.')
+
+        if errors:
+            context = {
+                'errors': errors,
+                "d": d, 
+                "cattle": edit, 
+                "cattles": Cattle.objects.all(),
+            }
+            return render(request, 'cattle/cattle_pregnancy_edit.html', context)
         
-        # Update the attributes
         edit.cattle_pregnancy_type = cpregnancy_type
         edit.cattle_pregnancy_date = cpregnancy_date
         edit.cattle_id = ccattle_id
         edit.cattle_pregnancy_status = cpregnancy_status
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Cattle Pregnancy Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/cattle_pregnancy")
     
 
-    # Fetch the cattle object again for rendering the form
     d = CattlePregnancy.objects.get(cattle_pregnancy_id=cattle_pregnancy_id)
     cattles = Cattle.objects.all()
     context = {"d": d, "cattle": edit, "cattles": cattles}
@@ -475,7 +548,7 @@ def vaccine_add(request):
 
         query = Vaccine(vaccine_name=cvaccine_name, vaccine_benefit=cvaccine_benefit, vaccine_recommended_time=cvaccine_recommended_time)
         query.save()
-        messages.info(request, "Vaccine Added Successfully!")
+        messages.success(request, "Vaccine Added Successfully!")
         return redirect("/vaccine")
 
     return render(request, 'cattle/vaccine_add.html')
@@ -489,19 +562,15 @@ def vaccine_edit(request,vaccine_id):
         cvaccine_name=request.POST.get('vaccine_name')
         cvaccine_benefit=request.POST.get('vaccine_benefit')
         cvaccine_recommended_time=request.POST.get('vaccine_recommended_time')
-        
-        # Update the attributes
+
         edit.vaccine_name = cvaccine_name
         edit.vaccine_benefit = cvaccine_benefit
         edit.vaccine_recommended_time = cvaccine_recommended_time
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Vaccine Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/vaccine")
 
-    # Fetch the vaccine object again for rendering the form
     d = Vaccine.objects.get(vaccine_id=vaccine_id)
     context = {"d": d}
 
@@ -512,6 +581,253 @@ def vaccine_delete(request, vaccine_id):
     d.delete()
     messages.error(request, "Vaccine Deleted Successfully!")
     return redirect("/vaccine")
+
+@login_required(login_url='login')
+def cattle_has_vaccine(request):
+    data = CattleHasVaccine.objects.all()
+    cattle = Cattle.objects.all()
+    vaccine = Vaccine.objects.all()
+
+    context = {"data1":data, 'cattle': cattle, 'vaccine': vaccine,}
+
+    return render(request, 'cattle/cattle_has_vaccine.html', context)
+
+@login_required(login_url='login')
+def cattle_has_vaccine_add(request):
+    if request.method=="POST":
+        cvaccine_name=request.POST.get('vaccine_name')
+        cgiven_time=request.POST.get('given_time')
+        ccattle_id=request.POST.get('cattle_id')
+
+        errors = []
+        if cgiven_time:
+            try:
+                cgiven_time = datetime.strptime(cgiven_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Given Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cgiven_time = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Cattle.objects.all(),
+                'data2': Vaccine.objects.all()
+            }
+            return render(request, 'cattle/cattle_add.html', context)
+
+        query = CattleHasVaccine(vaccine_id=cvaccine_name, cattle_given_time=cgiven_time, cattle_id=ccattle_id)
+        query.save()
+        messages.success(request, "Cattle Vaccination Added Successfully!")
+        return redirect("/cattle_has_vaccine")
+    
+    cattle_data = Cattle.objects.all()
+    vaccine_data = Vaccine.objects.all()
+    context = {
+        'data1': cattle_data,
+        'data2': vaccine_data,
+    }
+
+    return render(request, 'cattle/cattle_has_vaccine_add.html', context)
+
+@login_required(login_url='login')
+def cattle_has_vaccine_edit(request,id):
+    edit = CattleHasVaccine.objects.get(id=id)
+    
+    if request.method == "POST":
+        cvaccine_name=request.POST.get('vaccine_name')
+        cgiven_time=request.POST.get('given_time')
+        ccattle_id=request.POST.get('cattle_id')
+
+        errors = []
+        if cgiven_time:
+            try:
+                cgiven_time = datetime.strptime(cgiven_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Given Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cgiven_time = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+                'cattles': Cattle.objects.all(),
+                'vaccines': Vaccine.objects.all(),
+                "d": CattleHasVaccine.objects.get(id=id), 
+                "cattle": edit, 
+            }
+            return render(request, 'cattle/cattle_add.html', context)
+
+        edit.vaccine_id = cvaccine_name
+        edit.cattle_given_time = cgiven_time
+        edit.cattle_id = ccattle_id
+        
+        edit.save()
+        messages.warning(request, "Cattle Vaccination Updated Successfully!")
+        return redirect("/cattle_has_vaccine")
+    
+
+    d = CattleHasVaccine.objects.get(id=id)
+    cattles = Cattle.objects.all()
+    vaccines = Vaccine.objects.all()
+    context = {"d": d, "cattle": edit, "cattles": cattles, "vaccines": vaccines,}
+
+    return render(request, 'cattle/cattle_has_vaccine_edit.html', context)
+
+
+def cattle_has_vaccine_delete(request, id):
+    d = CattleHasVaccine.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Cattle Vaccination Deleted Successfully!")
+    return redirect("/cattle_has_vaccine")
+
+@login_required(login_url='login')
+def medicine(request):
+    data = Medicine.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'cattle/medicine.html', context)
+
+@login_required(login_url='login')
+def medicine_add(request):
+    if request.method=="POST":
+        cname=request.POST.get('name')
+        cbenefit=request.POST.get('benefit')
+        cdate = datetime.now().date()
+
+        query = Medicine(name=cname, benefit=cbenefit, modified_date=cdate)
+        query.save()
+        messages.success(request, "Medicine Added Successfully!")
+        return redirect("/medicine")
+
+    return render(request, 'cattle/medicine_add.html')
+
+@login_required(login_url='login')
+def medicine_edit(request, id):
+    edit = Medicine.objects.get(id=id)
+    
+    if request.method == "POST":
+        cname=request.POST.get('name')
+        cbenefit=request.POST.get('benefit')
+        cdate = datetime.now().date()
+
+        edit.name = cname
+        edit.benefit = cbenefit
+        edit.modified_date=cdate
+        
+        edit.save()
+        messages.warning(request, "Medicine Updated Successfully!")
+        return redirect("/medicine")
+
+    d = Medicine.objects.get(id=id)
+    context = {"d": d}
+
+    return render(request, 'cattle/medicine_edit.html', context)
+
+def medicine_delete(request, id):
+    d = Medicine.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Medicine Deleted Successfully!")
+    return redirect("/medicine")  
+
+@login_required(login_url='login')
+def cattle_health_checkup(request):
+    data = CattleHealthCheckup.objects.all()
+    cattle = Cattle.objects.all()
+    person = Person.objects.all()
+    employee = Employee.objects.all()
+
+    context = {"data1":data, 'cattle': cattle, 'person': person, 'employee': employee,}
+
+    return render(request, 'cattle/cattle_health_checkup.html', context)
+
+@login_required(login_url='login')
+def cattle_health_checkup_add(request):
+    if request.method=="POST":
+        ccattle_id=request.POST.get('cattle_id')
+        cfindings=request.POST.get('findings')
+        cchecked_by=request.POST.get('checked_by')
+
+
+        query = CattleHealthCheckup(findings=cfindings, checked_by_id=cchecked_by, cattle_id=ccattle_id,)
+        query.save()
+        messages.success(request, "Cattle Checkup Added Successfully!")
+        return redirect("/cattle_health_checkup")
+    
+    cattle_data = Cattle.objects.all()
+    person_data = Person.objects.all()
+    context = {
+        'data1': cattle_data,
+        'data2': person_data,
+    }
+
+    return render(request, 'cattle/cattle_health_checkup_add.html', context)
+
+@login_required(login_url='login')
+def cattle_health_checkup_edit(request, id):
+    edit = CattleHealthCheckup.objects.get(id=id)
+    
+    if request.method == "POST":
+        ccattle_id=request.POST.get('cattle_id')
+        cfindings=request.POST.get('findings')
+        cchecked_by=request.POST.get('checked_by')
+
+        edit.cattle_id = ccattle_id
+        edit.findings = cfindings
+        edit.checked_by_id=cchecked_by
+        
+        edit.save()
+        messages.warning(request, "Checkup Updated Successfully!")
+        return redirect("/cattle_health_checkup")
+
+    d = CattleHealthCheckup.objects.get(id=id)
+    cattles = Cattle.objects.all()
+    persons = Person.objects.all()
+    context = {"d": d, "cattle": edit, "cattles": cattles, "persons": persons,}
+
+    return render(request, 'cattle/cattle_health_checkup_edit.html', context)
+
+def cattle_health_checkup_delete(request, id):
+    d = CattleHealthCheckup.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Checkup Deleted Successfully!")
+    return redirect("/cattle_health_checkup") 
+
+@login_required(login_url='login')
+def checkup_medicine(request):
+    data = CattleHealthCheckupHasMedicine.objects.all()
+  
+    context = {"data1":data,}
+    return render(request, 'cattle/checkup_medicine.html', context)   
+
+@login_required(login_url='login')
+def checkup_medicine_add(request, id):
+    if request.method == "POST":
+        checkup_id = request.POST.get('checkup_id')
+        instruction = request.POST.get('instruction')
+        medicine_id = request.POST.get('medicine_id')
+        modified_date = datetime.now()
+
+        query = CattleHealthCheckupHasMedicine(
+            cattle_health_checkup_id=checkup_id,
+            giving_instruction=instruction,
+            medicine_id=medicine_id,
+            modified_date=modified_date,
+        )
+        query.save()
+        messages.success(request, "Cattle Medicine Added Successfully!")
+        return redirect("/cattle_health_checkup")
+    
+    checkup_data = CattleHealthCheckup.objects.all()
+    medicine_data = Medicine.objects.all()
+
+    context = {
+        'data1': checkup_data,
+        'data2': medicine_data,
+        'current_checkup_id': id,
+    }
+
+    return render(request, 'cattle/checkup_medicine_add.html', context)
 
 @login_required(login_url='login')
 def milk_production(request):
@@ -592,7 +908,7 @@ def milk_production_add(request):
 
         query = MilkProduction(amount_in_liter=camount_in_liter, milk_time=cmilk_time, fat_content=cfat_content, protein_content=cprotein_content, somatic_cell_count=csomatic_cell_count, duration_in_min=cduration_in_min, cattle_id=ccattle_id)
         query.save()
-        messages.info(request, "Milk Production Added Successfully!")
+        messages.success(request, "Milk Production Added Successfully!")
         return redirect("/milk_production")
     
     cattle_data = Cattle.objects.all()
@@ -719,7 +1035,7 @@ def person_type_add(request):
 
         query = PersonType(person_type=cperson_type, modified_date=cdate)
         query.save()
-        messages.info(request, "Person Type Added Successfully!")
+        messages.success(request, "Person Type Added Successfully!")
         return redirect("/person_type")
 
     return render(request, 'person/person_type_add.html')
@@ -768,7 +1084,7 @@ def person_title_add(request):
 
         query = PersonTitle(person_title=cperson_title, modified_date=cdate)
         query.save()
-        messages.info(request, "Person Title Added Successfully!")
+        messages.success(request, "Person Title Added Successfully!")
         return redirect("/person_title")
 
     return render(request, 'person/person_title_add.html')
@@ -818,7 +1134,7 @@ def contact_type_add(request):
 
         query = ContactType(contact_type=ccontact_type, contact_type_desc=ccontact_type_desc, modified_date=cdate)
         query.save()
-        messages.info(request, "Contact Type Added Successfully!")
+        messages.success(request, "Contact Type Added Successfully!")
         return redirect("/contact_type")
 
     return render(request, 'person/contact_type_add.html')
@@ -869,7 +1185,7 @@ def sale_type_add(request):
 
         query = SaleType(sale_type=csale_type, modified_date=cdate)
         query.save()
-        messages.info(request, "Sale Type Added Successfully!")
+        messages.success(request, "Sale Type Added Successfully!")
         return redirect("/sale_type")
 
     return render(request, 'sales/sale_type_add.html')
@@ -918,7 +1234,7 @@ def region_add(request):
 
         query = Region(region=cregion, modified_date=cdate)
         query.save()
-        messages.info(request, "Region Added Successfully!")
+        messages.success(request, "Region Added Successfully!")
         return redirect("/region")
 
     return render(request, 'person/region_add.html')
@@ -967,7 +1283,7 @@ def guarantee_type_add(request):
 
         query = GuaranteeType(guarantee_type=cguarantee_type, modified_date=cdate)
         query.save()
-        messages.info(request, "Guarantee Type Added Successfully!")
+        messages.success(request, "Guarantee Type Added Successfully!")
         return redirect("/guarantee_type")
 
     return render(request, 'employee/guarantee_type_add.html')
@@ -1015,9 +1331,32 @@ def shift_add(request):
         cshift_start_time=request.POST.get('shift_start_time')
         cshift_end_time=request.POST.get('shift_end_time')
 
+        errors = []
+        if cshift_start_time:
+            try:
+                cshift_start_time = datetime.strptime(cshift_start_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Start Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cshift_start_time = None 
+
+        if cshift_end_time:
+            try:
+                cshift_end_time = datetime.strptime(cshift_end_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid End Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cshift_end_time = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+            }
+            return render(request, 'employee/shift_add.html', context)
+
         query = Shift(shift_name=cshift_name, shift_start_time=cshift_start_time, shift_end_time=cshift_end_time)
         query.save()
-        messages.info(request, "Shift Added Successfully!")
+        messages.success(request, "Shift Added Successfully!")
         return redirect("/shift")
 
     return render(request, 'employee/shift_add.html')
@@ -1030,6 +1369,30 @@ def shift_edit(request,shift_id):
         cshift_name=request.POST.get('shift_name')
         cshift_start_time=request.POST.get('shift_start_time')
         cshift_end_time=request.POST.get('shift_end_time')
+
+        errors = []
+        if cshift_start_time:
+            try:
+                cshift_start_time = datetime.strptime(cshift_start_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Start Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cshift_start_time = None 
+
+        if cshift_end_time:
+            try:
+                cshift_end_time = datetime.strptime(cshift_end_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid End Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cshift_end_time = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+                'd': Shift.objects.get(shift_id=shift_id)
+            }
+            return render(request, 'employee/shift_edit.html', context)
         
         # Update the attributes
         edit.shift_name = cshift_name
@@ -1067,9 +1430,32 @@ def job_add(request):
         cjob_min_salary=request.POST.get('job_min_salary')
         cjob_max_salary=request.POST.get('job_max_salary')
 
+        errors = []
+        if cjob_min_salary:
+            try:
+                cjob_min_salary = float(cjob_min_salary)
+            except ValueError:
+                errors.append('Minimum Salary must be a number.')
+        else:
+            cjob_min_salary = None 
+
+        if cjob_max_salary:
+            try:
+                cjob_max_salary = float(cjob_max_salary)
+            except ValueError:
+                errors.append('Maximum Salary must be a number.')
+        else:
+            cjob_max_salary = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+            }
+            return render(request, 'employee/job_add.html', context)
+
         query = Job(job_title=cjob_title, job_min_salary=cjob_min_salary, job_max_salary=cjob_max_salary)
         query.save()
-        messages.info(request, "Job Added Successfully!")
+        messages.success(request, "Job Added Successfully!")
         return redirect("/job")
 
     return render(request, 'employee/job_add.html')
@@ -1082,6 +1468,30 @@ def job_edit(request,job_id):
         cjob_title=request.POST.get('job_title')
         cjob_min_salary=request.POST.get('job_min_salary')
         cjob_max_salary=request.POST.get('job_max_salary')
+
+        errors = []
+        if cjob_min_salary:
+            try:
+                cjob_min_salary = float(cjob_min_salary)
+            except ValueError:
+                errors.append('Minimum Salary must be a number.')
+        else:
+            cjob_min_salary = None 
+
+        if cjob_max_salary:
+            try:
+                cjob_max_salary = float(cjob_max_salary)
+            except ValueError:
+                errors.append('Maximum Salary must be a number.')
+        else:
+            cjob_max_salary = None 
+
+        if errors:
+            context = {
+                'd':Job.objects.get(job_id=job_id),
+                'errors': errors,
+            }
+            return render(request, 'employee/job_edit.html', context)
         
         # Update the attributes
         edit.job_title = cjob_title
@@ -1119,7 +1529,7 @@ def feed_formulation_add(request):
 
         query = FeedFormulation(feed_formulation_description=cfeed_formulation_description)
         query.save()
-        messages.info(request, "Feed Formulation Added Successfully!")
+        messages.success(request, "Feed Formulation Added Successfully!")
         return redirect("/feed_formulation")
 
     return render(request, 'cattle/feed_formulation_add.html')
@@ -1166,7 +1576,7 @@ def item_add(request):
 
         query = Item(name=cname, modified_date=cdate)
         query.save()
-        messages.info(request, "Item Added Successfully!")
+        messages.success(request, "Item Added Successfully!")
         return redirect("/item")
 
     return render(request, 'procurement/item_add.html')
@@ -1215,7 +1625,7 @@ def supplier_type_add(request):
 
         query = SupplierType(supplier_type=csupplier_type, modified_date=cdate)
         query.save()
-        messages.info(request, "Supplier Type Added Successfully!")
+        messages.success(request, "Supplier Type Added Successfully!")
         return redirect("/supplier_type")
 
     return render(request, 'procurement/supplier_type_add.html')
@@ -1276,7 +1686,7 @@ def supplier_add(request):
             account_number=caccount_number
         )
 
-        messages.info(request, "Supplier Added Successfully!")
+        messages.success(request, "Supplier Added Successfully!")
         return redirect("/supplier")
     
     # Fetch data for supplier type dropdown
@@ -1357,7 +1767,7 @@ def request_order_add(request):
 
         query = OrderHasItem.objects.create(order=order, item_id=citem_name, type=citem_type,quantity=cquantity)
         query.save()
-        messages.info(request, "Order Request Added Successfully!")
+        messages.success(request, "Order Request Added Successfully!")
         return redirect("/request_order")
     
         
@@ -1446,27 +1856,31 @@ def rfq_add(request, order_id):
         cdate = datetime.now().date()
 
         # Save the RFQ
-        query = OrderHasItemSupplier.objects.create(supplier_id=csupplier_name, item_id=citem_id, order_id=order_id, quantity=cquantity, price=cprice, status='pending', modified_date=cdate)
-        messages.info(request, "RFQ Added Successfully!")
+        query = OrderHasItemSupplier.objects.create(supplier_id=csupplier_name, item_id=citem_id, order_id=order_id, quantity=cquantity, price=cprice, status='Pending', modified_date=cdate)
+        messages.success(request, "RFQ Added Successfully!")
         return redirect(f"/request_order_view/{order_id}")
 
-    # order_data = OrderHasItem.objects.filter(order__request_approved='approved')
-    order_data = OrderHasItem.objects.filter(order__request_approved='approved').values('item_id').distinct()
     supplier_data = Supplier.objects.all()
     existing_rfq = OrderHasItemSupplier.objects.filter(order_id=order_id)
+
+    # distinct_items = OrderHasItem.objects.filter(order__request_approved='approved').values('item').distinct()
+    # items = Item.objects.filter(item_id__in=distinct_items)
+    order_item = get_object_or_404(OrderHasItem, order_id=order_id)
+    item = order_item.item
     
     context = {
-        'data1': order_data,
         'data2' : supplier_data,
         'existing_rfq' : existing_rfq,
         'order_id': order_id,
+        'item': item,
     }
 
     return render(request, 'procurement/rfq_add.html', context)
 
 @login_required(login_url='login')
 def rfq_edit(request,id):
-    edit = OrderHasItemSupplier.objects.get(id=id)
+    # edit = OrderHasItemSupplier.objects.get(id=id)
+    edit = get_object_or_404(OrderHasItemSupplier, id=id)
     
     if request.method == "POST":
         csupplier_name=request.POST.get('supplier_name')
@@ -1491,11 +1905,13 @@ def rfq_edit(request,id):
     # order_data = OrderHasItem.objects.filter(order__request_approved='approved')
     order_data = OrderHasItem.objects.filter(order__request_approved='approved').values('item_id').distinct()
     supplier_data = Supplier.objects.all()
+    item = get_object_or_404(Item, item_id=edit.item_id)
     
     context = {
         'data1': order_data,
         'data2' : supplier_data,
         'd': d,
+        'item': item,
     }
 
     return render(request, 'procurement/rfq_edit.html', context)
@@ -1536,10 +1952,9 @@ def purchase_order(request):
     return render(request, 'procurement/purchase_order.html', context)
 
 @login_required(login_url='login')
-def generate_purchase_order(request, supplier_id):
-    data = OrderHasItemSupplier.objects.filter(supplier_id=supplier_id, status='approved')
+def generate_purchase_order(request, order_id):
+    data = OrderHasItemSupplier.objects.filter(order_id=order_id, status='approved')
     item_data = Item.objects.all()
-    # qty_data = OrderHasItem.objects.all()
     supplier_data = Supplier.objects.all()
     current_date = timezone.now()
 
@@ -1550,31 +1965,12 @@ def generate_purchase_order(request, supplier_id):
         quantity = Decimal(item.quantity)  
         price = Decimal(item.price) 
         multiplied_value = quantity * price
-        multiplied_values[item.item_id] = multiplied_value  
+        multiplied_values[item] = multiplied_value  
         total += multiplied_value
-
-
-        # quantity = Decimal(item.quantity)  
-        # price = Decimal(item.price)
-        # order_id = item.order_id
-        # multiplied_value = quantity * price
-        # multiplied_values[(item.item_id, order_id)] += multiplied_value
-
-        
-
-        # item_id = item.item_id
-        # quantity = qty_data.filter(item_id=item_id).first().quantity
-        # price = Decimal(item.price)
-        # quantity = Decimal(quantity)
-        # multiplied_value = quantity * price
-        # multiplied_values[item_id] = multiplied_value
-        # total += multiplied_value
   
-
     context = {
         'data': data,
         'item_data': item_data, 
-        # 'qty_data': qty_data,
         'supplier_data': supplier_data,
         'multiplied_values': multiplied_values,
         'total': total,  
@@ -1582,6 +1978,7 @@ def generate_purchase_order(request, supplier_id):
     }
 
     return render(request, 'procurement/generate_purchase_order.html', context)
+
 
 @login_required(login_url='login')
 def department(request):
@@ -1597,7 +1994,7 @@ def department_add(request):
 
         query = Department(department_name=cdepartment)
         query.save()
-        messages.info(request, "Department Added Successfully!")
+        messages.success(request, "Department Added Successfully!")
         return redirect("/department")
 
     return render(request, 'employee/department_add.html')
@@ -1610,7 +2007,7 @@ def department_edit(request,department_id):
         cdepartment=request.POST.get('department')
         
         # Update the attributes
-        edit.department = cdepartment
+        edit.department_name = cdepartment
         
         # Save the changes
         edit.save()
@@ -1635,6 +2032,27 @@ def employee(request):
     context = {"data1":data}
 
     return render(request, 'employee/employee.html', context)
+
+@login_required(login_url='login')
+def employee_view(request, farm_entity_id):
+
+    farm_entity = get_object_or_404(FarmEntity, pk=farm_entity_id)
+    person = get_object_or_404(Person, farm_entity=farm_entity)
+    employee = get_object_or_404(Employee, person_farm_entity=person)
+    experience = EmployeeExperience.objects.filter(person_farm_entity=employee)
+    contact = FarmEntityContact.objects.filter(farm_entity=farm_entity)
+    address = FarmEntityAddress.objects.filter(farm_entity=farm_entity)
+
+    context = {
+        'person': person,
+        'employee': employee,
+        'farm_entity_id': farm_entity_id, 
+        'experience': experience,
+        'contact': contact,
+        'address': address,
+    }
+
+    return render(request, 'employee/employee_view.html', context)
 
 @login_required(login_url='login')
 def employee_add(request):
@@ -1736,7 +2154,7 @@ def employee_add(request):
             modified_date=cdate,
         )
 
-        messages.info(request, "Employee Added Successfully!")
+        messages.success(request, "Employee Added Successfully!")
         return redirect("/employee")
 
     title_data = PersonTitle.objects.all()
@@ -1844,7 +2262,7 @@ def employee_edit(request, farm_entity_id):
         person.save()
         employee.save()
 
-        messages.info(request, "Employee Updated Successfully!")
+        messages.warning(request, "Employee Updated Successfully!")
         return redirect("/employee")
 
     title_data = PersonTitle.objects.all()
@@ -1906,10 +2324,10 @@ def add_contact(request):
         )
         contact.save()
 
-        messages.info(request, "Employee Contact Added Successfully!")
+        messages.success(request, "Employee Contact Added Successfully!")
         return redirect("/employee")
 
-    return render(request, 'employee/employee_add.html')
+    return render(request, 'employee/employee_edit.html')
 
 @login_required(login_url='login')
 def add_address(request):
@@ -1935,10 +2353,10 @@ def add_address(request):
         )
         address.save()
 
-        messages.info(request, "Employee Address Added Successfully!")
+        messages.success(request, "Employee Address Added Successfully!")
         return redirect("/employee")
 
-    return render(request, 'employee/employee_add.html')
+    return render(request, 'employee/employee_edit.html')
 
 @login_required(login_url='login')
 def add_experience(request):
@@ -1949,7 +2367,41 @@ def add_experience(request):
         cstart_date = request.POST.get('start_date')
         cend_date = request.POST.get('end_date')
         csalary = request.POST.get('salary')
+
+        errors = []
+        if cstart_date:
+            parsed_start_date = parse_date(cstart_date)
+            if not parsed_start_date:
+                errors.append('Start date must be in YYYY-MM-DD format.')
+            else:
+                cstart_date = parsed_start_date
+        else:
+            cstart_date = None 
             
+        if cend_date:
+            parsed_end_date = parse_date(cend_date)
+            if not parsed_end_date:
+                errors.append('End date must be in YYYY-MM-DD format.')
+            else:
+                cend_date = parsed_end_date
+        else:
+            cend_date = None 
+
+        if csalary:
+            try:
+                csalary = float(csalary)
+            except ValueError:
+                errors.append('Salary must be a number.')
+        else:
+            csalary = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+            }
+            return render(request, 'employee/employee_edit.html', context)
+            
+
         experience = EmployeeExperience(
             person_farm_entity_id=cemployee_id,
             company=ccompany,
@@ -1960,10 +2412,10 @@ def add_experience(request):
         )
         experience.save()
 
-        messages.info(request, "Employee Experience Added Successfully!")
+        messages.success(request, "Employee Experience Added Successfully!")
         return redirect("/employee")
 
-    return render(request, 'employee/employee_add.html')
+    return render(request, 'employee/employee_edit.html')
 
 @login_required(login_url='login')
 def add_guarantee(request):
@@ -1971,6 +2423,21 @@ def add_guarantee(request):
         cemployee_id = request.POST.get('employee_id')
         cguarantee_type = request.POST.get('guarantee_type')
         csalary_evaluation = request.POST.get('salary_evaluation')
+
+        errors = []
+        if csalary_evaluation:
+            try:
+                csalary_evaluation = float(csalary_evaluation)
+            except ValueError:
+                errors.append('Salary must be a number.')
+        else:
+            csalary_evaluation = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+            }
+            return render(request, 'employee/employee_edit.html', context)
             
         guarantee = Guarantee(
             person_farm_entity_id=cemployee_id,
@@ -1979,10 +2446,10 @@ def add_guarantee(request):
         )
         guarantee.save()
 
-        messages.info(request, "Employee Guarantee Added Successfully!")
+        messages.success(request, "Employee Guarantee Added Successfully!")
         return redirect("/employee")
 
-    return render(request, 'employee/employee_add.html')
+    return render(request, 'employee/employee_edit.html')
 
 
 

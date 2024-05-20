@@ -58,7 +58,7 @@
 
             {% if statuses %}
               <h4 class="mt-0">
-                  <small><strong>Pregnancy Status:</strong> {{ statuses.0.cattle_pregnancy_status }} </small>
+                  <small><strong>Pregnancy Status:</strong> {{ statuses.cattle_pregnancy_status }} </small>
               </h4>
             {% endif %}
             {% comment %} <p>Raw denim you probably haven't heard of them jean shorts Austin. Nesciunt tofu stumptown aliqua butcher retro keffiyeh dreamcatcher synth. Cosby sweater eu banh mi, qui irure terr.</p> {% endcomment %}
@@ -129,7 +129,7 @@
 
             <div class="bg-gray py-2 px-3 mt-4">
               <h2 class="mb-0">
-               {{cattle.estimated_price}}
+                Estimated Price: {{cattle.estimated_price}}
               </h2>
             </div>
 
@@ -165,36 +165,99 @@
         <div class="row mt-4">
           <nav class="w-100">
             <div class="nav nav-tabs" id="product-tab" role="tablist">
-              <a class="nav-item nav-link active" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">Last Milk Production</a>
-              <a class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="false">Vaccination</a>
+              <a style="color: #007f5c;" class="nav-item nav-link active" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">Last Milk Production</a>
+              <a style="color: #007f5c;" class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="false">Vaccination</a>
+              <a style="color: #007f5c;" class="nav-item nav-link" id="health-tab" data-toggle="tab" href="#health" role="tab" aria-controls="health" aria-selected="false">Health</a>
             </div>
           </nav>
           <div class="tab-content p-3" id="nav-tabContent">
             <div class="tab-pane fade show active" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab"> 
-            {% if productions %}
-              <h4 class="mt-0">
-                  <small><strong>Amount of milk produced(in ltr):</strong> {{ productions.0.amount_in_liter }} </small>
-              </h4>
-              <h4 class="mt-0">
-                <small><strong>Milk time:</strong> {{ productions.0.milk_time }} </small>
-              </h4>
-              <h4 class="mt-0">
-                <small><strong>Fat content:</strong> {{ productions.0.fat_content }} </small>
-              </h4>
-              <h4 class="mt-0">
-                <small><strong>Protein content:</strong> {{ productions.0.protein_content }} </small>
-              </h4>
-              <h4 class="mt-0">
-                <small><strong>Somatic cell count:</strong> {{ productions.0.somatic_cell_count }} </small>
-              </h4>
-              <h4 class="mt-0">
-                <small><strong>Duration(in min):</strong> {{ productions.0.duration_in_min }} </small>
-              </h4>
-            {% endif %}
+              {% if productions %}
+              <h4 class="mt-0">Latest Milk Productions</h4>
+              <table class="table">
+                  <thead>
+                      <tr>
+                          <th>Amount (ltr)</th>
+                          <th>Milk Time</th>
+                          <th>Fat Content</th>
+                          <th>Protein Content</th>
+                          <th>Somatic Cell Count</th>
+                          <th>Duration (min)</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for production in productions %}
+                          <tr>
+                              <td>{{ production.amount_in_liter }}</td>
+                              <td>{{ production.milk_time }}</td>
+                              <td>{{ production.fat_content }}</td>
+                              <td>{{ production.protein_content }}</td>
+                              <td>{{ production.somatic_cell_count }}</td>
+                              <td>{{ production.duration_in_min }}</td>
+                          </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+              {% endif %}
             </div>
-            <div class="tab-pane fade" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab"> </div>
+            <div class="tab-pane fade" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab"> 
+              {% if vaccinations %}
+                <h4 class="mt-0">Last 5 Vaccinations</h4>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Vaccine Name</th>
+                            <th>Vaccination Given Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vaccination in vaccinations %}
+                            <tr>
+                                <td>{{ vaccination.vaccine.vaccine_name }}</td>
+                                <td>{{ vaccination.cattle_given_time }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+              {% endif %}
+            </div>
+            <div class="tab-pane fade" id="health" role="tabpanel" aria-labelledby="health-tab"> 
+              {% if healths %}
+                  <h4 class="mt-0">Last 5 Health Checkups</h4>
+                  <table class="table">
+                      <thead>
+                          <tr>
+                              <th>Findings</th>
+                              <th>Medicine</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                          {% for health in healths %}
+                              <tr>
+                                  <td>{{ health.findings }}</td>
+                                  <td>
+                                      {% if health.cattlehealthcheckuphasmedicine_set.all %}
+                                          {% for medicine_entry in health.cattlehealthcheckuphasmedicine_set.all %}
+                                              {{ medicine_entry.medicine.name }},
+                                          {% endfor %}
+                                      {% else %}
+                                          N/A
+                                      {% endif %}
+                                  </td>
+                              </tr>
+                          {% endfor %}
+                      </tbody>
+                  </table>
+              {% endif %}
+            </div>
           </div>
         </div> 
+
+        <div class="row">
+          <div class="col-12">
+            <a href="../cattle" class="btn btn-secondary">Back</a>
+          </div>
+        </div>
 
       </div>
     </div>

@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load static %}
 
 {% block content %}
 
@@ -13,7 +13,7 @@
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">Dashboard v1</li>
+              <li class="breadcrumb-item active">Dashboard</li>
             </ol>
           </div>
         </div>
@@ -24,8 +24,54 @@
       <div class="container-fluid">
 
         <div class="row">
-          <div class="col-lg-3 col-6">
+          <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box">
+              <span class="info-box-icon bg-info elevation-1"><i class="fas fa-coins"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">{{dash1.description}}</span>
+                <span class="info-box-number">
+                  {{dash1.amount}}
+                </span>
+              </div>
+            </div>
+          </div>
+     
+          <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box mb-3">
+              <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-shopping-cart"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">{{dash2.description}}</span>
+                <span class="info-box-number">{{dash2.amount}}</span>
+              </div>
+            </div>
+          </div>
          
+          <div class="clearfix hidden-md-up"></div>
+
+          <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box mb-3">
+              <span class="info-box-icon bg-success elevation-1"><i class="fas fa-lightbulb"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">{{dash3.description}}</span>
+                <span class="info-box-number">{{dash3.amount}}</span>
+              </div>
+            </div>
+          </div>
+       
+          <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box mb-3">
+              <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-users"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">{{dash4.description}}</span>
+                <span class="info-box-number">{{dash4.amount}}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        {% comment %} <div class="row">
+          <div class="col-lg-3 col-6">
             <div class="small-box bg-info">
               <div class="inner">
                 <h3>{{dash1.amount}}</h3>
@@ -55,7 +101,6 @@
           </div>
 
           <div class="col-lg-3 col-6">
- 
             <div class="small-box bg-warning">
               <div class="inner">
                 <h3>{{dash3.amount}}</h3>
@@ -70,7 +115,6 @@
           </div>
      
           <div class="col-lg-3 col-6">
- 
             <div class="small-box bg-danger">
               <div class="inner">
                 <h3>{{dash4.amount}}</h3>
@@ -83,13 +127,155 @@
               <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
             </div>
           </div>
-      
+        </div> {% endcomment %}
+
+
+        <div class="row">
+          <div class="col-8">
+            <div class="card">
+              <div class="card-header border-transparent">
+                <h3 class="card-title">Latest Orders</h3>
+
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+       
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table m-0">
+                    <thead>
+                    <tr>
+                      <th>Order ID</th>
+                      <th>Item</th>
+                      <th>Status</th>
+                      <th>Quantity</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      {% for d in data1 %}
+                      <tr>
+                        <td>
+                          {{d.id}}
+                        </td>
+                        <td>
+                          {% for item in item_data %}
+                            {% if item.item_id == d.item_id %}
+                              {{ item.name }}
+                            {% endif %}
+                          {% endfor %}
+                        </td>
+                        <td>
+                          {% comment %} <span class="badge badge-success">
+                            {% for orderdata in orderdatas %}
+                              {% if orderdata.order_id == d.order_id %}
+                                {{ orderdata.request_approved }}
+                              {% endif %}
+                            {% endfor %}
+                          </span> {% endcomment %}
+                          <span class="badge {% for orderdata in orderdatas %}{% if orderdata.order_id == d.order_id %}{% if orderdata.request_approved == 'Approved' %}badge-success{% elif orderdata.request_approved == 'Pending' %}badge-warning{% elif orderdata.request_approved == 'Rejected' %}badge-danger{% endif %}{% endif %}{% endfor %}">
+                            {% for orderdata in orderdatas %}
+                            {% if orderdata.order_id == d.order_id %}
+                            {{ orderdata.request_approved }}
+                            {% endif %}
+                            {% endfor %}
+                        </span>
+                        </td>
+                        <td>
+                          {{d.quantity}}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+             
+              <div class="card-footer clearfix">
+                <a href="request_order" class="btn btn-sm btn-secondary float-right">View All Orders</a>
+              </div>
+            
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="info-box mb-3 bg-warning">
+              <span class="info-box-icon"><i class="fas fa-user-tie"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">{{dash5.description}}</span>
+                <span class="info-box-number">{{dash5.amount}}</span>
+              </div>
+            </div>
+          
+            <div class="info-box mb-3 bg-success">
+              <span class="info-box-icon"><i class="fas fa-users"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">{{dash6.description}}</span>
+                <span class="info-box-number">{{dash6.amount}}</span>
+              </div>
+            </div>
+        
+            <div class="info-box mb-3 bg-danger">
+              <span class="info-box-icon"><i class="fas fa-user-alt"></i></span>
+              <div class="info-box-content">
+                <span class="info-box-text">{{dash7.description}}</span>
+                <span class="info-box-number">{{dash7.amount}}</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Recently Added Cattles</h3>
+
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+           
+              <div class="card-body p-0">
+                <ul class="products-list product-list-in-card pl-2 pr-2">
+                {% for d in cattle %}
+                  <li class="item">
+                    {% comment %} <div class="product-img">
+                      <img src="{{ photos.0.cattle_photo_url }}" alt="{{ photos.0.cattle_photo_description }}" class="img-size-50">
+                    </div>  {% endcomment %}
+
+                    <div class="product-img">
+                      {% if cattle_photos.d.cattle_id %}
+                          <img src="{{ cattle_photos.d.cattle_id }}" alt="Cattle Photo" class="img-size-50">
+                      {% else %}
+                          <img src="{% static 'dist/img/dairy1.jpg' %}" class="img-size-50">
+                      {% endif %}
+                  </div>
+  
+                    <div class="product-info">
+                      <a href="#" class="product-title">{{d.cattle_name}}
+                        <span class="badge badge-warning float-right">{{d.estimated_price}}</span></a>
+                      <span class="product-description">
+                        {{d.cattle_breed.cattle_breed_type}}
+                      </span>
+                    </div>
+                  </li>
+                {% endfor %}
+                </ul>
+              </div>  
+           
+              <div class="card-footer text-center">
+                <a href="cattle" class="uppercase">View All Cattles</a>
+              </div>
+       
+            </div>
+          </div>
         </div>
- 
+
       </div>
     </section>
 
-  </div>  
+  </div> 
 
 
 {% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+
+{% block content %} 
+
+  <div class="content-wrapper">
+
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Cattle Medicine Add</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="../checkup_medicine">Home</a></li>
+              <li class="breadcrumb-item active">Cattle Medicine Add</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="content">
+      <form action="/checkup_medicine_add/{{ current_checkup_id }}/" method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header" style="background-color: #007f5c;color: #fff;">
+                        <h3 class="card-title">Basic Information</h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="checkupId">Checkup Id</label>
+                            <input type="text" id="inputName" name="checkup_id" value="{{current_checkup_id}}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputName">Instruction</label>
+                            <input type="text" id="inputName" name="instruction" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputMedicine">Medicine</label>
+                            <select id="inputMedicine" name="medicine_id" class="form-control custom-select">
+                                {% for d in data2 %}
+                                <option value="{{ d.id }}">{{ d.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <a href="/cattle_health_checkup" class="btn btn-secondary">Back</a>
+                <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Cattle Medicine</button>
+            </div>
+        </div>
+    </form>
+    
+    
+    </section>
+
+  </div>
+  
+  {% endblock %}
+

@@ -159,19 +159,51 @@
       </li>
     </ul>
   </nav>
-  <!-- /.navbar -->
 
-  <!-- Main Sidebar Container -->
+ 
+  <style>
+    .main-sidebar {
+      background-color: #1a2421 ;
+      color: #fff  !important;
+  }
+  .sidebar .nav-item > a.active {
+      background-color: #007f5c !important; 
+      color: #FFFFFF !important;           
+  }
+
+  .sidebar .nav-treeview > .nav-item > a.active {
+      background-color: #F0F0F0 !important; 
+      color: #000000 !important;          
+  }
+
+  .sidebar .nav-treeview > .nav-item > a:hover {
+      background-color: #D8D8D8; 
+      color: #000000;           
+  }
+
+  .brand-link {
+    background-color: transparent !important; 
+    color: inherit; 
+}
+
+.brand-link .brand-text {
+    color: #FFFFFF; 
+}
+
+  .breadcrumb-item a{
+    color:#007f5c;
+  }
+  </style> 
+
+
   <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <!-- Brand Logo -->
     <a href="#" class="brand-link">
-      <img src="{% static 'dist/img/cattlecopy.jpg' %}" alt="Admin Logo" class="brand-image img-circle elevation-3">
+      <img src="{% static 'dist/img/cattle4.jpg' %}" alt="Admin Logo" class="brand-image img-circle elevation-3">
       <span class="brand-text font-weight-light">BiloFarm</span>
     </a>
 
     <!-- Sidebar -->
     <div class="sidebar">
-      <!-- Sidebar user panel (optional) -->
       <div class="user-panel mt-3 pb-3 mb-3 d-flex">
         <div class="image">
           <img src="{% static 'dist/img/avatar4.png' %}" class="img-circle elevation-2" alt="User Image">
@@ -196,8 +228,8 @@
       <!-- Sidebar Menu -->
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-          <li class="nav-item menu-open">
-            <a href="index" class="nav-link active">
+          <li class="nav-item menu-open active">
+            <a href="../index" class="nav-link">
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>
                 Dashboard
@@ -228,15 +260,17 @@
               {% comment %} {% endif %}
               {% if request.user|is_allowed_user:"Admin, Veterinarian" %}  {% endcomment %}
               <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="../../cattle_health_checkup" class="nav-link">
                   <i class="fas fa-hospital nav-icon"></i>
-                  <p>Health CheckUp</p>
+                  <p>Cattle Health
+                  </p>
                 </a>
+                
               </li>
               {% comment %} {% endif %} 
               {% if request.user|is_allowed_user:"Admin, Veterinarian" %}  {% endcomment %}
               <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="../../cattle_has_vaccine" class="nav-link">
                   <i class="fas fa-syringe nav-icon"></i>
                   <p>Vaccination</p>
                 </a>
@@ -508,6 +542,12 @@
                           <p>Vaccine</p>
                         </a>
                       </li>
+                      <li class="nav-item"> 
+                        <a href="../../medicine" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Medicine</p>
+                        </a>
+                      </li>
                       <li class="nav-item">
                         <a href="../../feed_formulation" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
@@ -633,51 +673,85 @@
     <div class="float-right d-none d-sm-block">
       <b>Version</b> 3.2.0
     </div>
-    <strong>Copyright &copy; 2014-2021 <a href="https://adminlte.io">BiloFarm</a>.</strong> All rights reserved.
+    <strong>Copyright &copy; 2014-2021 <a href="#">BiloFarm</a>.</strong> All rights reserved.
   </footer>
 
 
-  <!-- Control Sidebar -->
   <aside class="control-sidebar control-sidebar-dark">
-    <!-- Control sidebar content goes here -->
   </aside>
-  <!-- /.control-sidebar -->
-</div>
-<!-- ./wrapper -->
 
-<!-- jQuery -->
+</div>
+
 <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
-<!-- jQuery UI 1.11.4 -->
 <script src="{% static 'plugins/jquery-ui/jquery-ui.min.js' %}"></script>
-<!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
 <script>
   $.widget.bridge('uibutton', $.ui.button)
 </script>
-<!-- Bootstrap 4 -->
+
+<script>
+  var url = window.location;
+
+  // Main sidebar items
+  $('ul.nav-sidebar a').filter(function() {
+      return this.href == url;
+  }).addClass('active').css({
+      'background-color': '#007f5c', 
+      'color': '#FFFFFF'            
+  });
+
+  // Treeview items
+  $('ul.nav-treeview a').filter(function() {
+      return this.href == url;
+  }).css({
+      'background-color': '#F0F0F0', 
+      'color': '#000000'             
+  }).parentsUntil(".nav-sidebar > .nav-treeview")
+    .addClass('menu-open')
+    .prev('a')
+    .addClass('active')
+    .css({
+      'background-color': '#007f5c', 
+      'color': '#FFFFFF'             
+  });
+</script>
+
+
+{% comment %} <script>
+  var url = window.location;
+
+  $('ul.nav-sidebar a').filter(function() {
+      return this.href == url;
+  }).addClass('active').css({
+      'background-color': '#007f5c', 
+      'color': '#FFFFFF'           
+  });
+
+  $('ul.nav-treeview a').filter(function() {
+      return this.href == url;
+  }).parentsUntil(".nav-sidebar > .nav-treeview")
+    .addClass('menu-open')
+    .prev('a')
+    .addClass('active')
+    .css({
+      'background-color': '#007f5c', 
+      'color': '#FFFFFF'            
+  });
+</script> {% endcomment %}
+
+
 <script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
-<!-- ChartJS -->
 <script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
-<!-- Sparkline -->
 <script src="{% static 'plugins/sparklines/sparkline.js' %}"></script>
-<!-- JQVMap -->
 <script src="{% static 'plugins/jqvmap/jquery.vmap.min.js' %}"></script>
 <script src="{% static 'plugins/jqvmap/maps/jquery.vmap.usa.js' %}"></script>
-<!-- jQuery Knob Chart -->
 <script src="{% static 'plugins/jquery-knob/jquery.knob.min.js' %}"></script>
-<!-- daterangepicker -->
-<script src="{% static 'plugins/moment/moment.min.js"></script>
+<script src="{% static 'plugins/moment/moment.min.js%' %}"></script>
 <script src="{% static 'plugins/daterangepicker/daterangepicker.js' %}"></script>
-<!-- Tempusdominus Bootstrap 4 -->
 <script src="{% static 'plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js' %}"></script>
-<!-- Summernote -->
 <script src="{% static 'plugins/summernote/summernote-bs4.min.js' %}"></script>
-<!-- overlayScrollbars -->
 <script src="{% static 'plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js' %}"></script>
-<!-- AdminLTE App -->
 <script src="{% static 'dist/js/adminlte.js' %}"></script>
-<!-- AdminLTE for demo purposes -->
 <script src="{% static 'dist/js/demo.js' %}"></script>
-<!-- AdminLTE dashboard demo (This is only for demo purposes) -->
 <script src="{% static 'dist/js/pages/dashboard.js' %}"></script>
 </body>
 </html>

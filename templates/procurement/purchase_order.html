@@ -27,7 +27,7 @@
 
       <!-- Default box -->
       <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="background-color: #007f5c;color: #fff;">
           <h3 class="card-title">Manage Purchase Order</h3>
 
           <div class="card-tools">
@@ -100,11 +100,13 @@
                         {{d.price}}
                       </td>
                       <td>
-                        {{d.status}}
+                        <span class="badge {% if d.status == 'Approved' %}badge-success{% elif d.status == 'Pending' %}badge-info{% elif d.status == 'Rejected' %}badge-danger{% endif %}">
+                          {{d.status}}
+                        </span>
                       </td>
                       
                       <td class="project-actions">
-                          <a class="btn btn-info btn-sm" href="/generate_purchase_order/{{d.supplier_id}}">
+                          <a class="btn btn-sm" href="/generate_purchase_order/{{d.order_id}}" style="background-color: #007f5c;color: #fff;">
                               <i class="fas fa-pencil-alt">
                               </i>
                               Generate Purchase Order

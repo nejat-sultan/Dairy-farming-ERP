@@ -30,7 +30,7 @@
           <h3 class="card-title">Manage Cattle</h3>
 
           <div class="card-tools">
-            <a class="btn btn-primary" href="cattle_add">
+            <a class="btn" href="cattle_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -56,7 +56,7 @@
                       <th style="width: 30%">
                         Date of Birth
                       </th>
-                      <th style="width: 20%">
+                      <th style="width: 25%">
                         Name
                       </th>
                       <th style="width: 20%">
@@ -82,22 +82,17 @@
                         {{d.cattle_gender}}
                       </td>
 
-                      <td class="project-actions text-right">
-                          <a class="btn btn-primary btn-sm" href="/cattle_view/{{d.cattle_id}}">
-                              <i class="fas fa-folder">
-                              </i>
-                              View
-                          </a>
-                          <a class="btn btn-info btn-sm" href="/cattle_edit/{{d.cattle_id}}">
-                              <i class="fas fa-pencil-alt">
-                              </i>
-                              Edit
-                          </a>
-                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.cattle_id }}')">
-                              <i class="fas fa-trash">
-                              </i>
-                              Delete
-                          </a>
+                      <td class="project-actions">
+                        <a class="btn btn-sm" href="/cattle_view/{{d.cattle_id}}" title="View" style="background-color: #007f5c;color: #fff;">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a class="btn btn-info btn-sm" href="/cattle_edit/{{d.cattle_id}}" title="Edit">
+                            <i class="fas fa-pencil-alt"></i>
+                        </a>
+                        <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.cattle_id }}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        
 
                           <script>
                             function confirmDelete(cattleId) {

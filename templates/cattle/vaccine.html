@@ -30,7 +30,7 @@
           <h3 class="card-title">Manage Vaccine</h3>
 
           <div class="card-tools">
-            <a class="btn btn-primary" href="vaccine_add">
+            <a class="btn" href="vaccine_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -86,12 +86,10 @@
                           <a class="btn btn-info btn-sm" href="/vaccine_edit/{{d.vaccine_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
-                              Edit
                           </a>
                           <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.vaccine_id }}')">
                             <i class="fas fa-trash">
                             </i>
-                            Delete
                           </a>
 
                           <script>

@@ -30,7 +30,7 @@
           <h3 class="card-title">Manage Cattle Pregnancy</h3>
 
           <div class="card-tools">
-            <a class="btn btn-primary" href="cattle_pregnancy_add">
+            <a class="btn" href="cattle_pregnancy_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -88,20 +88,20 @@
                           {% endif %}
                         {% endfor %}
                       </td>
-                      <td class="status-highlight">
-                        {{d.cattle_pregnancy_status}}
+                      <td>
+                        <span class="badge {% if d.cattle_pregnancy_status == 'Pregnant' %}badge-success{% elif d.cattle_pregnancy_status == 'Not Pregnant' %}badge-warning {% endif %}">
+                          {{d.cattle_pregnancy_status}}
+                        </span>
                       </td>
 
                       <td class="project-actions">
                           <a class="btn btn-info btn-sm" href="/cattle_pregnancy_edit/{{d.cattle_pregnancy_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
-                              Edit
                           </a>
                           <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.cattle_pregnancy_id }}')">
                             <i class="fas fa-trash">
                             </i>
-                            Delete
                           </a>
 
                           <script>

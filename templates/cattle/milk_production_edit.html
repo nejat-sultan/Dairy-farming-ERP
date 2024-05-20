@@ -27,7 +27,7 @@
         <div class="row">
           <div class="col-md-12">
             <div class="card card-primary">
-              <div class="card-header">
+              <div class="card-header" style="background-color: #007f5c;color: #fff;">
                 <h3 class="card-title">Basic Information</h3>
   
                 <div class="card-tools">
@@ -49,11 +49,11 @@
               
                 <div class="form-group">
                   <label for="inputName">Amount in Liter</label>
-                  <input type="text" id="inputName" name="amount_in_liter" value="{{d.amount_in_liter}}" class="form-control">
+                  <input type="text" id="inputName" name="amount_in_liter" value="{{d.amount_in_liter}}" class="form-control" required>
                 </div>
                 <div class="form-group">
                   <label for="inputName">Milk Time</label>
-                  <input type="datetime-local" id="inputName" name="milk_time" value="{{ d.milk_time|date:'Y-m-d' }}T{{ d.milk_time|time:'H:i' }}" class="form-control">
+                  <input type="datetime-local" id="inputName" name="milk_time" value="{{ d.milk_time|date:'Y-m-d' }}T{{ d.milk_time|time:'H:i' }}" class="form-control" required>
                 </div>
                 <div class="form-group">
                   <label for="inputName">Fat Content</label>
@@ -90,7 +90,7 @@
         <div class="row">
           <div class="col-12">
             <a href="../milk_production" class="btn btn-secondary">Back</a>
-            <button type="submit" class="btn btn-success float-right" >Update Milk Production</button>
+            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Milk Production</button>
           </div>
         </div>
       </form>

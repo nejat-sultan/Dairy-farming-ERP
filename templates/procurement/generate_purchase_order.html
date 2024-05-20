@@ -47,7 +47,7 @@
               <div class="col-sm-4 invoice-col">
                 From
                 <address>
-                  <strong>Admin Farm</strong><br>
+                  <strong>Bilo Farm</strong><br>
                   {% comment %} 795 Folsom Ave, Suite 600<br>
                   San Francisco, CA 94107<br>
                   Phone: (804) 123-5432<br>
@@ -109,7 +109,8 @@
                       </tr>
                   </thead>
                   <tbody>
-                    {% for d in data %}
+                    {% comment %} {% for d in data %} {% endcomment %}
+                    {% for d, multiplied_value in multiplied_values.items %}
                       <tr>
                           <td>
                           {% for supplier in supplier_data %}
@@ -133,17 +134,11 @@
                           </td>
                           <td>
                             {{ d.quantity }}
-                        {% comment %} {% for item in qty_data %}
-                            {% if item.item_id == d.item_id %} 
-                                {{ item.quantity }}
-                            {% endif %}
-                        {% endfor %}  {% endcomment %}
                           </td> 
                           <td>
-                         
-                            {{ multiplied_values|get_item:d.item_id }} 
-                          </td> 
-
+                          {{ multiplied_value }}
+                          </td>
+                          
                     {% endfor %}
                   </tbody>
                 </table>
@@ -193,6 +188,13 @@
           </div>
         </div>
       </div>
+
+      <div class="row">
+        <div class="col-12">
+          <a href="../purchase_order" class="btn btn-secondary">Back</a>
+        </div>
+      </div>
+
     </div>
   </section>
 </div>
