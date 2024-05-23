@@ -38,8 +38,7 @@
                     </div>
                     <div class="card-body">
                         <div class="form-group">
-                            <label for="checkupId">Checkup Id</label>
-                            <input type="text" id="inputName" name="checkup_id" value="{{current_checkup_id}}" class="form-control" readonly>
+                            <input type="hidden" name="checkup_id" value="{{ current_checkup_id }}">
                         </div>
                         <div class="form-group">
                             <label for="inputName">Instruction</label>
@@ -59,7 +58,7 @@
         </div>
         <div class="row">
             <div class="col-12">
-                <a href="/cattle_health_checkup" class="btn btn-secondary">Back</a>
+                <a href="../../cattle_health_checkup" class="btn btn-secondary">Back</a>
                 <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Cattle Medicine</button>
             </div>
         </div>

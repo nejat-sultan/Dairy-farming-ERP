@@ -83,14 +83,17 @@
                       </td>
                       <td>
                         {% for cattle in cattle %}
-                          {% if cattle.cattle_id == d.cattle_id %}
+                          {% if cattle.farm_entity_id == d.cattle_id %}
                             {{ cattle.cattle_name }}
                           {% endif %}
                         {% endfor %}
                       </td>
                       <td>
-                        <span class="badge {% if d.cattle_pregnancy_status == 'Pregnant' %}badge-success{% elif d.cattle_pregnancy_status == 'Not Pregnant' %}badge-warning {% endif %}">
+                        {% comment %} <span class="badge {% if d.cattle_pregnancy_status == 'Pregnant' %}badge-success{% elif d.cattle_pregnancy_status == 'Not Pregnant' %}badge-warning {% endif %}">
                           {{d.cattle_pregnancy_status}}
+                        </span> {% endcomment %}
+                        <span class="badge {% if d.pregnancy_status.pregnancy_status == 'Pregnant' %}badge-warning{% elif d.pregnancy_status.pregnancy_status == 'Postpartum' %}badge-success {% endif %}">
+                          {{d.pregnancy_status.pregnancy_status}}
                         </span>
                       </td>
 

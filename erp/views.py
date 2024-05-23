@@ -3,35 +3,156 @@ import os
 from django.shortcuts import get_object_or_404, render,redirect
 from django.core.files.storage import FileSystemStorage
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, Employee, EmployeeExperience, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, Job, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, Region, SaleType, Shift, Supplier, SupplierType, Vaccine
+from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, Employee, EmployeeExperience, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, Job, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Supplier, SupplierType, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
-from .forms import CreateUserForm
+from .forms import CreateUserForm, GroupAssignmentForm, GroupCreationForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
+from django.utils.dateparse import parse_date
+from django.http import JsonResponse
+from django.db import transaction
 
 
-# Create your views here.
-@unauthenticated_user
+@login_required(login_url='login')
+def user(request):
+    user_profiles = UserProfile.objects.select_related('user', 'employee').all()
+    context = {
+        'user_profiles': user_profiles,
+    }
+    return render(request, 'auth/user.html', context)
+
+@login_required(login_url='login')
 def register(request):
-    
     form = CreateUserForm()
     if request.method == 'POST':
         form = CreateUserForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "User registered Successfully!")
-            return redirect("/login") 
+            user = form.save()
+            employee_id = form.cleaned_data.get('employee_id')
 
-    context = {'form':form}
+            user_profile = UserProfile.objects.create(
+                user=user,
+                employee_id=employee_id
+            )
+
+            messages.success(request, "User registered Successfully!")
+            return redirect("/user") 
+
+    context = {'form': form}
     return render(request, 'auth/register.html', context)
+
+@login_required(login_url='login')
+def edit_user(request, user_id):
+    user_profile = get_object_or_404(UserProfile, user_id=user_id)
+    user = user_profile.user
+    employees = Employee.objects.select_related('person_farm_entity').all()
+
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        employee_id = request.POST.get('employee_id')
+        
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        user.save()
+
+        if employee_id:
+            try:
+                employee = Employee.objects.get(person_farm_entity=employee_id)
+                user_profile.employee = employee
+                user_profile.save()
+            except Employee.DoesNotExist:
+                messages.error(request, "Selected employee does not exist.")
+        
+        messages.success(request, "User profile updated successfully!")
+        return redirect("/user") 
+
+    context = {
+        'user_profile': user_profile,
+        'employees': employees,
+    }
+
+    return render(request, 'auth/edit_user.html', context)
+
+
+def user_delete(request, id):
+    try:
+        user = User.objects.get(pk=id)
+        user_profile = user.userprofile
+        user_profile.delete()
+        user.delete()
+        
+        messages.success(request, "User deleted successfully!")
+    except User.DoesNotExist:
+        messages.error(request, "User not found!")
+    
+    return redirect("/user")
+
+@login_required(login_url='login')
+def group(request):
+    groups = Group.objects.all()
+    context = {"groups":groups}
+    return render(request, 'auth/group.html', context)
+
+@login_required(login_url='login')
+def create_group(request):
+    if request.method == 'POST':
+        form = GroupCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('group') 
+    else:
+        form = GroupCreationForm()
+    return render(request, 'auth/create_group.html', {'form': form})
+
+@login_required(login_url='login')
+def edit_group(request, id):
+    group = get_object_or_404(Group, id=id)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        
+        if name:
+            group.name = name
+            group.save()
+            
+        messages.success(request, "Group updated successfully!")
+        return redirect("/group") 
+
+    context = {'group': group}
+
+    return render(request, 'auth/edit_group.html', context)
+
+
+def group_delete(request, id):
+    d = Group.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Role Deleted Successfully!")
+    return redirect("/group")
+
+@login_required(login_url='login')
+def assign_users_to_group(request, user_id):
+    user = User.objects.get(id=user_id)
+    groups = Group.objects.all() 
+    
+    if request.method == 'POST':
+        group_id = request.POST.get('group')  
+        group = Group.objects.get(id=group_id)
+        user.groups.clear()  
+        user.groups.add(group)  
+        return redirect('user')  
+    
+    return render(request, 'auth/assign_users_to_group.html', {'user': user, 'groups': groups})
 
 @unauthenticated_user
 def login_page(request):
@@ -55,10 +176,6 @@ def login_page(request):
 def logout_user(request):
     logout(request)
     return redirect("/login")
-
-def user_page(request):
-    context = {}
-    return render(request, 'auth/user.html', context)
 
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin'])
@@ -103,11 +220,9 @@ def index(request):
     cattle_photos = {}
     for cow in cattle:
         photo = CattlePhoto.objects.filter(cattle=cow).first()
-        cattle_photos[cow.cattle_id] = photo.cattle_photo_url if photo else None
+        cattle_photos[cow.farm_entity_id] = photo.cattle_photo_url if photo else None
 
-    print("Cattle Photos Dictionary:", cattle_photos)  # Debug statement
-
-
+    print("Cattle Photos Dictionary:", cattle_photos)  
 
     context = {
         'dash1': dash1, 
@@ -134,8 +249,8 @@ def cattle(request):
 
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin'])
-def cattle_view(request, cattle_id):
-    cattle = get_object_or_404(Cattle, cattle_id=cattle_id)
+def cattle_view(request, farm_entity_id):
+    cattle = get_object_or_404(Cattle, farm_entity_id=farm_entity_id)
     photos = CattlePhoto.objects.filter(cattle=cattle)
     breeds = CattleBreed.objects.filter(cattle=cattle)
     statuses = CattlePregnancy.objects.filter(cattle=cattle).order_by('-cattle_id').first()
@@ -160,7 +275,6 @@ def cattle_view(request, cattle_id):
     return render(request, 'cattle/cattle_view.html', context)
 
 
-from django.utils.dateparse import parse_date
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin'])
 def cattle_add(request):
@@ -172,6 +286,8 @@ def cattle_add(request):
         cestimatedprice = request.POST.get('estimated_price')
         cbreed = request.POST.get('breed')
         cstatus = request.POST.get('status')
+
+        farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
 
         errors = []
         if not cid:
@@ -202,7 +318,7 @@ def cattle_add(request):
             }
             return render(request, 'cattle/cattle_add.html', context)
         
-        query = Cattle(cattle_id=cid, cattle_date_of_birth=cdob, cattle_name=cname, cattle_gender=cgender, estimated_price=cestimatedprice, cattle_breed_id=cbreed, cattle_status_id=cstatus)
+        query = Cattle(farm_entity=farm_entity,cattle_ear_id=cid, cattle_date_of_birth=cdob, cattle_name=cname, cattle_gender=cgender, estimated_price=cestimatedprice, cattle_breed_id=cbreed, cattle_status_id=cstatus)
         query.save()
         messages.success(request, "Cattle Added Successfully!")
         return redirect("/cattle")
@@ -221,8 +337,8 @@ def cattle_add(request):
 
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin'])
-def cattle_edit(request,cattle_id):
-    edit = Cattle.objects.get(cattle_id=cattle_id)
+def cattle_edit(request,farm_entity_id):
+    edit = Cattle.objects.get(farm_entity_id=farm_entity_id)
     
     if request.method == "POST":
         cid=request.POST.get('id')
@@ -263,7 +379,7 @@ def cattle_edit(request,cattle_id):
             }
             return render(request, 'cattle/cattle_edit.html', context)
 
-        edit.cattle_id = cid
+        edit.cattle_ear_id = cid
         edit.cattle_date_of_birth = cdob
         edit.cattle_name = cname
         edit.cattle_gender = cgender
@@ -276,6 +392,7 @@ def cattle_edit(request,cattle_id):
         return redirect("/cattle")
         
     
+    # d = Cattle.objects.get(farm_entity_id=farm_entity_id)
     cattle_statuses = CattleStatus.objects.all()
     cattle_breed = CattleBreed.objects.all()
     cattle_data = Cattle.objects.all()
@@ -286,8 +403,8 @@ def cattle_edit(request,cattle_id):
 
 
 # @allowed_users(allowed_roles=['Admin'])
-def cattle_delete(request, cattle_id):
-    d = Cattle.objects.get(cattle_id=cattle_id)
+def cattle_delete(request, farm_entity_id):
+    d = Cattle.objects.get(farm_entity_id=farm_entity_id)
     d.delete()
     messages.error(request, "Cattle Deleted Successfully!")
     return redirect("/cattle")
@@ -424,6 +541,53 @@ def cattle_breed_delete(request, cattle_breed_id):
     return redirect("/cattle_breed")
 
 @login_required(login_url='login')
+def pregnancy_status(request):
+    data = PregnancyStatus.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'cattle/pregnancy_status.html', context)
+
+@login_required(login_url='login')
+def pregnancy_status_add(request):
+    if request.method=="POST":
+        cstatus=request.POST.get('status')
+        cdate = datetime.now().date()
+
+        query = PregnancyStatus(pregnancy_status=cstatus, modified_date=cdate)
+        query.save()
+        messages.success(request, "Pregnancy Status Added Successfully!")
+        return redirect("/pregnancy_status")
+
+    return render(request, 'cattle/pregnancy_status_add.html')
+
+@login_required(login_url='login')
+def pregnancy_status_edit(request,pregnancy_status_id):
+    edit = PregnancyStatus.objects.get(pregnancy_status_id=pregnancy_status_id)
+    
+    if request.method == "POST":
+        cstatus=request.POST.get('status')
+        cdate = datetime.now().date()
+        
+        edit.pregnancy_status = cstatus
+        edit.modified_date = cdate
+        edit.save()
+        messages.warning(request, "Pregnancy Status Updated Successfully!")
+        return redirect("/pregnancy_status")
+
+    d = PregnancyStatus.objects.get(pregnancy_status_id=pregnancy_status_id)
+    context = {"d": d}
+
+    return render(request, 'cattle/pregnancy_status_edit.html', context)
+
+@login_required(login_url='login')
+def pregnancy_status_delete(request, pregnancy_status_id):
+    d = PregnancyStatus.objects.get(pregnancy_status_id=pregnancy_status_id)
+    d.delete()
+    messages.error(request, "Pregnancy Status Deleted Successfully!")
+    return redirect("/pregnancy_status")
+
+
+@login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy(request):
     data = CattlePregnancy.objects.all()
@@ -440,7 +604,7 @@ def cattle_pregnancy_add(request):
         cpregnancy_type=request.POST.get('pregnancy_type')
         cpregnancy_date=request.POST.get('pregnancy_date')
         ccattle_id=request.POST.get('cattle_id')
-        cpregnancy_status = "Pregnant"
+        cpregnancy_status = request.POST.get('pregnancy_status')
 
         errors = []
 
@@ -460,18 +624,21 @@ def cattle_pregnancy_add(request):
             context = {
                 'errors': errors,
                 'data1': Cattle.objects.all(),
+                'data2': PregnancyStatus.objects.all(),
             }
             return render(request, 'cattle/cattle_pregnancy_add.html', context)
 
-        query = CattlePregnancy(cattle_pregnancy_type=cpregnancy_type, cattle_pregnancy_date=cpregnancy_date, cattle_id=ccattle_id, cattle_pregnancy_status=cpregnancy_status)
+        query = CattlePregnancy(cattle_pregnancy_type=cpregnancy_type, cattle_pregnancy_date=cpregnancy_date, cattle_id=ccattle_id, pregnancy_status_id=cpregnancy_status)
         query.save()
         messages.success(request, "Cattle Pregnancy Added Successfully!")
         return redirect("/cattle_pregnancy")
     
     cattle_data = Cattle.objects.all()
+    status_data = PregnancyStatus.objects.all()
 
     context = {
         'data1': cattle_data,
+        'data2': status_data,
     }
 
     return render(request, 'cattle/cattle_pregnancy_add.html', context)
@@ -485,7 +652,7 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
         cpregnancy_type=request.POST.get('pregnancy_type')
         cpregnancy_date=request.POST.get('pregnancy_date')
         ccattle_id=request.POST.get('cattle_id')
-        cpregnancy_status=request.POST.get('pregnancy_status')
+        cpregnancy_status = request.POST.get('pregnancy_status')
 
         errors = []
         if cpregnancy_date:
@@ -512,7 +679,7 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
         edit.cattle_pregnancy_type = cpregnancy_type
         edit.cattle_pregnancy_date = cpregnancy_date
         edit.cattle_id = ccattle_id
-        edit.cattle_pregnancy_status = cpregnancy_status
+        edit.pregnancy_status_id = cpregnancy_status
         
         edit.save()
         messages.warning(request, "Cattle Pregnancy Updated Successfully!")
@@ -521,7 +688,8 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
 
     d = CattlePregnancy.objects.get(cattle_pregnancy_id=cattle_pregnancy_id)
     cattles = Cattle.objects.all()
-    context = {"d": d, "cattle": edit, "cattles": cattles}
+    statuses = PregnancyStatus.objects.all()
+    context = {"d": d, "pregnancy": edit, "cattles": cattles, "statuses": statuses,}
 
     return render(request, 'cattle/cattle_pregnancy_edit.html', context)
 
@@ -742,6 +910,15 @@ def cattle_health_checkup(request):
     return render(request, 'cattle/cattle_health_checkup.html', context)
 
 @login_required(login_url='login')
+def cattle_health_checkup_view(request, id):
+    health = get_object_or_404(CattleHealthCheckup, id=id)
+    medicine_data = CattleHealthCheckupHasMedicine.objects.filter(cattle_health_checkup_id=id)
+
+    context = {"health":health, "medicine_data":medicine_data,}
+
+    return render(request, 'cattle/cattle_health_checkup_view.html', context)
+
+@login_required(login_url='login')
 def cattle_health_checkup_add(request):
     if request.method=="POST":
         ccattle_id=request.POST.get('cattle_id')
@@ -794,13 +971,6 @@ def cattle_health_checkup_delete(request, id):
     return redirect("/cattle_health_checkup") 
 
 @login_required(login_url='login')
-def checkup_medicine(request):
-    data = CattleHealthCheckupHasMedicine.objects.all()
-  
-    context = {"data1":data,}
-    return render(request, 'cattle/checkup_medicine.html', context)   
-
-@login_required(login_url='login')
 def checkup_medicine_add(request, id):
     if request.method == "POST":
         checkup_id = request.POST.get('checkup_id')
@@ -816,7 +986,7 @@ def checkup_medicine_add(request, id):
         )
         query.save()
         messages.success(request, "Cattle Medicine Added Successfully!")
-        return redirect("/cattle_health_checkup")
+        return redirect(f"/cattle_health_checkup_view/{id}")
     
     checkup_data = CattleHealthCheckup.objects.all()
     medicine_data = Medicine.objects.all()
@@ -828,6 +998,44 @@ def checkup_medicine_add(request, id):
     }
 
     return render(request, 'cattle/checkup_medicine_add.html', context)
+
+@login_required(login_url='login')
+def checkup_medicine_edit(request, id):
+    edit = get_object_or_404(CattleHealthCheckupHasMedicine, id=id)
+    
+    if request.method == "POST":
+        checkup_id = request.POST.get('checkup_id')
+        instruction = request.POST.get('instruction')
+        medicine_id = request.POST.get('medicine_id')
+        modified_date = datetime.now()
+        
+        # Update the attributes
+        edit.cattle_health_checkup_id = checkup_id
+        edit.giving_instruction = instruction
+        edit.medicine_id = medicine_id
+        edit.modified_date = modified_date
+        
+        # Save the changes
+        edit.save()
+        messages.warning(request, "Medicine Updated Successfully!")
+        return redirect('/cattle_health_checkup')
+
+    d = CattleHealthCheckupHasMedicine.objects.get(id=id)
+    medicine_data = Medicine.objects.all()
+    
+    context = {
+        'data2' : medicine_data,
+        'd': d,
+    }
+
+    return render(request, 'cattle/checkup_medicine_edit.html', context)
+
+def checkup_medicine_delete(request, id):
+    d = CattleHealthCheckupHasMedicine.objects.get(id=id)
+    id = d.id
+    d.delete()
+    messages.error(request, "Medicine Deleted Successfully!")
+    return redirect('/cattle_health_checkup')
 
 @login_required(login_url='login')
 def milk_production(request):
@@ -1675,10 +1883,8 @@ def supplier_add(request):
         csupplier_type = request.POST.get('supplier_type')
         caccount_number = request.POST.get('account_number')
 
-        # Create a new FarmEntity
         farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
 
-        # Create the Supplier instance and associate it with the FarmEntity
         supplier = Supplier.objects.create(
             farm_entity=farm_entity,
             supplier_name=csupplier_name,
@@ -1688,8 +1894,7 @@ def supplier_add(request):
 
         messages.success(request, "Supplier Added Successfully!")
         return redirect("/supplier")
-    
-    # Fetch data for supplier type dropdown
+
     type_data = SupplierType.objects.all()
     context = {
         'data1': type_data,
@@ -1719,7 +1924,11 @@ def supplier_edit(request,farm_entity_id):
 
     d = Supplier.objects.get(farm_entity_id=farm_entity_id)
     data1 = SupplierType.objects.all()
-    context = {"d": d, "type": edit, "data1": data1}
+    contact_data = ContactType.objects.all() 
+    region_data = Region.objects.all() 
+
+    context = {"d": d, "type": edit, "data1": data1, "data6": contact_data, 
+        "data7": region_data,}
 
     return render(request, 'procurement/supplier_edit.html', context)
 
@@ -1728,6 +1937,55 @@ def supplier_delete(request, farm_entity_id):
     d.delete()
     messages.error(request, "Supplier Deleted Successfully!")
     return redirect("/supplier")
+
+@login_required(login_url='login')
+def add_supplier_contact(request):
+    if request.method == 'POST':
+        csupplier_id = request.POST.get('supplier_id')
+        ccontact_type = request.POST.get('contact_type')
+        ccontact = request.POST.get('contact')
+            
+        # Create a new contact
+        contact = FarmEntityContact(
+            farm_entity_id=csupplier_id,
+            contact_type_id=ccontact_type,
+            contact=ccontact
+        )
+        contact.save()
+
+        messages.success(request, "Supplier Contact Added Successfully!")
+        return redirect("/supplier")
+
+    return render(request, 'procurement/supplier_edit.html')
+
+@login_required(login_url='login')
+def add_supplier_address(request):
+    if request.method == 'POST':
+        csupplier_id = request.POST.get('supplier_id')
+        cregion = request.POST.get('region')
+        ccountry = request.POST.get('country')
+        czone_subcity = request.POST.get('zone_subcity')
+        cworeda = request.POST.get('woreda')
+        ckebele = request.POST.get('kebele')
+        chouse_no = request.POST.get('house_no')
+        cstreet = request.POST.get('street')
+            
+        address = FarmEntityAddress(
+            farm_entity_id=csupplier_id,
+            region_id=cregion,
+            country=ccountry,
+            zone_subcity=czone_subcity,
+            woreda=cworeda,
+            kebele=ckebele,
+            house_number=chouse_no,
+            street_name=cstreet,
+        )
+        address.save()
+
+        messages.success(request, "Supplier Address Added Successfully!")
+        return redirect("/supplier")
+
+    return render(request, 'supplier/supplier_edit.html')
 
 @login_required(login_url='login')
 def request_order(request):
@@ -1739,6 +1997,7 @@ def request_order(request):
 
     return render(request, 'procurement/request_order.html', context)
 
+@login_required(login_url='login')
 def request_order_view(request, order_id):
     order = get_object_or_404(OrderHasItem, order_id=order_id)
     orderdatas = Order.objects.filter(order_id=order_id)
@@ -1787,15 +2046,12 @@ def request_order_edit(request,order_id):
         citem_type=request.POST.get('item_type')
         cquantity=request.POST.get('quantity')
         
-        # Update the attributes
         edit.item_id = citem_name
         edit.type = citem_type
         edit.quantity = cquantity
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Request Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/request_order")
 
     d = OrderHasItem.objects.get(order_id=order_id)
@@ -1825,6 +2081,7 @@ def approve_request(request, order_id):
     try:
         order = Order.objects.get(pk=order_id)
         order.request_approved = 'Approved'
+        order.request_approved_date = datetime.now().date()
         order.save()
         return JsonResponse({'message': 'Order request approved successfully.'})
     except Order.DoesNotExist:
@@ -1834,6 +2091,7 @@ def reject_request(request, order_id):
     try:
         order = Order.objects.get(pk=order_id)
         order.request_approved = 'Rejected'
+        order.request_approved_date = datetime.now().date()
         order.save()
         return JsonResponse({'message': 'Order request rejected successfully.'})
     except Order.DoesNotExist:
@@ -1925,21 +2183,45 @@ def rfq_delete(request, id):
 
 def approve_rfq(request, id):
     try:
-        order = OrderHasItemSupplier.objects.get(pk=id)
-        order.status = 'Approved'
-        order.save()
+        with transaction.atomic():
+            order_item_supplier = OrderHasItemSupplier.objects.get(pk=id)
+            order_item_supplier.status = 'Approved'
+            order_item_supplier.save()
+            
+            order_item = order_item_supplier.order
+            order = order_item.order
+            
+            order.purchase_approved = 'Approved'
+            order.purchase_approved_date = timezone.now()
+            order.save()
+
         return JsonResponse({'message': 'Purchase approved successfully.'})
+    except OrderHasItemSupplier.DoesNotExist:
+        return JsonResponse({'error': 'Order item supplier not found.'}, status=404)
     except Order.DoesNotExist:
         return JsonResponse({'error': 'Order not found.'}, status=404)
 
+
 def reject_rfq(request, id):
     try:
-        order = OrderHasItemSupplier.objects.get(pk=id)
-        order.status = 'Rejected'
-        order.save()
-        return JsonResponse({'message': 'Purchase rejected successfully.'})
+        with transaction.atomic():
+            order_item_supplier = OrderHasItemSupplier.objects.get(pk=id)
+            order_item_supplier.status = 'Rejected'
+            order_item_supplier.save()
+            
+            order_item = order_item_supplier.order
+            order = order_item.order
+            
+            order.purchase_approved = 'Rejected'
+            order.purchase_approved_date = timezone.now()
+            order.save()
+
+        return JsonResponse({'message': 'Purchase approved successfully.'})
+    except OrderHasItemSupplier.DoesNotExist:
+        return JsonResponse({'error': 'Order item supplier not found.'}, status=404)
     except Order.DoesNotExist:
         return JsonResponse({'error': 'Order not found.'}, status=404)
+
 
 @login_required(login_url='login')
 def purchase_order(request):
@@ -1957,6 +2239,8 @@ def generate_purchase_order(request, order_id):
     item_data = Item.objects.all()
     supplier_data = Supplier.objects.all()
     current_date = timezone.now()
+    contact_data = FarmEntityContact.objects.filter(farm_entity__in=[item.supplier.farm_entity_id for item in data])
+    address_data = FarmEntityAddress.objects.filter(farm_entity__in=[item.supplier.farm_entity_id for item in data])
 
     multiplied_values = {}
     total = Decimal(0) 
@@ -1975,6 +2259,8 @@ def generate_purchase_order(request, order_id):
         'multiplied_values': multiplied_values,
         'total': total,  
         'current_date': current_date,
+        'contact_data': contact_data,
+        'address_data': address_data,
     }
 
     return render(request, 'procurement/generate_purchase_order.html', context)
@@ -2422,7 +2708,10 @@ def add_guarantee(request):
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
         cguarantee_type = request.POST.get('guarantee_type')
+        cname = request.POST.get('name')
         csalary_evaluation = request.POST.get('salary_evaluation')
+
+        farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
 
         errors = []
         if csalary_evaluation:
@@ -2440,8 +2729,10 @@ def add_guarantee(request):
             return render(request, 'employee/employee_edit.html', context)
             
         guarantee = Guarantee(
+            farm_entity=farm_entity,
             person_farm_entity_id=cemployee_id,
             guarantee_type_id=cguarantee_type,
+            name=cname,
             salary_evaluation=csalary_evaluation,
         )
         guarantee.save()
@@ -2450,12 +2741,3 @@ def add_guarantee(request):
         return redirect("/employee")
 
     return render(request, 'employee/employee_edit.html')
-
-
-
-
-
-
-
-
-

@@ -1,101 +1,10 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
 class Dashboard:
     amount:int
     description: str
-
-# class ItemType(models.Model):
-#     item_type_id = models.AutoField(primary_key=True)
-#     item_type = models.CharField(max_length=100, null=True)
-#     modified_date = models.DateField(null=True)
-
-#     class Meta:
-#         db_table = 'item_type'
-
-
-class CattleStatus(models.Model):
-    cattle_status_id = models.AutoField(primary_key=True)
-    cattle_status = models.CharField(max_length=100, null=True)
-    modified_date = models.DateTimeField(null=True)
-
-    class Meta:
-        db_table = 'cattle_status'
-
-class CattleBreed(models.Model):
-    cattle_breed_id = models.AutoField(primary_key=True)
-    cattle_breed_type = models.CharField(max_length=100, null=True)
-    cattle_breed_description = models.CharField(max_length=200, null=True)
-    modified_date = models.DateTimeField(null=True)
-
-    class Meta:
-        db_table = 'cattle_breed'
-
-class Cattle(models.Model):
-    cattle_id = models.CharField(max_length=30, primary_key=True)
-    cattle_date_of_birth = models.DateTimeField(null=True)
-    cattle_name = models.CharField(max_length=50, null=True)
-    cattle_gender = models.CharField(max_length=15, null=True)
-    estimated_price = models.FloatField(null=True)
-    cattle_breed = models.ForeignKey(CattleBreed, on_delete=models.CASCADE)
-    cattle_status = models.ForeignKey(CattleStatus, on_delete=models.CASCADE)
-    
-    class Meta:
-        db_table = 'cattle'
-
-class CattlePhoto(models.Model):
-    cattle_photo_id = models.AutoField(primary_key=True)
-    cattle_photo_url = models.CharField(max_length=200, null=True)
-    cattle_photo_description = models.CharField(max_length=200, null=True)
-    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'cattle_photo'
-
-class Vaccine(models.Model):
-    vaccine_id = models.AutoField(primary_key=True)
-    vaccine_name = models.CharField(max_length=45, null=True)
-    vaccine_benefit = models.CharField(max_length=2555, null=True)
-    vaccine_recommended_time = models.CharField(max_length=45, null=True)
-
-    class Meta:
-        db_table = 'vaccine'
-
-class CattleHasVaccine(models.Model):
-    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
-    vaccine = models.ForeignKey(Vaccine, on_delete=models.CASCADE)
-    cattle_given_time = models.DateTimeField(null=True)
-    
-    class Meta:
-        db_table = 'cattle_has_vaccine'
-        # unique_together = ['cattle_id', 'vaccine_id']
-
-class CattlePregnancy(models.Model):
-    cattle_pregnancy_id = models.AutoField(primary_key=True)
-    cattle_pregnancy_type = models.CharField(max_length=45, null=True)
-    cattle_pregnancy_date = models.DateField()
-    cattle_expected_delivery_date = models.DateField(null=True)
-    cattle_pregnancy_status = models.CharField(max_length=45, null=True)
-    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'cattle_pregnancy'
-
-class MilkProduction(models.Model):
-    milk_production_id = models.AutoField(primary_key=True)
-    amount_in_liter = models.FloatField(null=True)
-    milk_time = models.DateTimeField(null=True)
-    fat_content = models.FloatField(null=True)
-    protein_content = models.FloatField(null=True)
-    somatic_cell_count = models.FloatField(null=True)
-    duration_in_min = models.FloatField(null=True)
-    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'milk_production'
-
-
-
 
 class Region(models.Model):
     region_id = models.AutoField(primary_key=True)
@@ -207,6 +116,13 @@ class Employee(models.Model):
     class Meta:
         db_table = 'employee'
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True)
+
+    class Meta:
+        db_table = 'user_profile'
+
 class EmployeeExperience(models.Model):
     experience_id = models.AutoField(primary_key=True)
     company = models.CharField(max_length=100)
@@ -227,10 +143,20 @@ class GuaranteeType(models.Model):
     class Meta:
         db_table = 'guarantee_type'
 
+# class Guarantee(models.Model):
+#     guarantee_id = models.AutoField(primary_key=True)
+#     guarantee_type = models.ForeignKey(GuaranteeType, on_delete=models.CASCADE)
+#     salary_evaluation = models.FloatField(null=True)
+#     person_farm_entity = models.ForeignKey(Employee, on_delete=models.CASCADE)
+
+#     class Meta:
+#         db_table = 'guarantee'
+
 class Guarantee(models.Model):
-    guarantee_id = models.AutoField(primary_key=True)
-    guarantee_type = models.ForeignKey(GuaranteeType, on_delete=models.CASCADE)
+    farm_entity = models.OneToOneField(FarmEntity, on_delete=models.CASCADE, primary_key=True)
+    name = models.CharField(max_length=200)
     salary_evaluation = models.FloatField(null=True)
+    guarantee_type = models.ForeignKey(GuaranteeType, on_delete=models.CASCADE)
     person_farm_entity = models.ForeignKey(Employee, on_delete=models.CASCADE)
 
     class Meta:
@@ -257,6 +183,123 @@ class JobHistory(models.Model):
         db_table = 'job_history'
         unique_together = [('department', 'job', 'employee')]
 
+
+
+
+
+class CattleStatus(models.Model):
+    cattle_status_id = models.AutoField(primary_key=True)
+    cattle_status = models.CharField(max_length=100, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'cattle_status'
+
+class CattleBreed(models.Model):
+    cattle_breed_id = models.AutoField(primary_key=True)
+    cattle_breed_type = models.CharField(max_length=100, null=True)
+    cattle_breed_description = models.CharField(max_length=200, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'cattle_breed'
+
+# class Cattle(models.Model):
+#     cattle_id = models.CharField(max_length=30, primary_key=True)
+#     cattle_date_of_birth = models.DateTimeField(null=True)
+#     cattle_name = models.CharField(max_length=50, null=True)
+#     cattle_gender = models.CharField(max_length=15, null=True)
+#     estimated_price = models.FloatField(null=True)
+#     cattle_breed = models.ForeignKey(CattleBreed, on_delete=models.CASCADE)
+#     cattle_status = models.ForeignKey(CattleStatus, on_delete=models.CASCADE)
+    
+#     class Meta:
+#         db_table = 'cattle'
+
+class Cattle(models.Model):
+    farm_entity = models.OneToOneField(FarmEntity,on_delete=models.CASCADE,primary_key=True)
+    cattle_ear_id = models.CharField(max_length=30, null=True, blank=True)
+    cattle_date_of_birth = models.DateTimeField(null=True, blank=True)
+    cattle_name = models.CharField(max_length=50, null=True, blank=True)
+    cattle_gender = models.CharField(max_length=15, null=True, blank=True)
+    estimated_price = models.FloatField(null=True, blank=True)
+    cattle_breed = models.ForeignKey(CattleBreed,on_delete=models.CASCADE)
+    cattle_status = models.ForeignKey(CattleStatus,on_delete=models.CASCADE) 
+
+    class Meta:
+        db_table = 'cattle'
+
+class CattlePhoto(models.Model):
+    cattle_photo_id = models.AutoField(primary_key=True)
+    cattle_photo_url = models.CharField(max_length=200, null=True)
+    cattle_photo_description = models.CharField(max_length=200, null=True)
+    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'cattle_photo'
+
+class Vaccine(models.Model):
+    vaccine_id = models.AutoField(primary_key=True)
+    vaccine_name = models.CharField(max_length=45, null=True)
+    vaccine_benefit = models.CharField(max_length=2555, null=True)
+    vaccine_recommended_time = models.CharField(max_length=45, null=True)
+
+    class Meta:
+        db_table = 'vaccine'
+
+class CattleHasVaccine(models.Model):
+    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
+    vaccine = models.ForeignKey(Vaccine, on_delete=models.CASCADE)
+    cattle_given_time = models.DateTimeField(null=True)
+    
+    class Meta:
+        db_table = 'cattle_has_vaccine'
+        # unique_together = ['cattle_id', 'vaccine_id']
+
+# class CattlePregnancy(models.Model):
+#     cattle_pregnancy_id = models.AutoField(primary_key=True)
+#     cattle_pregnancy_type = models.CharField(max_length=45, null=True)
+#     cattle_pregnancy_date = models.DateField()
+#     cattle_expected_delivery_date = models.DateField(null=True)
+#     cattle_pregnancy_status = models.CharField(max_length=45, null=True)
+#     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
+
+#     class Meta:
+#         db_table = 'cattle_pregnancy'
+class PregnancyStatus(models.Model):
+    pregnancy_status_id = models.AutoField(primary_key=True)
+    pregnancy_status = models.CharField(max_length=100, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'pregnancy_status'
+
+class CattlePregnancy(models.Model):
+    cattle_pregnancy_id = models.AutoField(primary_key=True)
+    cattle_pregnancy_type = models.CharField(max_length=45, null=True)
+    cattle_pregnancy_date = models.DateField()
+    is_active = models.CharField(max_length=10, null=True)
+    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
+    pregnancy_status = models.ForeignKey(PregnancyStatus, on_delete=models.CASCADE)
+    check_by = models.ForeignKey(Person, on_delete=models.CASCADE, null=True)
+    data_encoded_by = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True)
+
+    class Meta:
+        db_table = 'cattle_pregnancy'
+
+class MilkProduction(models.Model):
+    milk_production_id = models.AutoField(primary_key=True)
+    amount_in_liter = models.FloatField(null=True)
+    milk_time = models.DateTimeField(null=True)
+    fat_content = models.FloatField(null=True)
+    protein_content = models.FloatField(null=True)
+    somatic_cell_count = models.FloatField(null=True)
+    duration_in_min = models.FloatField(null=True)
+    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'milk_production'
+
 class Medicine(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=200, null=True) 
@@ -270,7 +313,7 @@ class CattleHealthCheckup(models.Model):
     id = models.AutoField(primary_key=True)
     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
     findings = models.CharField(max_length=255, null=True)
-    checked_by = models.ForeignKey(Person, on_delete=models.CASCADE)
+    checked_by = models.ForeignKey(Person, on_delete=models.CASCADE, null=True)
     data_encoded_by = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True)
 
     class Meta:

@@ -66,7 +66,15 @@
                 {% comment %} <input type="text" id="inputName" name="cattle_id" class="form-control"> {% endcomment %}
                 <select id="inputStatus" name="cattle_id" class="form-control custom-select">
                   {% for d in data1 %}
-                  <option value="{{d.cattle_id}}">{{ d.cattle_name}}</option>
+                  <option value="{{d.farm_entity_id}}">{{ d.cattle_name}}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="inputName">Pregnancy Status</label>
+                <select id="inputStatus" name="pregnancy_status" class="form-control custom-select">
+                  {% for d in data2 %}
+                  <option value="{{d.pregnancy_status_id}}">{{ d.pregnancy_status}}</option>
                   {% endfor %}
                 </select>
               </div>

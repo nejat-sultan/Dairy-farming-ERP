@@ -76,7 +76,7 @@
                   {% comment %} <input type="text" id="inputName" name="cattle_id" value="{{d.cattle_id}}" class="form-control"> {% endcomment %}
                   <select id="inputStatus" name="cattle_id" class="form-control custom-select">
                     {% for d in cattles %} 
-                      <option value="{{d.cattle_id}}" {% if d.cattle_id == cattle.cattle_id %} selected {% endif %}>
+                      <option value="{{d.farm_entity_id}}" {% if d.farm_entity_id == cattle.cattle_id %} selected {% endif %}>
                         {{ d.cattle_name }}
                       </option>
                     {% endfor %}

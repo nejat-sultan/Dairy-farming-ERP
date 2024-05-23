@@ -245,8 +245,8 @@
                     </div>  {% endcomment %}
 
                     <div class="product-img">
-                      {% if cattle_photos.d.cattle_id %}
-                          <img src="{{ cattle_photos.d.cattle_id }}" alt="Cattle Photo" class="img-size-50">
+                      {% if cattle_photos.d.farm_entity_id %}
+                          <img src="{{ cattle_photos.d.farm_entity_id }}" alt="Cattle Photo" class="img-size-50">
                       {% else %}
                           <img src="{% static 'dist/img/dairy1.jpg' %}" class="img-size-50">
                       {% endif %}

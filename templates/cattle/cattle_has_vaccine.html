@@ -82,7 +82,7 @@
                       </td>
                       <td>
                         {% for cattle in cattle %}
-                          {% if cattle.cattle_id == d.cattle_id %}
+                          {% if cattle.farm_entity_id == d.cattle_id %}
                             {{ cattle.cattle_name }}
                           {% endif %}
                         {% endfor %}

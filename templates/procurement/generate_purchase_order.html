@@ -54,34 +54,45 @@
                   Email: info@almasaeedstudio.com {% endcomment %}
                 </address>
               </div>
-              <!-- /.col -->
+    
               <div class="col-sm-4 invoice-col">
                 To
                 <address>
-                  {% comment %} {% for item in data %}
-                    <strong>{{ item.supplier.supplier_name }}</strong><br>
-                  {% endfor %} {% endcomment %}
+                    {% for item in data %}
+                        {% ifchanged item.supplier.supplier_name %}
+                            <strong>{{ item.supplier.supplier_name }}</strong><br>
+                            {% for contact in contact_data %}
+                                {% if contact.farm_entity_id == item.supplier.farm_entity_id %}
+                                {{ contact.contact }}<br>
+                                {% endif %}
+                            {% endfor %}
 
-                  {% for item in data %}
-                    {% ifchanged item.supplier.supplier_name %}
-                        <strong>{{ item.supplier.supplier_name }}</strong><br>
-                    {% endifchanged %}
-                {% endfor %}
+                            {% for address in address_data %}
+                                {% if address.farm_entity_id == item.supplier.farm_entity_id %}
+                                {{ address.country }}({{ address.region.region }},{{ address.zone_subcity }})<br>
+                                {% endif %}
+                            {% endfor %}
+                        {% endifchanged %}
+                    {% endfor %}
+                    
                 </address>
-              </div>
+            </div>
+            
               <!-- /.col -->
               <div class="col-sm-4 invoice-col">
+                {% for item in data %}
+                {% ifchanged item.supplier.supplier_name %}
+                <strong> Account:</strong>{{ item.supplier.account_number }}<br>
                 {% comment %} <b>Invoice #007612</b><br>
                 <br>
                 <b>Order ID:</b> 4F3S8J<br>
                 <b>Payment Due:</b> 2/22/2014<br>
                 <b>Account:</b> 968-34567 {% endcomment %}
+                {% endifchanged %}
+                {% endfor %}
               </div>
-              <!-- /.col -->
             </div>
-            <!-- /.row -->
 
-            <!-- Table row -->
             <div class="row">
               <div class="col-12 table-responsive">
                 <table class="table table-striped projects">

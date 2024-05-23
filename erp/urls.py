@@ -8,13 +8,20 @@ urlpatterns = [
     path('register', views.register, name='register'),
     path('login', views.login_page, name='login'),
     path('logout', views.logout_user, name='logout'),
-    path('user', views.user_page, name='user'),
+    path('user', views.user, name='user'),
+    path('edit_user/<int:user_id>/', views.edit_user, name='edit_user'),
+    path('user_delete/<str:id>', views.user_delete),
+    path('group', views.group, name='group'),
+    path('create_group', views.create_group, name='create_group'),
+    path('edit_group/<int:id>/', views.edit_group, name='edit_group'),
+    path('group_delete/<str:id>', views.group_delete),
+    path('assign_users_to_group/<str:user_id>/', views.assign_users_to_group, name='assign_users_to_group'),
 
     path('cattle', views.cattle),
     path('cattle_add', views.cattle_add),
-    path('cattle_view/<str:cattle_id>', views.cattle_view, name='cattle_view'),
-    path('cattle_edit/<str:cattle_id>', views.cattle_edit, name='cattle_edit'),
-    path('cattle_delete/<str:cattle_id>', views.cattle_delete),
+    path('cattle_view/<str:farm_entity_id>', views.cattle_view, name='cattle_view'),
+    path('cattle_edit/<str:farm_entity_id>', views.cattle_edit, name='cattle_edit'),
+    path('cattle_delete/<str:farm_entity_id>', views.cattle_delete),
 
     path('cattle_status', views.cattle_status),
     path('cattle_status_add', views.cattle_status_add),
@@ -25,6 +32,11 @@ urlpatterns = [
     path('cattle_breed_add', views.cattle_breed_add),
     path('cattle_breed_edit/<str:cattle_breed_id>', views.cattle_breed_edit, name='cattle_breed_edit'),
     path('cattle_breed_delete/<str:cattle_breed_id>', views.cattle_breed_delete),
+
+    path('pregnancy_status', views.pregnancy_status),
+    path('pregnancy_status_add', views.pregnancy_status_add),
+    path('pregnancy_status_edit/<str:pregnancy_status_id>', views.pregnancy_status_edit, name='pregnancy_status_edit'),
+    path('pregnancy_status_delete/<str:pregnancy_status_id>', views.pregnancy_status_delete),
 
     path('cattle_pregnancy', views.cattle_pregnancy),
     path('cattle_pregnancy_add', views.cattle_pregnancy_add),
@@ -47,14 +59,14 @@ urlpatterns = [
     path('medicine_delete/<str:id>', views.medicine_delete),
 
     path('cattle_health_checkup', views.cattle_health_checkup),
+    path('cattle_health_checkup_view/<str:id>', views.cattle_health_checkup_view, name='cattle_health_checkup_view'),
     path('cattle_health_checkup_add', views.cattle_health_checkup_add),
     path('cattle_health_checkup_edit/<str:id>', views.cattle_health_checkup_edit, name='cattle_health_checkup_edit'),
     path('cattle_health_checkup_delete/<str:id>', views.cattle_health_checkup_delete), 
 
-    path('checkup_medicine', views.checkup_medicine),
     path('checkup_medicine_add/<int:id>/', views.checkup_medicine_add, name='checkup_medicine_add'),
-    # path('checkup_medicine_edit/<str:id>', views.checkup_medicine_edit, name='checkup_medicine_edit'),
-    # path('checkup_medicine_delete/<str:id>', views.checkup_medicine_delete), 
+    path('checkup_medicine_edit/<str:id>', views.checkup_medicine_edit, name='checkup_medicine_edit'),
+    path('checkup_medicine_delete/<str:id>', views.checkup_medicine_delete), 
 
     path('milk_production', views.milk_production),
     path('milk_production_add', views.milk_production_add),
@@ -127,6 +139,8 @@ urlpatterns = [
     path('supplier_add', views.supplier_add),
     path('supplier_edit/<str:farm_entity_id>', views.supplier_edit, name='supplier_edit'),
     path('supplier_delete/<str:farm_entity_id>', views.supplier_delete),
+    path('add_supplier_contact', views.add_supplier_contact),
+    path('add_supplier_address', views.add_supplier_address),
 
     path('request_order', views.request_order),
     path('request_order_view/<str:order_id>', views.request_order_view, name='request_order_view'),
