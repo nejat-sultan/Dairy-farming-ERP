@@ -115,6 +115,14 @@ urlpatterns = [
     path('shift_edit/<str:shift_id>', views.shift_edit, name='shift_edit'),
     path('shift_delete/<str:shift_id>', views.shift_delete),
 
+    path('leave', views.leave),
+    path('leave_add', views.leave_add),
+    path('leave_view/<str:leave_id>', views.leave_view, name='leave_view'),
+    path('leave_edit/<str:leave_id>', views.leave_edit, name='leave_edit'),
+    path('leave_delete/<str:leave_id>', views.leave_delete),
+    path('approve_leave/<int:leave_id>/', views.approve_leave, name='approve_leave'),
+    path('reject_leave/<int:leave_id>/', views.reject_leave, name='reject_leave'),
+
     path('job', views.job),
     path('job_add', views.job_add),
     path('job_edit/<str:job_id>', views.job_edit, name='job_edit'),
@@ -160,6 +168,18 @@ urlpatterns = [
     path('purchase_order', views.purchase_order),
     path('generate_purchase_order/<str:order_id>', views.generate_purchase_order, name='generate_purchase_order'),
 
+    path('approve_inventory/<int:order_id>/', views.approve_inventory, name='approve_inventory'),
+    path('reject_inventory/<int:order_id>/', views.reject_inventory, name='reject_inventory'),
+    path('stock_in', views.stock_in),
+    path('stockin_add', views.stockin_add),
+    path('stockin_edit/<int:inventory_id>', views.stockin_edit, name='stockin_edit'),
+    path('stockin_delete/<int:inventory_id>', views.stockin_delete),
+
+    path('item_measurement', views.item_measurement),
+    path('item_measurement_add', views.item_measurement_add),
+    path('item_measurement_edit/<int:id>', views.item_measurement_edit, name='item_measurement_edit'),
+    path('item_measurement_delete/<int:id>', views.item_measurement_delete),
+
     path('employee', views.employee),
     path('employee_add', views.employee_add),
     path('employee_edit/<int:farm_entity_id>/', views.employee_edit, name='employee_edit'),
@@ -175,6 +195,7 @@ urlpatterns = [
     path('add_address', views.add_address),
     path('add_experience', views.add_experience),
     path('add_guarantee', views.add_guarantee),
+    path('add_jobhistory', views.add_jobhistory),
 
 
 ]

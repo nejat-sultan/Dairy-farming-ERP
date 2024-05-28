@@ -172,17 +172,29 @@ class Shift(models.Model):
         db_table = 'shift'
 
 class JobHistory(models.Model):
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
-    job = models.ForeignKey(Job, on_delete=models.CASCADE)
+    id = models.AutoField(primary_key=True)
+    person_farm_entity = models.ForeignKey(Employee, null=True, on_delete=models.CASCADE)
+    job = models.ForeignKey(Job, null=True, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, null=True, on_delete=models.CASCADE)
     start_date = models.DateField(null=True)
     end_date = models.DateField(null=True)
     salary = models.FloatField(null=True)
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    promotion_or_demotion = models.CharField(max_length=45, null=True)
 
-    class Meta: 
+    class Meta:
         db_table = 'job_history'
-        unique_together = [('department', 'job', 'employee')]
 
+class EmployeeLeave(models.Model):
+    leave_id = models.AutoField(primary_key=True)
+    start_date = models.DateTimeField(null=True)
+    end_date = models.DateTimeField(null=True)
+    reason = models.CharField(max_length=100, null=True)
+    approval_status = models.CharField(max_length=45, null=True)
+    person_farm_entity = models.ForeignKey(Employee, null=True, on_delete=models.CASCADE, related_name='leaves')
+    approved_by_farm_entity = models.ForeignKey(Employee, null=True, on_delete=models.SET_NULL, related_name='approved_leaves')
+
+    class Meta:
+        db_table = 'employee_leave'
 
 
 
@@ -386,6 +398,15 @@ class Supplier(models.Model):
     class Meta:
         db_table = 'supplier'
 
+class ItemMeasurement(models.Model):
+    id = models.AutoField(primary_key=True)
+    measurement = models.CharField(max_length=100)
+    description = models.CharField(max_length=200, null=True, blank=True)
+    modified_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'item_measurement'
+
 class Order(models.Model):
     order_id = models.AutoField(primary_key=True)
     requested_by = models.ForeignKey(Employee, on_delete=models.CASCADE,null=True, related_name='requested_orders')
@@ -409,7 +430,7 @@ class OrderHasItem(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     type = models.CharField(max_length=45, null=True)
     quantity = models.CharField(max_length=45, null=True)
-    measurement = models.CharField(max_length=45, null=True)
+    item_measurement = models.ForeignKey(ItemMeasurement, null=True, on_delete=models.SET_NULL)
     extra_charges = models.FloatField(null=True)
     extracharge_reasons = models.CharField(max_length=150, null=True)
     taxes_in_percent = models.FloatField(null=True)
@@ -433,18 +454,19 @@ class OrderHasItemSupplier(models.Model):
         db_table = 'order_has_item_supplier'
         # unique_together = ('order', 'item', 'supplier')
 
-class Inventory(models.Model):
+class ItemInventory(models.Model):
     inventory_id = models.AutoField(primary_key=True)
-    quantity = models.CharField(max_length=45, null=True)
-    unit_price = models.CharField(max_length=45, null=True)
-    measurement = models.CharField(max_length=100, null=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    order = models.ForeignKey(Order, null=True, on_delete=models.SET_NULL)
+    quantity = models.CharField(max_length=45)
+    unit_price = models.CharField(max_length=45, null=True)
     type = models.CharField(max_length=45, null=True)
     description = models.CharField(max_length=200, null=True)
     modified_date = models.DateTimeField(null=True)
+    item_measurement = models.ForeignKey(ItemMeasurement, null=True, on_delete=models.SET_NULL)
 
     class Meta:
-        db_table = 'inventory'
+        db_table = 'item_inventory'
 
 
 class SaleType(models.Model):

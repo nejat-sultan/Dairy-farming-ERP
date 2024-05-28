@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, Employee, EmployeeExperience, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, Job, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Supplier, SupplierType, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, ItemInventory, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Supplier, SupplierType, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -153,7 +153,7 @@ def assign_users_to_group(request, user_id):
         return redirect('user')  
     
     return render(request, 'auth/assign_users_to_group.html', {'user': user, 'groups': groups})
-
+from django.contrib.auth.hashers import make_password
 @unauthenticated_user
 def login_page(request):
    
@@ -169,9 +169,13 @@ def login_page(request):
         else:
             messages.error(request, "Username or password is incorrect!")
             return render(request, 'auth/login.html')
-
+        
+    hashed_password = make_password('admin@admin')
+    print(hashed_password)
+    
     context = {}
     return render(request, 'auth/login.html', context)
+
 
 def logout_user(request):
     logout(request)
@@ -1992,8 +1996,9 @@ def request_order(request):
     data = OrderHasItem.objects.all()
     orderdatas = Order.objects.all()
     item_data = Item.objects.all()
+    measurement_data = ItemMeasurement.objects.all()
 
-    context = {"data1":data,'orderdatas': orderdatas,'item_data': item_data,}
+    context = {"data1":data,'orderdatas': orderdatas,'item_data': item_data, 'measurement_data': measurement_data}
 
     return render(request, 'procurement/request_order.html', context)
 
@@ -2016,6 +2021,7 @@ def request_order_add(request):
         citem_name=request.POST.get('item_name')
         citem_type=request.POST.get('item_type')
         cquantity=request.POST.get('quantity')
+        citem_measurement_id=request.POST.get('item_measurement_id')
 
         # Add requested_date to the order object
         order.requested_date = datetime.now().date()
@@ -2024,15 +2030,16 @@ def request_order_add(request):
         order.inventory_approved = 'Pending'
         order.save()
 
-        query = OrderHasItem.objects.create(order=order, item_id=citem_name, type=citem_type,quantity=cquantity)
+        query = OrderHasItem.objects.create(order=order, item_id=citem_name, type=citem_type, item_measurement_id=citem_measurement_id, quantity=cquantity)
         query.save()
         messages.success(request, "Order Request Added Successfully!")
         return redirect("/request_order")
-    
-        
+     
     item_data = Item.objects.all()
+    measurement_data = ItemMeasurement.objects.all()
     context = {
         'data1': item_data,
+          'data2': measurement_data,
     }
 
     return render(request, 'procurement/request_order_add.html', context)
@@ -2044,10 +2051,12 @@ def request_order_edit(request,order_id):
     if request.method == "POST":
         citem_name=request.POST.get('item_name')
         citem_type=request.POST.get('item_type')
+        citem_measurement_id=request.POST.get('item_measurement_id')
         cquantity=request.POST.get('quantity')
         
         edit.item_id = citem_name
         edit.type = citem_type
+        edit.item_measurement_id = citem_measurement_id
         edit.quantity = cquantity
         
         edit.save()
@@ -2056,7 +2065,8 @@ def request_order_edit(request,order_id):
 
     d = OrderHasItem.objects.get(order_id=order_id)
     data1 = Item.objects.all()
-    context = {"d": d, "item": edit, "data1": data1}
+    data2 = ItemMeasurement.objects.all()
+    context = {"d": d, "item": edit, "data1": data1, "data2": data2,}
 
     return render(request, 'procurement/request_order_edit.html', context)
 
@@ -2228,8 +2238,9 @@ def purchase_order(request):
     approved_supp = OrderHasItemSupplier.objects.filter(status='approved').values('supplier_id', 'order_id', 'item_id', 'quantity', 'price', 'status', 'modified_date').distinct()
     item_data = Item.objects.all()
     supplier_data = Supplier.objects.all()
+    inventory_data = Order.objects.all()
     
-    context = {"approved_supp": approved_supp, 'item_data': item_data, 'supplier_data': supplier_data,}
+    context = {"approved_supp": approved_supp, 'item_data': item_data, 'supplier_data': supplier_data, 'inventory_data': inventory_data}
 
     return render(request, 'procurement/purchase_order.html', context)
 
@@ -2265,6 +2276,209 @@ def generate_purchase_order(request, order_id):
 
     return render(request, 'procurement/generate_purchase_order.html', context)
 
+# def approve_inventory(request, order_id):
+#     try:
+#         order = get_object_or_404(Order, pk=order_id)
+        
+#         order.inventory_approved = 'Approved'
+#         order.inventory_approved_date = timezone.now()
+#         order.save()
+
+#         for order_item in order.orderhasitem_set.all():
+#             item_measurement = order_item.item_measurement
+#             inventory_item, created = ItemInventory.objects.get_or_create(
+#                 item=order_item.item,
+#                 order=order,
+#                 defaults={
+#                     'quantity': order_item.quantity,
+#                     'unit_price': None, 
+#                     'type': order_item.type,
+#                     'description': None, 
+#                     'modified_date': timezone.now(),
+#                     'item_measurement': item_measurement,
+#                 }
+#             )
+
+#             if not created:
+#                 new_quantity = int(inventory_item.quantity) + int(order_item.quantity)
+#                 inventory_item.quantity = str(new_quantity)
+#                 inventory_item.modified_date = timezone.now()
+#                 inventory_item.save()
+
+#         return JsonResponse({'message': 'Inventory approved successfully.'})
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+
+def approve_inventory(request, order_id):
+    try:
+        order = get_object_or_404(Order, pk=order_id)
+        
+        order.inventory_approved = 'Approved'
+        order.inventory_approved_date = timezone.now()
+        order.save()
+
+        order_items = OrderHasItem.objects.filter(order=order)
+
+        for order_item in order_items:
+            order_item_suppliers = OrderHasItemSupplier.objects.filter(order=order_item)
+
+            for order_item_supplier in order_item_suppliers:
+                item_measurement = order_item.item_measurement
+                quantity = int(order_item_supplier.quantity)
+                item_type = order_item.type
+
+                existing_inventory_item = ItemInventory.objects.filter(
+                    item=order_item_supplier.item,
+                    order=order
+                ).first()
+
+                if existing_inventory_item:
+                    existing_inventory_item.quantity = str(int(existing_inventory_item.quantity) + quantity)
+                    existing_inventory_item.modified_date = timezone.now()
+                    existing_inventory_item.save()
+                else:
+                    ItemInventory.objects.create(
+                        item=order_item_supplier.item,
+                        order=order,
+                        quantity=quantity,
+                        unit_price=None,
+                        type=item_type,
+                        description=None,
+                        modified_date=timezone.now(),
+                        item_measurement=item_measurement,
+                    )
+
+        return JsonResponse({'message': 'Inventory approved successfully.'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def reject_inventory(request, order_id):
+    try:
+        order = get_object_or_404(Order, pk=order_id)
+        order.inventory_approved = 'Rejected'
+        order.save()
+        return JsonResponse({'message': 'Inventory rejected successfully.'})
+    except Exception as e:
+        messages.error(request, str(e))
+        return redirect("/purchase_order")
+
+@login_required(login_url='login')
+def item_measurement(request):
+    data = ItemMeasurement.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'inventory/item_measurement.html', context)
+
+@login_required(login_url='login')
+def item_measurement_add(request):
+    if request.method=="POST":
+        cmeasurement=request.POST.get('measurement')
+        cdescription=request.POST.get('description')
+        cdate = datetime.now().date()
+
+        query = ItemMeasurement(measurement=cmeasurement, description=cdescription, modified_date=cdate)
+        query.save()
+        messages.success(request, "Item Measurement Added Successfully!")
+        return redirect("/item_measurement")
+
+    return render(request, 'inventory/item_measurement_add.html')
+
+@login_required(login_url='login')
+def item_measurement_edit(request,id):
+    edit = ItemMeasurement.objects.get(id=id)
+    
+    if request.method == "POST":
+        cmeasurement=request.POST.get('measurement')
+        cdescription=request.POST.get('description')
+        cdate = datetime.now().date()
+        
+        edit.measurement = cmeasurement
+        edit.description = cdescription
+        edit.modified_date = cdate
+        
+        edit.save()
+        messages.warning(request, "Item Measurement Updated Successfully!")
+        return redirect("/item_measurement")
+
+    d = ItemMeasurement.objects.get(id=id)
+    context = {"d": d}
+
+    return render(request, 'inventory/item_measurement_edit.html', context)
+
+def item_measurement_delete(request, id):
+    d = ItemMeasurement.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Item Measurement Deleted Successfully!")
+    return redirect("/item_measurement")
+
+
+@login_required(login_url='login')
+def stock_in(request):
+    data = ItemInventory.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'inventory/stock_in.html', context)
+
+
+@login_required(login_url='login')
+def stockin_add(request):
+    if request.method=="POST":
+        cquantity=request.POST.get('quantity')
+        ctype=request.POST.get('type')
+        citem_id=request.POST.get('item_id')
+        citem_measurement_id=request.POST.get('item_measurement_id')
+        cmodified_date = datetime.now().date()
+
+        query = ItemInventory(quantity=cquantity, type=ctype, item_id=citem_id, item_measurement_id=citem_measurement_id, modified_date=cmodified_date)
+        query.save()
+        messages.success(request, "Added to Stock Successfully!")
+        return redirect("/stock_in")
+    
+    item_data = Item.objects.all()
+    measurement_data = ItemMeasurement.objects.all()
+    context = {
+        'data1': item_data,
+        'data2': measurement_data,
+    }
+
+    return render(request, 'inventory/stockin_add.html', context)
+
+@login_required(login_url='login')
+def stockin_edit(request,inventory_id):
+    edit = ItemInventory.objects.get(inventory_id=inventory_id)
+    
+    if request.method == "POST":
+        cquantity=request.POST.get('quantity')
+        ctype=request.POST.get('type')
+        citem_id=request.POST.get('item_id')
+        citem_measurement_id=request.POST.get('item_measurement_id')
+        cmodified_date = datetime.now().date()
+        
+        edit.quantity = cquantity
+        edit.type = ctype
+        edit.item_id = citem_id
+        edit.item_measurement_id = citem_measurement_id
+        edit.modified_date = cmodified_date
+        
+        edit.save()
+        messages.warning(request, "Stock Updated Successfully!")
+        return redirect("/stock_in")
+
+    d = ItemInventory.objects.get(inventory_id=inventory_id)
+    data1 = Item.objects.all()
+    data2 = ItemMeasurement.objects.all()
+        
+    context = {"d": d, "item": edit, "data1": data1, "data2": data2,}
+
+    return render(request, 'inventory/stockin_edit.html', context)
+
+def stockin_delete(request, inventory_id):
+    d = ItemInventory.objects.get(inventory_id=inventory_id)
+    d.delete()
+    messages.error(request, "Stock Deleted Successfully!")
+    return redirect("/stock_in")
+
 
 @login_required(login_url='login')
 def department(request):
@@ -2291,14 +2505,10 @@ def department_edit(request,department_id):
     
     if request.method == "POST":
         cdepartment=request.POST.get('department')
-        
-        # Update the attributes
+
         edit.department_name = cdepartment
-        
-        # Save the changes
         edit.save()
         messages.warning(request, "Department Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/department")
 
     d = Department.objects.get(department_id=department_id)
@@ -2328,6 +2538,8 @@ def employee_view(request, farm_entity_id):
     experience = EmployeeExperience.objects.filter(person_farm_entity=employee)
     contact = FarmEntityContact.objects.filter(farm_entity=farm_entity)
     address = FarmEntityAddress.objects.filter(farm_entity=farm_entity)
+    guarantee = Guarantee.objects.filter(person_farm_entity=employee)
+    jobhistory = JobHistory.objects.filter(person_farm_entity=employee)
 
     context = {
         'person': person,
@@ -2336,6 +2548,8 @@ def employee_view(request, farm_entity_id):
         'experience': experience,
         'contact': contact,
         'address': address,
+        'jobhistory': jobhistory,
+        'guarantee': guarantee,
     }
 
     return render(request, 'employee/employee_view.html', context)
@@ -2354,6 +2568,7 @@ def employee_add(request):
         cdepartment = request.POST.get('department')
         csalary = request.POST.get('salary')
         chire_data = request.POST.get('hire_date')
+        cavailableleavehours = 384
         cnational_id = request.POST.get('national_id')
         ccontract_type = request.POST.get('contract_type')
         ccontract_period = request.POST.get('contract_period')
@@ -2432,6 +2647,7 @@ def employee_add(request):
             person_farm_entity=person,
             salary=csalary,
             hire_date=chire_data,
+            available_leave_hours=cavailableleavehours,
             national_id=cnational_id,
             contract_type=ccontract_type,
             contract_period_in_month=ccontract_period,
@@ -2741,3 +2957,165 @@ def add_guarantee(request):
         return redirect("/employee")
 
     return render(request, 'employee/employee_edit.html')
+
+@login_required(login_url='login')
+def add_jobhistory(request):
+    if request.method == 'POST':
+        cemployee_id = request.POST.get('employee_id')
+        cjob_id = request.POST.get('job_id')
+        cdepartment_id = request.POST.get('department_id')
+        cstart_date = request.POST.get('start_date')
+        cend_date = request.POST.get('end_date')
+        csalary = request.POST.get('salary')
+        cpromotion_or_demotion = request.POST.get('promotion_or_demotion')
+
+        errors = []
+        if csalary:
+            try:
+                csalary = float(csalary)
+            except ValueError:
+                errors.append('Salary must be a number.')
+        else:
+            csalary = None 
+
+        if cstart_date:
+            parsed_start_date = parse_date(cstart_date)
+            if not parsed_start_date:
+                errors.append('Start date must be in YYYY-MM-DD format.')
+            else:
+                cstart_date = parsed_start_date
+        else:
+            cstart_date = None 
+            
+        if cend_date:
+            parsed_end_date = parse_date(cend_date)
+            if not parsed_end_date:
+                errors.append('End date must be in YYYY-MM-DD format.')
+            else:
+                cend_date = parsed_end_date
+        else:
+            cend_date = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+            }
+            return render(request, 'employee/employee_edit.html', context)
+
+        jobhistory = JobHistory(
+            person_farm_entity_id=cemployee_id,
+            job_id=cjob_id,
+            department_id=cdepartment_id,
+            start_date=cstart_date,
+            end_date=cend_date,
+            salary=csalary,
+            promotion_or_demotion=cpromotion_or_demotion,
+        )
+        jobhistory.save()
+
+        messages.success(request, "Employee Job History Added Successfully!")
+        return redirect("/employee")
+
+    return render(request, 'employee/employee_edit.html')
+
+@login_required(login_url='login')
+def leave(request):
+    data = EmployeeLeave.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'employee/leave.html', context)
+
+@login_required(login_url='login')
+def leave_view(request, leave_id):
+    leave = get_object_or_404(EmployeeLeave, leave_id=leave_id)
+    context = {"leave":leave}
+
+    return render(request, 'employee/leave_view.html', context)
+
+
+@login_required(login_url='login')
+def leave_add(request):
+    if request.method=="POST":
+        cstart_date=request.POST.get('start_date')
+        cend_date=request.POST.get('end_date')
+        creason=request.POST.get('reason')
+        capproval_status='Pending'
+
+        user_profile = UserProfile.objects.get(user=request.user)
+        cperson_farm_entity_id = user_profile.employee_id
+
+        query = EmployeeLeave.objects.create(start_date=cstart_date, end_date=cend_date, reason=creason,approval_status=capproval_status, person_farm_entity_id=cperson_farm_entity_id)
+        query.save()
+        messages.success(request, "Leave Request Added Successfully!")
+        return redirect("/leave")
+
+    return render(request, 'employee/leave_add.html')
+
+@login_required(login_url='login')
+def leave_edit(request,leave_id):
+    edit = EmployeeLeave.objects.get(leave_id=leave_id)
+    
+    if request.method == "POST":
+        cstart_date=request.POST.get('start_date')
+        cend_date=request.POST.get('end_date')
+        creason=request.POST.get('reason')
+        
+        edit.start_date = cstart_date
+        edit.end_date = cend_date
+        edit.reason = creason
+        
+        edit.save()
+        messages.warning(request, "Request Updated Successfully!")
+        return redirect("/leave")
+
+    d = EmployeeLeave.objects.get(leave_id=leave_id)
+    context = {"d": d,}
+
+    return render(request, 'employee/leave_edit.html', context)
+
+def leave_delete(request, leave_id):
+    d = EmployeeLeave.objects.get(leave_id=leave_id)
+    d.delete()
+    messages.error(request, "Request Deleted Successfully!")
+    return redirect("/leave")
+
+# def approve_leave(request, leave_id):
+#     try:
+#         leave = EmployeeLeave.objects.get(pk=leave_id)
+#         leave.approval_status = 'Approved'
+#         leave.save()
+#         return JsonResponse({'message': 'Leave request approved successfully.'})
+#     except EmployeeLeave.DoesNotExist:
+#         return JsonResponse({'error': 'Leave not found.'}, status=404)
+
+def approve_leave(request, leave_id):
+    try:
+        leave = EmployeeLeave.objects.get(pk=leave_id)
+    
+        start_date = leave.start_date
+        end_date = leave.end_date
+        leave_duration = (end_date - start_date).total_seconds() / 3600 
+        
+        employee = leave.person_farm_entity
+        if employee.available_leave_hours is not None:
+            employee.available_leave_hours -= leave_duration
+            employee.save()
+        
+        leave.approval_status = 'Approved'
+        leave.save()
+        
+        return JsonResponse({'message': 'Leave request approved successfully.'})
+    except EmployeeLeave.DoesNotExist:
+        return JsonResponse({'error': 'Leave not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+def reject_leave(request, leave_id):
+    try:
+        leave = EmployeeLeave.objects.get(pk=leave_id)
+        leave.approval_status = 'Rejected'
+        leave.save()
+        return JsonResponse({'message': 'Leave request Rejected successfully.'})
+    except EmployeeLeave.DoesNotExist:
+        return JsonResponse({'error': 'Leave not found.'}, status=404)

@@ -12,7 +12,7 @@
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item"><a href="">Home</a></li>
               <li class="breadcrumb-item active">Order Request</li>
             </ol>
           </div>
@@ -57,15 +57,18 @@
                           Item
                       </th>
                       <th style="width: 15%">
+                        Measurement
+                      </th>
+                      <th style="width: 15%">
                           Requested Date
                       </th>
                       <th style="width: 10%">
                           Quantity
                       </th>
-                      <th style="width: 25%">
+                      <th style="width: 15%">
                           Status
                       </th>
-                      <th style="width: 30%"> </th>
+                      <th style="width: 25%"> </th>
                   </tr> 
               </thead>
               <tbody>
@@ -78,6 +81,13 @@
                         {% for item in item_data %}
                           {% if item.item_id == d.item_id %}
                             {{ item.name }}
+                          {% endif %}
+                        {% endfor %}
+                      </td>
+                      <td>
+                        {% for measure in measurement_data %}
+                          {% if measure.id == d.item_measurement_id %}
+                            {{ measure.measurement }}
                           {% endif %}
                         {% endfor %}
                       </td>

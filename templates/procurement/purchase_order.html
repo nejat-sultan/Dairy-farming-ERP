@@ -14,7 +14,7 @@
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item"><a href="">Home</a></li>
               <li class="breadcrumb-item active">Purchase Order</li>
             </ol>
           </div>
@@ -57,19 +57,18 @@
                       <th style="width: 10%">
                         Item 
                       </th>
-                      <th style="width: 10%">
+                      <th style="width: 15%">
                         Order 
                       </th>
-                      <th style="width: 10%">
+                      <th style="width: 15%">
                         Quantity 
                       </th>
-                      <th style="width: 10%">
+                      <th style="width: 15%">
                         Price
                       </th>
-                      <th style="width: 15%">
+                      {% comment %} <th style="width: 15%">
                         Status
-                      </th>
-
+                      </th> {% endcomment %}
                       <th style="width: 30%"> Actions </th>
                   </tr>
               </thead>
@@ -99,21 +98,34 @@
                       <td>
                         {{d.price}}
                       </td>
-                      <td>
+                      {% comment %} <td>
                         <span class="badge {% if d.status == 'Approved' %}badge-success{% elif d.status == 'Pending' %}badge-info{% elif d.status == 'Rejected' %}badge-danger{% endif %}">
                           {{d.status}}
-                        </span>
-                      </td>
+                        </span> 
+                      </td> {% endcomment %}
                       
                       <td class="project-actions">
                           <a class="btn btn-sm" href="/generate_purchase_order/{{d.order_id}}" style="background-color: #007f5c;color: #fff;">
-                              <i class="fas fa-pencil-alt">
-                              </i>
-                              Generate Purchase Order
+                            <i class="fas fa-pencil-alt">
+                            </i>
+                            Generate PO
                           </a>
+
+                          {% for inventorydata in inventory_data %}
+                            {% if inventorydata.order_id == d.order_id %}
+                              {% if inventorydata.inventory_approved != 'Approved' and inventorydata.inventory_approved != 'Rejected' %}
+                                  <button class="btn btn-success btn-sm" onclick="confirmApprove({{ inventorydata.order_id }})">Approve</button>
+                                  <button class="btn btn-danger btn-sm" onclick="confirmReject({{ inventorydata.order_id }})">Reject</button>
+                              {% elif inventorydata.inventory_approved == 'Approved' %}
+                                  <span class="badge badge-success">Approved</span>
+                              {% elif inventorydata.inventory_approved == 'Rejected' %}
+                                  <span class="badge badge-danger">Rejected</span>
+                              {% endif %}
+                            {% endif %}
+                          {% endfor %}
                       </td>
-                  </tr>
-                  {% endfor %}
+                    </tr>
+                          {% endfor %}
               </tbody>
           </table>
         </div>
@@ -128,6 +140,45 @@
       font-weight: bold;
   }
   </style>
+
+  <script>
+    function confirmApprove(orderId) {
+        if (confirm("Are you sure you want to approve this purchase?")) {
+            $.ajax({
+                type: "POST",
+                url: "/approve_inventory/" + orderId + "/",
+                data: {
+                    csrfmiddlewaretoken: "{{ csrf_token }}"
+                },
+                success: function(response) {
+                    //location.reload();
+                    window.location.href = "/stock_in"; 
+                },
+                error: function(xhr, errmsg, err) {
+                    console.log(xhr.status + ": " + xhr.responseText);
+                }
+            });
+        }
+    } 
+    
+    function confirmReject(orderId) {
+      if (confirm("Are you sure you want to reject this purchase?")) {
+          $.ajax({
+              type: "POST",
+              url: "/reject_inventory/" + orderId + "/",
+              data: {
+                  csrfmiddlewaretoken: "{{ csrf_token }}"
+              },
+              success: function(response) {
+                location.reload();
+              },
+              error: function(xhr, errmsg, err) {
+                  console.log(xhr.status + ": " + xhr.responseText);
+              }
+          });
+      }
+  }
+</script>
   
 </div>
 

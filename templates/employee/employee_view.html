@@ -91,6 +91,8 @@
                   <li class="nav-item"><a class="tab nav-link active" href="#timeline" data-toggle="tab">Experience</a></li>
                   <li class="nav-item"><a class="tab nav-link" href="#activity" data-toggle="tab">Contact Information</a></li>
                   <li class="nav-item"><a class="tab nav-link" href="#address" data-toggle="tab">Address</a></li>
+                  <li class="nav-item"><a class="tab nav-link" href="#jobhistory" data-toggle="tab">Job history</a></li> 
+                  <li class="nav-item"><a class="tab nav-link" href="#guarantee" data-toggle="tab">guarantee</a></li>
                   {% comment %} <li class="nav-item"><a class="nav-link" href="#settings" data-toggle="tab">Settings</a></li> {% endcomment %}
                 </ul>
               </div>
@@ -106,7 +108,7 @@
                         </span>
                       </div>
                       <div>
-                        <i class="fas fa-envelope"></i>
+                        <i class="fas fa-home"></i>
                         <div class="timeline-item">
                           <h3 class="timeline-header"><a href="#" style="color: #007f5c;">{{ex.company}}</a></h3>
 
@@ -181,6 +183,56 @@
                       <div class="time-label">
                         <span class="bg-danger">
                           {{ ex.end_date }}
+                        </span>
+                      </div>
+                      {% endfor %}
+                    </div>
+                  </div>
+
+                  <div class="tab-pane" id="guarantee">
+                    {% for gt in guarantee %}
+                    <div class="post">
+                      <div class="user-block">
+                   
+                        <span class="username">
+                          <a href="#" style="color: #007f5c;">{{gt.name}}</a>
+                        </span>
+                        <span class="description">{{gt.guarantee_type.guarantee_type}}</span>
+                      </div>
+                       <p>{{gt.salary_evaluation}}</p> 
+                    </div>
+                    {% endfor %}
+                  </div>
+
+
+                  <div class="tab-pane" id="jobhistory">
+                    <div class="timeline timeline-inverse">
+                      {% for job in jobhistory %}
+                      <div class="time-label">
+                        <span class="bg" style="background-color: #007f5c;color: #fff;">
+                          {{ job.start_date }}
+                        </span>
+                      </div>
+                      <div>
+                        <i class="fas fa-home"></i>
+                        <div class="timeline-item">
+                          <h3 class="timeline-header"><a href="#" style="color: #007f5c;">{{job.department.department_name}}</a></h3>
+
+                          <div class="timeline-body">
+                            Worked as a {{job.job.job_title}}
+                          </div>
+                          <div class="timeline-body">
+                            Salary: {{job.salary}}
+                          </div>
+                          <div class="timeline-body">
+                            Promotion or Demotion: {{job.promotion_or_demotion}}
+                          </div>
+  
+                        </div>
+                      </div>
+                      <div class="time-label">
+                        <span class="bg-danger">
+                          {{ job.end_date }}
                         </span>
                       </div>
                       {% endfor %}

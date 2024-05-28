@@ -192,7 +192,8 @@
         <button type="button" class="btn btn-primary mr-3" id="addcontactBtn">Add Contact</button>
         <button type="button" class="btn btn-success mr-3" id="addaddressBtn">Add Address</button>
         <button type="button" class="btn btn-info mr-3" id="addexperienceBtn">Add Experience</button>
-        <button type="button" class="btn btn-warning" id="addguaranteeBtn">Add Guarantee</button>
+        <button type="button" class="btn btn-warning mr-3" id="addguaranteeBtn">Add Guarantee</button>
+        <button type="button" class="btn btn-dark" id="addjobhistoryBtn">Add Job history</button>
 
       <br><br>
 
@@ -322,7 +323,7 @@
                         </div>
                         <div class="form-group">
                             <label for="inputPhotoDescription">Salary</label>
-                            <input type="text" id="inputPhotoDescription" name="salary" class="form-control">
+                            <input type="number" id="inputPhotoDescription" name="salary" class="form-control">
                         </div>
                     </div>
                 </div>
@@ -355,7 +356,7 @@
                     <div class="col-md-6">
                         <div class="form-group">
                           <label for="inputPhotoDescription">Salary</label>
-                          <input type="text" id="inputPhotoDescription" name="salary_evaluation" class="form-control">
+                          <input type="number" id="inputPhotoDescription" name="salary_evaluation" class="form-control">
                         </div>
                         <div class="form-group">
                             <label for="inputPhotoDescription">Guarantee Type</label>
@@ -376,6 +377,65 @@
             </form>
         </div>
       </div>
+
+            <!-- Hidden section for jobhistory form -->
+            <div class="card" id="jobhistoryFormSection" style="display: none;">
+              <div class="card-body">
+                  <form action="/add_jobhistory" method="post" id="jobhistoryForm" enctype="multipart/form-data">
+                      {% csrf_token %}
+                      <div class="row">
+                          <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="inputStatus">Employee</label>
+                                <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                              <label for="job_id">Job</label>
+                              <select id="job_id" name="job_id" class="form-control custom-select">
+                                  {% for d in data4 %}
+                                      <option value="{{ d.job_id }}">{{ d.job_title }}</option>
+                                  {% endfor %}
+                              </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="department_id">Department</label>
+                                <select id="department_id" name="department_id" class="form-control custom-select">
+                                    {% for d in data5 %}
+                                        <option value="{{ d.department_id }}">{{ d.department_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                              <label for="salary">Salary</label>
+                              <input type="number" id="salary" name="salary" class="form-control" required>
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                              <div class="form-group">
+                                <label for="start_date">Start Date</label>
+                                <input type="date" id="start_date" name="start_date" class="form-control" >
+                              </div>
+                              <div class="form-group">
+                                  <label for="end_date">End Date</label>
+                                  <input type="date" id="end_date" name="end_date" class="form-control">
+                              </div>
+                              <div class="form-group">
+                                <label for="promotion_or_demotion">Promotion or Demotion</label>
+                                <input type="text" id="promotion_or_demotion" name="promotion_or_demotion" class="form-control">
+                            </div>
+            
+                            
+                          </div>
+                      </div>
+                      <div class="row">
+                        <div class="col-12">
+                          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Job history</button>
+                        </div>
+                      </div>
+                      <br>
+                  </form>
+              </div>
+            </div>
     </section>
   
   </div>
@@ -388,6 +448,7 @@
     document.getElementById('addressFormSection').style.display = 'none';
     document.getElementById('experienceFormSection').style.display = 'none';
     document.getElementById('guaranteeFormSection').style.display = 'none';
+    document.getElementById('jobhistoryFormSection').style.display = 'none';
   });
 
   document.getElementById('addaddressBtn').addEventListener('click', function() {
@@ -395,6 +456,7 @@
     document.getElementById('addressFormSection').style.display = 'block';
     document.getElementById('experienceFormSection').style.display = 'none';
     document.getElementById('guaranteeFormSection').style.display = 'none';
+    document.getElementById('jobhistoryFormSection').style.display = 'none';
   });
 
   document.getElementById('addexperienceBtn').addEventListener('click', function() {
@@ -402,6 +464,7 @@
     document.getElementById('addressFormSection').style.display = 'none';
     document.getElementById('experienceFormSection').style.display = 'block';
     document.getElementById('guaranteeFormSection').style.display = 'none';
+    document.getElementById('jobhistoryFormSection').style.display = 'none';
   });
 
   document.getElementById('addguaranteeBtn').addEventListener('click', function() {
@@ -409,6 +472,15 @@
     document.getElementById('addressFormSection').style.display = 'none';
     document.getElementById('experienceFormSection').style.display = 'none';
     document.getElementById('guaranteeFormSection').style.display = 'block';
+    document.getElementById('jobhistoryFormSection').style.display = 'none';
+  });
+
+  document.getElementById('addjobhistoryBtn').addEventListener('click', function() {
+    document.getElementById('contactFormSection').style.display = 'none';
+    document.getElementById('addressFormSection').style.display = 'none';
+    document.getElementById('experienceFormSection').style.display = 'none';
+    document.getElementById('guaranteeFormSection').style.display = 'none';
+    document.getElementById('jobhistoryFormSection').style.display = 'block';
   });
 </script>
 
