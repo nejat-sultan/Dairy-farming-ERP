@@ -19,6 +19,7 @@ from django.contrib.auth.models import User, Group
 from django.utils.dateparse import parse_date
 from django.http import JsonResponse
 from django.db import transaction
+from django.db.models import Sum
 
 
 @login_required(login_url='login')
@@ -2114,25 +2115,33 @@ def rfq(request):
 
     return render(request, 'procurement/rfq.html', context)
 
+
 @login_required(login_url='login')
 def rfq_add(request, order_id):
     if request.method == "POST":
         csupplier_name = request.POST.get('supplier_name')
         citem_id = request.POST.get('item_id')
-        cquantity = request.POST.get('quantity')
+        cquantity = int(request.POST.get('quantity'))
         cprice = request.POST.get('price')
         cdate = datetime.now().date()
 
-        # Save the RFQ
-        query = OrderHasItemSupplier.objects.create(supplier_id=csupplier_name, item_id=citem_id, order_id=order_id, quantity=cquantity, price=cprice, status='Pending', modified_date=cdate)
-        messages.success(request, "RFQ Added Successfully!")
+        order_item = OrderHasItem.objects.get(order_id=order_id)
+        order_item_quantity = int(order_item.quantity)
+
+        order_supplier_quantity = OrderHasItemSupplier.objects.filter(order_id=order_id).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
+        total_quantity = order_supplier_quantity + cquantity
+
+        if total_quantity <= order_item_quantity:
+            query = OrderHasItemSupplier.objects.create(supplier_id=csupplier_name, item_id=citem_id, order_id=order_id, quantity=cquantity, price=cprice, status='Pending', modified_date=cdate)
+            messages.success(request, "RFQ Added Successfully!")
+        else:
+            messages.error(request, "Total RFQ quantity exceeds available quantity.")
+        
         return redirect(f"/request_order_view/{order_id}")
 
     supplier_data = Supplier.objects.all()
     existing_rfq = OrderHasItemSupplier.objects.filter(order_id=order_id)
 
-    # distinct_items = OrderHasItem.objects.filter(order__request_approved='approved').values('item').distinct()
-    # items = Item.objects.filter(item_id__in=distinct_items)
     order_item = get_object_or_404(OrderHasItem, order_id=order_id)
     item = order_item.item
     
@@ -2276,39 +2285,7 @@ def generate_purchase_order(request, order_id):
 
     return render(request, 'procurement/generate_purchase_order.html', context)
 
-# def approve_inventory(request, order_id):
-#     try:
-#         order = get_object_or_404(Order, pk=order_id)
-        
-#         order.inventory_approved = 'Approved'
-#         order.inventory_approved_date = timezone.now()
-#         order.save()
-
-#         for order_item in order.orderhasitem_set.all():
-#             item_measurement = order_item.item_measurement
-#             inventory_item, created = ItemInventory.objects.get_or_create(
-#                 item=order_item.item,
-#                 order=order,
-#                 defaults={
-#                     'quantity': order_item.quantity,
-#                     'unit_price': None, 
-#                     'type': order_item.type,
-#                     'description': None, 
-#                     'modified_date': timezone.now(),
-#                     'item_measurement': item_measurement,
-#                 }
-#             )
-
-#             if not created:
-#                 new_quantity = int(inventory_item.quantity) + int(order_item.quantity)
-#                 inventory_item.quantity = str(new_quantity)
-#                 inventory_item.modified_date = timezone.now()
-#                 inventory_item.save()
-
-#         return JsonResponse({'message': 'Inventory approved successfully.'})
-#     except Exception as e:
-#         return JsonResponse({'error': str(e)}, status=500)
-
+from django.db.models import Q
 def approve_inventory(request, order_id):
     try:
         order = get_object_or_404(Order, pk=order_id)
@@ -2318,9 +2295,10 @@ def approve_inventory(request, order_id):
         order.save()
 
         order_items = OrderHasItem.objects.filter(order=order)
-
         for order_item in order_items:
-            order_item_suppliers = OrderHasItemSupplier.objects.filter(order=order_item)
+            order_item_suppliers = OrderHasItemSupplier.objects.filter(
+                Q(order=order_item) & Q(status='Approved')
+            )
 
             for order_item_supplier in order_item_suppliers:
                 item_measurement = order_item.item_measurement
@@ -2329,7 +2307,9 @@ def approve_inventory(request, order_id):
 
                 existing_inventory_item = ItemInventory.objects.filter(
                     item=order_item_supplier.item,
-                    order=order
+                    # order=order
+                    type=item_type,
+                    item_measurement=item_measurement
                 ).first()
 
                 if existing_inventory_item:
@@ -2430,10 +2410,22 @@ def stockin_add(request):
         citem_measurement_id=request.POST.get('item_measurement_id')
         cmodified_date = datetime.now().date()
 
-        query = ItemInventory(quantity=cquantity, type=ctype, item_id=citem_id, item_measurement_id=citem_measurement_id, modified_date=cmodified_date)
-        query.save()
-        messages.success(request, "Added to Stock Successfully!")
-        return redirect("/stock_in")
+        existing_inventory_item = ItemInventory.objects.filter(
+            item_id=citem_id,
+            item_measurement_id=citem_measurement_id,
+            type=ctype
+        ).first()
+
+        if existing_inventory_item:
+            existing_inventory_item.quantity = str(int(existing_inventory_item.quantity) + int(cquantity))
+            existing_inventory_item.modified_date = cmodified_date
+            existing_inventory_item.save()
+            messages.success(request, "Stock updated successfully!")
+            return redirect("/stock_in")
+        else:
+            ItemInventory.objects.create(quantity=cquantity,type=ctype,item_id=citem_id,item_measurement_id=citem_measurement_id,modified_date=cmodified_date)
+            messages.success(request, "Added to Stock Successfully!")
+            return redirect("/stock_in")
     
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()

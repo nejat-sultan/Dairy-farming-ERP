@@ -151,8 +151,8 @@
                     csrfmiddlewaretoken: "{{ csrf_token }}"
                 },
                 success: function(response) {
-                    //location.reload();
-                    window.location.href = "/stock_in"; 
+                    location.reload();
+                    //window.location.href = "/stock_in"; 
                 },
                 error: function(xhr, errmsg, err) {
                     console.log(xhr.status + ": " + xhr.responseText);
