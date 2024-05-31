@@ -7,7 +7,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, ItemInventory, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Supplier, SupplierType, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -20,6 +20,7 @@ from django.utils.dateparse import parse_date
 from django.http import JsonResponse
 from django.db import transaction
 from django.db.models import Sum
+from django.contrib.auth.hashers import make_password
 
 
 @login_required(login_url='login')
@@ -154,7 +155,8 @@ def assign_users_to_group(request, user_id):
         return redirect('user')  
     
     return render(request, 'auth/assign_users_to_group.html', {'user': user, 'groups': groups})
-from django.contrib.auth.hashers import make_password
+
+
 @unauthenticated_user
 def login_page(request):
    
@@ -2132,7 +2134,7 @@ def rfq_add(request, order_id):
         total_quantity = order_supplier_quantity + cquantity
 
         if total_quantity <= order_item_quantity:
-            query = OrderHasItemSupplier.objects.create(supplier_id=csupplier_name, item_id=citem_id, order_id=order_id, quantity=cquantity, price=cprice, status='Pending', modified_date=cdate)
+            query = OrderHasItemSupplier.objects.create(supplier_id=csupplier_name, item_id=citem_id, order_id=order_id, quantity=cquantity, price=cprice, status='Pending', modified_date=cdate, inventory_status='Pending')
             messages.success(request, "RFQ Added Successfully!")
         else:
             messages.error(request, "Total RFQ quantity exceeds available quantity.")
@@ -2244,7 +2246,7 @@ def reject_rfq(request, id):
 
 @login_required(login_url='login')
 def purchase_order(request):
-    approved_supp = OrderHasItemSupplier.objects.filter(status='approved').values('supplier_id', 'order_id', 'item_id', 'quantity', 'price', 'status', 'modified_date').distinct()
+    approved_supp = OrderHasItemSupplier.objects.filter(status='approved').values('id','supplier_id', 'order_id', 'item_id', 'quantity', 'price', 'status', 'modified_date','inventory_status').distinct()
     item_data = Item.objects.all()
     supplier_data = Supplier.objects.all()
     inventory_data = Order.objects.all()
@@ -2286,62 +2288,53 @@ def generate_purchase_order(request, order_id):
     return render(request, 'procurement/generate_purchase_order.html', context)
 
 from django.db.models import Q
-def approve_inventory(request, order_id):
+def approve_inventory(request, id):
     try:
-        order = get_object_or_404(Order, pk=order_id)
-        
-        order.inventory_approved = 'Approved'
-        order.inventory_approved_date = timezone.now()
-        order.save()
+        order_has_item_supplier = get_object_or_404(OrderHasItemSupplier, pk=id)
+        order_has_item_supplier.inventory_status = 'Approved'
+        order_has_item_supplier.save()
 
-        order_items = OrderHasItem.objects.filter(order=order)
-        for order_item in order_items:
-            order_item_suppliers = OrderHasItemSupplier.objects.filter(
-                Q(order=order_item) & Q(status='Approved')
+        order_has_item = order_has_item_supplier.order
+
+        item = order_has_item_supplier.item
+        quantity = int(order_has_item_supplier.quantity)
+        item_type = order_has_item.type
+        item_measurement = order_has_item.item_measurement
+
+        existing_inventory_item = Stock.objects.filter(
+            item=item,
+            type=item_type,
+            item_measurement=item_measurement
+        ).first()
+
+        if existing_inventory_item:
+            existing_inventory_item.quantity = str(int(existing_inventory_item.quantity) + quantity)
+            existing_inventory_item.modified_date = timezone.now()
+            existing_inventory_item.save()
+        else:
+            Stock.objects.create(
+                item=item,
+                quantity=str(quantity),
+                type=item_type,
+                modified_date=timezone.now(),
+                item_measurement=item_measurement,
+                approval_status='Approved'
             )
-
-            for order_item_supplier in order_item_suppliers:
-                item_measurement = order_item.item_measurement
-                quantity = int(order_item_supplier.quantity)
-                item_type = order_item.type
-
-                existing_inventory_item = ItemInventory.objects.filter(
-                    item=order_item_supplier.item,
-                    # order=order
-                    type=item_type,
-                    item_measurement=item_measurement
-                ).first()
-
-                if existing_inventory_item:
-                    existing_inventory_item.quantity = str(int(existing_inventory_item.quantity) + quantity)
-                    existing_inventory_item.modified_date = timezone.now()
-                    existing_inventory_item.save()
-                else:
-                    ItemInventory.objects.create(
-                        item=order_item_supplier.item,
-                        order=order,
-                        quantity=quantity,
-                        unit_price=None,
-                        type=item_type,
-                        description=None,
-                        modified_date=timezone.now(),
-                        item_measurement=item_measurement,
-                    )
 
         return JsonResponse({'message': 'Inventory approved successfully.'})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-
-def reject_inventory(request, order_id):
+def reject_inventory(request, id):
     try:
-        order = get_object_or_404(Order, pk=order_id)
-        order.inventory_approved = 'Rejected'
-        order.save()
+        order_has_item_supplier = get_object_or_404(OrderHasItemSupplier, pk=id)
+        order_has_item_supplier.inventory_status = 'Rejected'
+        order_has_item_supplier.save()
+
         return JsonResponse({'message': 'Inventory rejected successfully.'})
     except Exception as e:
-        messages.error(request, str(e))
-        return redirect("/purchase_order")
+        return JsonResponse({'message': 'An error occurred: ' + str(e)}, status=400)
+
 
 @login_required(login_url='login')
 def item_measurement(request):
@@ -2394,15 +2387,15 @@ def item_measurement_delete(request, id):
 
 
 @login_required(login_url='login')
-def stock_in(request):
-    data = ItemInventory.objects.all()
+def stock(request):
+    data = Stock.objects.all()
     context = {"data1":data}
 
-    return render(request, 'inventory/stock_in.html', context)
+    return render(request, 'inventory/stock.html', context)
 
 
 @login_required(login_url='login')
-def stockin_add(request):
+def stock_add(request):
     if request.method=="POST":
         cquantity=request.POST.get('quantity')
         ctype=request.POST.get('type')
@@ -2410,7 +2403,7 @@ def stockin_add(request):
         citem_measurement_id=request.POST.get('item_measurement_id')
         cmodified_date = datetime.now().date()
 
-        existing_inventory_item = ItemInventory.objects.filter(
+        existing_inventory_item = Stock.objects.filter(
             item_id=citem_id,
             item_measurement_id=citem_measurement_id,
             type=ctype
@@ -2421,11 +2414,11 @@ def stockin_add(request):
             existing_inventory_item.modified_date = cmodified_date
             existing_inventory_item.save()
             messages.success(request, "Stock updated successfully!")
-            return redirect("/stock_in")
+            return redirect("/stock")
         else:
-            ItemInventory.objects.create(quantity=cquantity,type=ctype,item_id=citem_id,item_measurement_id=citem_measurement_id,modified_date=cmodified_date)
+            Stock.objects.create(quantity=cquantity,type=ctype,item_id=citem_id,item_measurement_id=citem_measurement_id,modified_date=cmodified_date)
             messages.success(request, "Added to Stock Successfully!")
-            return redirect("/stock_in")
+            return redirect("/stock")
     
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
@@ -2434,11 +2427,11 @@ def stockin_add(request):
         'data2': measurement_data,
     }
 
-    return render(request, 'inventory/stockin_add.html', context)
+    return render(request, 'inventory/stock_add.html', context)
 
 @login_required(login_url='login')
-def stockin_edit(request,inventory_id):
-    edit = ItemInventory.objects.get(inventory_id=inventory_id)
+def stock_edit(request,stock_id):
+    edit = Stock.objects.get(stock_id=stock_id)
     
     if request.method == "POST":
         cquantity=request.POST.get('quantity')
@@ -2455,9 +2448,81 @@ def stockin_edit(request,inventory_id):
         
         edit.save()
         messages.warning(request, "Stock Updated Successfully!")
+        return redirect("/stock")
+
+    d = Stock.objects.get(stock_id=stock_id)
+    data1 = Item.objects.all()
+    data2 = ItemMeasurement.objects.all()
+        
+    context = {"d": d, "item": edit, "data1": data1, "data2": data2,}
+
+    return render(request, 'inventory/stock_edit.html', context)
+
+def stock_delete(request, stock_id):
+    d = Stock.objects.get(stock_id=stock_id)
+    d.delete()
+    messages.error(request, "Stock Deleted Successfully!")
+    return redirect("/stock")
+
+
+@login_required(login_url='login')
+def stock_in(request):
+    data = DirectlyAddedItem.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'inventory/stock_in.html', context)
+
+
+@login_required(login_url='login')
+def stockin_add(request):
+    if request.method=="POST":
+        cquantity=request.POST.get('quantity')
+        ctype=request.POST.get('type')
+        citem_id=request.POST.get('item_id')
+        citem_measurement_id=request.POST.get('item_measurement_id')
+        cunit_price = request.POST.get('unit_price')
+        cdescription = request.POST.get('description')
+        capproval_status = 'Pending'
+
+        DirectlyAddedItem.objects.create(quantity=cquantity,item_type=ctype,item_id=citem_id,measurement_id=citem_measurement_id,unit_price=cunit_price,description=cdescription,approval_status=capproval_status)
+        messages.success(request, "Stock request sent Successfully!")
+        return redirect("/stock_in")
+    
+    item_data = Item.objects.all()
+    measurement_data = ItemMeasurement.objects.all()
+    context = {
+        'data1': item_data,
+        'data2': measurement_data,
+    }
+
+    return render(request, 'inventory/stockin_add.html', context)
+
+@login_required(login_url='login')
+def stockin_edit(request,id):
+    edit = DirectlyAddedItem.objects.get(id=id)
+    
+    if request.method == "POST":
+        cquantity=request.POST.get('quantity')
+        ctype=request.POST.get('type')
+        citem_id=request.POST.get('item_id')
+        citem_measurement_id=request.POST.get('item_measurement_id')
+        cunit_price = request.POST.get('unit_price')
+        cdescription = request.POST.get('description')
+        capproval_status = 'Pending'
+        
+        edit.quantity = cquantity
+        edit.item_type = ctype
+        edit.item_id = citem_id
+        edit.measurement_id = citem_measurement_id
+        edit.unit_price = cunit_price
+        edit.description = cdescription
+        edit.approval_status = capproval_status
+        
+        edit.save()
+        messages.warning(request, "Stock request updated Successfully!")
         return redirect("/stock_in")
 
-    d = ItemInventory.objects.get(inventory_id=inventory_id)
+    d = DirectlyAddedItem.objects.get(id=id)
     data1 = Item.objects.all()
     data2 = ItemMeasurement.objects.all()
         
@@ -2465,11 +2530,168 @@ def stockin_edit(request,inventory_id):
 
     return render(request, 'inventory/stockin_edit.html', context)
 
-def stockin_delete(request, inventory_id):
-    d = ItemInventory.objects.get(inventory_id=inventory_id)
+def stockin_delete(request, id):
+    d = DirectlyAddedItem.objects.get(id=id)
     d.delete()
-    messages.error(request, "Stock Deleted Successfully!")
+    messages.error(request, "Stock request Deleted Successfully!")
     return redirect("/stock_in")
+
+
+def approve_stockin(request, id):
+    try:
+        inventory = get_object_or_404(DirectlyAddedItem, pk=id)
+        inventory.approval_status = 'Approved'
+        inventory.save()
+
+        item = inventory.item
+        quantity = int(inventory.quantity)
+        item_type = inventory.item_type
+        item_measurement = inventory.measurement
+
+        existing_inventory_item = Stock.objects.filter(
+            item=item,
+            type=item_type,
+            item_measurement=item_measurement
+        ).first()
+
+        if existing_inventory_item:
+            existing_inventory_item.quantity = str(int(existing_inventory_item.quantity) + quantity)
+            existing_inventory_item.modified_date = timezone.now()
+            existing_inventory_item.save()
+        else:
+            Stock.objects.create(
+                item=item,
+                quantity=str(quantity),
+                type=item_type,
+                modified_date=timezone.now(),
+                item_measurement=item_measurement,
+                approval_status='Approved'
+            )
+
+        return JsonResponse({'message': 'Inventory approved successfully.'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def reject_stockin(request, id):
+    try:
+        inventory = get_object_or_404(DirectlyAddedItem, pk=id)
+        inventory.approval_status = 'Rejected'
+        inventory.save()
+
+        return JsonResponse({'message': 'Inventory rejected successfully.'})
+    except Exception as e:
+        return JsonResponse({'message': 'An error occurred: ' + str(e)}, status=400)
+
+
+@login_required(login_url='login')
+def stock_out(request):
+    data = Stockout.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'inventory/stock_out.html', context)
+
+
+@login_required(login_url='login')
+def stockout_add(request):
+    if request.method=="POST":
+        cquantity=request.POST.get('quantity')
+        citem_type=request.POST.get('item_type')
+        citem_id=request.POST.get('item_id')
+        citem_measurement_id=request.POST.get('item_measurement_id')
+        cstatus = 'Pending'
+        cmodified_date = datetime.now().date()
+
+        Stockout.objects.create(quantity=cquantity,item_type=citem_type,item_id=citem_id,measurement_id=citem_measurement_id,status=cstatus,modified_date=cmodified_date)
+        messages.success(request, "Stock out request sent Successfully!")
+        return redirect("/stock_out")
+    
+    item_data = Item.objects.all()
+    measurement_data = ItemMeasurement.objects.all()
+    context = {
+        'data1': item_data,
+        'data2': measurement_data,
+    }
+
+    return render(request, 'inventory/stockout_add.html', context)
+
+@login_required(login_url='login')
+def stockout_edit(request,id):
+    edit = Stockout.objects.get(id=id)
+    
+    if request.method == "POST":
+        cquantity=request.POST.get('quantity')
+        ctype=request.POST.get('item_type')
+        citem_id=request.POST.get('item_id')
+        citem_measurement_id=request.POST.get('item_measurement_id')
+        cstatus = 'Pending'
+        cmodified_date = datetime.now().date()
+        
+        edit.quantity = cquantity
+        edit.item_type = ctype
+        edit.item_id = citem_id
+        edit.measurement_id = citem_measurement_id
+        edit.status = cstatus
+        edit.modified_date = cmodified_date
+        
+        edit.save()
+        messages.warning(request, "Stockout Updated Successfully!")
+        return redirect("/stock_out")
+
+    d = Stockout.objects.get(id=id)
+    data1 = Item.objects.all()
+    data2 = ItemMeasurement.objects.all()
+        
+    context = {"d": d, "item": edit, "data1": data1, "data2": data2,}
+
+    return render(request, 'inventory/stockout_edit.html', context)
+
+def stockout_delete(request, id):
+    d = Stockout.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Stockout Deleted Successfully!")
+    return redirect("/stock_out")
+
+    
+def approve_stockout(request, id):
+    try:
+        inventory = get_object_or_404(Stockout, pk=id)
+        stock_item = Stock.objects.filter(
+            item=inventory.item,
+            type=inventory.item_type,
+            item_measurement=inventory.measurement
+        ).first()
+        
+        if not stock_item:
+            return JsonResponse({'error': 'Stock item not found'}, status=404)
+        
+        current_stock_quantity = int(stock_item.quantity)
+        requested_quantity = int(inventory.quantity)
+        
+        if requested_quantity > current_stock_quantity:
+            return JsonResponse({'error': 'Requested quantity exceeds current stock'}, status=400)
+        
+        inventory.status = 'Approved'
+        inventory.save()
+        
+        stock_item.quantity = str(current_stock_quantity - requested_quantity)
+        stock_item.modified_date = timezone.now()
+        stock_item.save()
+        
+        return JsonResponse({'message': 'Inventory approved and stock updated successfully.'})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+def reject_stockout(request, id):
+    try:
+        inventory = get_object_or_404(Stockout, pk=id)
+        inventory.status = 'Rejected'
+        inventory.save()
+
+        return JsonResponse({'message': 'Inventory rejected successfully.'})
+    except Exception as e:
+        return JsonResponse({'message': 'An error occurred: ' + str(e)}, status=400)
+
+
 
 
 @login_required(login_url='login')

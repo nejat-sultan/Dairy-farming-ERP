@@ -1,0 +1,123 @@
+<!-- purchase_order_add.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+
+
+  <div class="content-wrapper">
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Stock</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="">Home</a></li>
+              <li class="breadcrumb-item active">Stock</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Manage Stock</h3>
+
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+
+        {% for message in messages %}
+        <div class="alert alert-{{message.tags}} alert-dismissible fade show" role="alert">
+          <strong>{{message}}</strong>
+        </div>
+        {% endfor %}
+
+        <div class="card-body p-0">
+          <table class="table table-striped projects">
+              <thead>
+                  <tr>
+                      <th style="width: 10%">
+                        Id 
+                      </th>
+                      <th style="width: 15%">
+                        Type
+                      </th>
+                      <th style="width: 15%">
+                        Item
+                      </th>
+                      <th style="width: 20%">
+                        Measurement
+                      </th>
+                      <th style="width: 20%">
+                        Quantity 
+                      </th>
+
+                      <th style="width: 20%"> Actions </th>
+                  </tr>
+              </thead>
+              <tbody>
+                {% for d in data1 %}
+                  <tr>
+                      <td>
+                        {{d.stock_id}}
+                      </td>
+                      <td>
+                        {{d.type}}
+                      </td>
+                      <td>
+                        {{d.item.name}}
+                      </td>
+                      <td>
+                        {{d.item_measurement.measurement}}
+                      </td>
+                      <td>
+                        {{d.quantity}}
+                      </td>
+                      
+                      <td class="project-actions">
+                        <a class="btn btn-info btn-sm" href="/stock_edit/{{d.stock_id}}">
+                          <i class="fas fa-pencil-alt">
+                          </i>
+                        </a>
+                        <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.stock_id }}')">
+                          <i class="fas fa-trash">
+                          </i>
+                        </a>
+
+                        <script>
+                          function confirmDelete(cattleId) {
+                              if (confirm("Are you sure you want to delete this Item from inventory?")) {
+                                  // If user confirms, redirect to the delete URL
+                                  window.location.href = "/stock_delete/" + cattleId;
+                              }
+                          }
+                        </script>
+                      </td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </div>
+
+  <style>
+    .status-highlight {
+      background-color: #f0ad4e; 
+      font-weight: bold;
+  }
+  </style>
+  
+</div>
+
+
+{% endblock %}

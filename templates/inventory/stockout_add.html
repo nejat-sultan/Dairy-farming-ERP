@@ -9,12 +9,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Stock In Add</h1>
+            <h1>Stock Out Add</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="../stock_in">Home</a></li>
-              <li class="breadcrumb-item active">Stock In Add</li>
+              <li class="breadcrumb-item"><a href="../stock_out">Home</a></li>
+              <li class="breadcrumb-item active">Stock Out Add</li>
             </ol>
           </div>
         </div>
@@ -23,7 +23,7 @@
 
 
     <section class="content">
-    <form action="/stockin_add" method="post">
+    <form action="/stockout_add" method="post">
       {% csrf_token %}
       <div class="row">
         <div class="col-md-12">
@@ -48,7 +48,7 @@
               </div>
               <div class="form-group">
                 <label for="inputName">Type</label>
-                <input type="text" id="inputName" name="type" class="form-control">
+                <input type="text" id="inputName" name="item_type" class="form-control">
               </div>
               <div class="form-group">
                 <label for="inputName">Measurement</label>
@@ -62,14 +62,6 @@
                 <label for="inputDescription">Quantity</label>
                 <input type="number" id="inputName" name="quantity" class="form-control" required>
               </div> 
-              <div class="form-group">
-                <label for="inputName">Unit Price</label>
-                <input type="text" id="inputName" name="unit_price" class="form-control">
-              </div>  
-              <div class="form-group">
-                <label for="inputName">Description</label>
-                <input type="text" id="inputName" name="description" class="form-control">
-              </div>          
             </div>
           </div>
         </div>
@@ -77,8 +69,8 @@
       </div>
       <div class="row">
         <div class="col-12">
-          <a href="stock_in" class="btn btn-secondary">Back</a>
-          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;"> Add to Stock</button>
+          <a href="stock_out" class="btn btn-secondary">Back</a>
+          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;"> Request Stockout</button>
         </div>
       </div>
     </form>

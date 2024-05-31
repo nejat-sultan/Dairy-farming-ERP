@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load custom_filters %}
 
 {% block content %}
 
@@ -91,6 +91,7 @@
                       </td>
 
                       <td class="project-actions">
+                      {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
                         {% for orderdata in orderdatas %}
                             {% if orderdata.request_approved == 'Approved' %}
                                 <button class="btn btn-danger btn-sm" onclick="confirmReject({{ orderdata.order_id }})">
@@ -105,6 +106,7 @@
                                 </button>
                             {% endif %}
                         {% endfor %}
+                      {% endif %}
                       </td>
                     
 
@@ -264,6 +266,7 @@
                           </span>
                         </td>
                         
+                      
                         <td class="project-actions">
                             {% comment %} {% if d.status == 'Approved' %}
                                 <span class="badge badge-success">Approved</span>
@@ -276,6 +279,7 @@
                                 Reject
                             </button> {% endcomment %}
      
+                          {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
                             {% if d.status == 'Approved' %}
                               <button class="btn btn-danger btn-sm" onclick="confirmRejectrfq({{ d.id }})">
                                   Reject
@@ -304,7 +308,10 @@
                                   }
                               }
                             </script>
+                          {% endif %} 
                         </td>
+                        
+                        
                     </tr>
                     {% endfor %}
                 </tbody>

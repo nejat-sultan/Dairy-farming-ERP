@@ -9,12 +9,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Stock In</h1>
+            <h1>Stock Out</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="">Home</a></li>
-              <li class="breadcrumb-item active">Stock In</li>
+              <li class="breadcrumb-item active">Stock Out</li>
             </ol>
           </div>
         </div>
@@ -24,10 +24,10 @@
     <section class="content">
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Manage Stock In</h3>
+          <h3 class="card-title">Manage Stock Out</h3>
 
           <div class="card-tools">
-            <a class="btn" href="stockin_add" style="background-color: #007f5c;color: #fff;">
+            <a class="btn" href="stockout_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -47,25 +47,22 @@
           <table class="table table-striped projects">
               <thead>
                   <tr>
-                      <th style="width: 5%">
+                      <th style="width: 10%">
                         Id 
                       </th>
                       <th style="width: 10%">
                         Type
                       </th>
-                      <th style="width: 10%">
+                      <th style="width: 15%">
                         Item
                       </th>
                       <th style="width: 15%">
                         Measurement
                       </th>
-                      <th style="width: 10%">
+                      <th style="width: 15%">
                         Quantity 
                       </th>
-                      <th style="width: 10%">
-                        Unit Price
-                      </th>
-                      <th style="width: 20%">
+                      <th style="width: 15%">
                         Status 
                       </th>
 
@@ -91,25 +88,22 @@
                         {{d.quantity}}
                       </td>
                       <td>
-                        {{d.unit_price}}
-                      </td>
-                      <td>
-                        <span class="badge {% if d.approval_status == 'Approved' %}badge-success{% elif d.approval_status == 'Pending' %}badge-warning{% elif d.approval_status == 'Rejected' %}badge-danger{% endif %}">
-                        {{d.approval_status}}
+                        <span class="badge {% if d.status == 'Approved' %}badge-success{% elif d.status == 'Pending' %}badge-warning{% elif d.status == 'Rejected' %}badge-danger{% endif %}">
+                        {{d.status}}
                         </span>
                       </td>
                       
                       <td class="project-actions">
-                        {% if d.approval_status != 'Approved' and d.approval_status != 'Rejected' %}
+                        {% if d.status != 'Approved' and d.status != 'Rejected' %}
                             <button class="btn btn-success btn-sm" onclick="confirmApprove({{ d.id }})">Approve</button>
                             <button class="btn btn-danger btn-sm" onclick="confirmReject({{ d.id }})">Reject</button>
-                        {% elif d.approval_status == 'Approved' %}
+                        {% elif d.status == 'Approved' %}
                             <span class="badge badge-success">Approved</span>
-                        {% elif d.approval_status == 'Rejected' %}
+                        {% elif d.status == 'Rejected' %}
                             <span class="badge badge-danger">Rejected</span>
                         {% endif %}
 
-                        <a class="btn btn-info btn-sm" href="/stockin_edit/{{d.id}}">
+                        <a class="btn btn-info btn-sm" href="/stockout_edit/{{d.id}}">
                           <i class="fas fa-pencil-alt">
                           </i>
                         </a>
@@ -120,9 +114,9 @@
 
                         <script>
                           function confirmDelete(cattleId) {
-                              if (confirm("Are you sure you want to delete this Item request?")) {
+                              if (confirm("Are you sure you want to delete this stockout request?")) {
                                   // If user confirms, redirect to the delete URL
-                                  window.location.href = "/stockin_delete/" + cattleId;
+                                  window.location.href = "/stockout_delete/" + cattleId;
                               }
                           }
                         </script>
@@ -143,50 +137,51 @@
       font-weight: bold;
   }
   </style>
+ 
+  <script>
 
-  
-<script>
-  function confirmApprove(orderHasItemSupplierId) {
+    function confirmApprove(stockoutId) {
       if (confirm("Are you sure you want to approve this request?")) {
           $.ajax({
               type: "POST",
-              url: "/approve_stockin/" + orderHasItemSupplierId + "/",
+              url: "/approve_stockout/" + stockoutId + "/",
               data: {
                   csrfmiddlewaretoken: "{{ csrf_token }}",
-                  status: 'Approved'  // Send the status along with the request
               },
               success: function(response) {
-                  location.reload();
+                  location.reload();  // Reload the page on success
               },
               error: function(xhr, errmsg, err) {
-                  console.log(xhr.status + ": " + xhr.responseText);
+                  // Display the error message upfront
+                  alert(xhr.responseJSON.error);
               }
           });
       }
   } 
   
-  function confirmReject(orderHasItemSupplierId) {
+  function confirmReject(stockoutId) {
       if (confirm("Are you sure you want to reject this request?")) {
           $.ajax({
               type: "POST",
-              url: "/reject_stockin/" + orderHasItemSupplierId + "/",
+              url: "/reject_stockout/" + stockoutId + "/",
               data: {
                   csrfmiddlewaretoken: "{{ csrf_token }}",
-                  status: 'Rejected'  // Send the status along with the request
               },
               success: function(response) {
-                  location.reload();
+                  location.reload(); 
               },
               error: function(xhr, errmsg, err) {
-                  console.log(xhr.status + ": " + xhr.responseText);
+                  // Display the error message upfront
+                  alert(xhr.responseJSON.error);
               }
           });
       }
   }
-  </script>
-
+    </script>
   
-</div>
-
-
-{% endblock %}
+    
+  </div>
+  
+  
+  {% endblock %}
+  

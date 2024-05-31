@@ -1,11 +1,10 @@
-<!-- purchase_order_add.html -->
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block content %}
 
 
   <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
     <section class="content-header">
       <div class="container-fluid">
         <div class="row mb-2">
@@ -19,22 +18,16 @@
             </ol>
           </div>
         </div>
-      </div><!-- /.container-fluid -->
+      </div>
     </section>
 
-    <!-- Main content -->
     <section class="content">
 
-      <!-- Default box -->
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Manage Purchase Order</h3>
 
           <div class="card-tools">
-            {% comment %} <a class="btn btn-primary" href="rfq_add">
-              <i class="fas fa-plus"></i>
-              Add New
-            </a> {% endcomment %}
             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
               <i class="fas fa-minus"></i>
             </button>
@@ -51,7 +44,10 @@
           <table class="table table-striped projects">
               <thead>
                   <tr>
-                      <th style="width: 15%">
+                    <th style="width: 5%">
+                      id
+                    </th>
+                      <th style="width: 10%">
                         Supplier Name
                       </th>
                       <th style="width: 10%">
@@ -66,15 +62,15 @@
                       <th style="width: 15%">
                         Price
                       </th>
-                      {% comment %} <th style="width: 15%">
-                        Status
-                      </th> {% endcomment %}
                       <th style="width: 30%"> Actions </th>
                   </tr>
               </thead>
               <tbody>
                 {% for d in approved_supp %}
                   <tr>
+                    <td>
+                      {{d.id}}
+                    </td>
                       <td>
                       {% for supplier in supplier_data %}
                         {% if supplier.farm_entity_id == d.supplier_id %}
@@ -98,12 +94,6 @@
                       <td>
                         {{d.price}}
                       </td>
-                      {% comment %} <td>
-                        <span class="badge {% if d.status == 'Approved' %}badge-success{% elif d.status == 'Pending' %}badge-info{% elif d.status == 'Rejected' %}badge-danger{% endif %}">
-                          {{d.status}}
-                        </span> 
-                      </td> {% endcomment %}
-                      
                       <td class="project-actions">
                           <a class="btn btn-sm" href="/generate_purchase_order/{{d.order_id}}" style="background-color: #007f5c;color: #fff;">
                             <i class="fas fa-pencil-alt">
@@ -111,21 +101,17 @@
                             Generate PO
                           </a>
 
-                          {% for inventorydata in inventory_data %}
-                            {% if inventorydata.order_id == d.order_id %}
-                              {% if inventorydata.inventory_approved != 'Approved' and inventorydata.inventory_approved != 'Rejected' %}
-                                  <button class="btn btn-success btn-sm" onclick="confirmApprove({{ inventorydata.order_id }})">Approve</button>
-                                  <button class="btn btn-danger btn-sm" onclick="confirmReject({{ inventorydata.order_id }})">Reject</button>
-                              {% elif inventorydata.inventory_approved == 'Approved' %}
-                                  <span class="badge badge-success">Approved</span>
-                              {% elif inventorydata.inventory_approved == 'Rejected' %}
-                                  <span class="badge badge-danger">Rejected</span>
-                              {% endif %}
-                            {% endif %}
-                          {% endfor %}
+                        {% if d.inventory_status != 'Approved' and d.inventory_status != 'Rejected' %}
+                            <button class="btn btn-success btn-sm" onclick="confirmApprove({{ d.id }})">Approve</button>
+                            <button class="btn btn-danger btn-sm" onclick="confirmReject({{ d.id }})">Reject</button>
+                        {% elif d.inventory_status == 'Approved' %}
+                            <span class="badge badge-success">Approved</span>
+                        {% elif d.inventory_status == 'Rejected' %}
+                            <span class="badge badge-danger">Rejected</span>
+                        {% endif %}
                       </td>
                     </tr>
-                          {% endfor %}
+                  {% endfor %}
               </tbody>
           </table>
         </div>
@@ -139,38 +125,39 @@
       background-color: #f0ad4e; 
       font-weight: bold;
   }
-  </style>
+  </style> 
 
-  <script>
-    function confirmApprove(orderId) {
-        if (confirm("Are you sure you want to approve this purchase?")) {
-            $.ajax({
-                type: "POST",
-                url: "/approve_inventory/" + orderId + "/",
-                data: {
-                    csrfmiddlewaretoken: "{{ csrf_token }}"
-                },
-                success: function(response) {
-                    location.reload();
-                    //window.location.href = "/stock_in"; 
-                },
-                error: function(xhr, errmsg, err) {
-                    console.log(xhr.status + ": " + xhr.responseText);
-                }
-            });
-        }
-    } 
-    
-    function confirmReject(orderId) {
+<script>
+  function confirmApprove(orderHasItemSupplierId) {
+      if (confirm("Are you sure you want to approve this purchase?")) {
+          $.ajax({
+              type: "POST",
+              url: "/approve_inventory/" + orderHasItemSupplierId + "/",
+              data: {
+                  csrfmiddlewaretoken: "{{ csrf_token }}",
+                  status: 'Approved'  // Send the status along with the request
+              },
+              success: function(response) {
+                  location.reload();
+              },
+              error: function(xhr, errmsg, err) {
+                  console.log(xhr.status + ": " + xhr.responseText);
+              }
+          });
+      }
+  } 
+  
+  function confirmReject(orderHasItemSupplierId) {
       if (confirm("Are you sure you want to reject this purchase?")) {
           $.ajax({
               type: "POST",
-              url: "/reject_inventory/" + orderId + "/",
+              url: "/reject_inventory/" + orderHasItemSupplierId + "/",
               data: {
-                  csrfmiddlewaretoken: "{{ csrf_token }}"
+                  csrfmiddlewaretoken: "{{ csrf_token }}",
+                  status: 'Rejected'  // Send the status along with the request
               },
               success: function(response) {
-                location.reload();
+                  location.reload();
               },
               error: function(xhr, errmsg, err) {
                   console.log(xhr.status + ": " + xhr.responseText);
@@ -178,7 +165,8 @@
           });
       }
   }
-</script>
+  </script>
+
   
 </div>
 

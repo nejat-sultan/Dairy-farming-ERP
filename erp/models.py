@@ -448,26 +448,52 @@ class OrderHasItemSupplier(models.Model):
     price = models.FloatField(null=True)
     quantity = models.CharField(max_length=45, null=True)
     status = models.CharField(max_length=45, null=True)
+    inventory_status = models.CharField(max_length=45, null=True)
     modified_date = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'order_has_item_supplier'
         # unique_together = ('order', 'item', 'supplier')
 
-class ItemInventory(models.Model):
-    inventory_id = models.AutoField(primary_key=True)
+class Stock(models.Model):
+    stock_id = models.AutoField(primary_key=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    order = models.ForeignKey(Order, null=True, on_delete=models.SET_NULL)
     quantity = models.CharField(max_length=45)
-    unit_price = models.CharField(max_length=45, null=True)
     type = models.CharField(max_length=45, null=True)
-    description = models.CharField(max_length=200, null=True)
+    approval_status = models.CharField(max_length=45, null=True)
     modified_date = models.DateTimeField(null=True)
     item_measurement = models.ForeignKey(ItemMeasurement, null=True, on_delete=models.SET_NULL)
 
     class Meta:
-        db_table = 'item_inventory'
+        db_table = 'stock'
 
+class DirectlyAddedItem(models.Model):
+    id = models.AutoField(primary_key=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    quantity = models.CharField(max_length=45, null=True)
+    measurement = models.ForeignKey(ItemMeasurement, on_delete=models.SET_NULL, null=True)
+    item_type = models.CharField(max_length=200, null=True)
+    description = models.CharField(max_length=45, null=True)
+    unit_price = models.FloatField()
+    total_price = models.FloatField(null=True)
+    approval_status = models.CharField(max_length=45, null=True)
+
+    class Meta:
+        db_table = 'directly_added_items'
+
+class Stockout(models.Model):
+    id = models.AutoField(primary_key=True)
+    requested_by = models.ForeignKey(Employee, on_delete=models.CASCADE,null=True, related_name='stockout_requests')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='stockout_items')
+    item_type = models.CharField(max_length=200, null=True)
+    measurement = models.ForeignKey(ItemMeasurement, on_delete=models.SET_NULL, null=True, related_name='stockout_items')
+    approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='approved_stockouts')
+    quantity = models.IntegerField()
+    status = models.CharField(max_length=45, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'stockout'
 
 class SaleType(models.Model):
     sale_type_id = models.AutoField(primary_key=True)

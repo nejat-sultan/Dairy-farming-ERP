@@ -168,12 +168,26 @@ urlpatterns = [
     path('purchase_order', views.purchase_order),
     path('generate_purchase_order/<str:order_id>', views.generate_purchase_order, name='generate_purchase_order'),
 
-    path('approve_inventory/<int:order_id>/', views.approve_inventory, name='approve_inventory'),
-    path('reject_inventory/<int:order_id>/', views.reject_inventory, name='reject_inventory'),
+    path('approve_inventory/<int:id>/', views.approve_inventory, name='approve_inventory'),
+    path('reject_inventory/<int:id>/', views.reject_inventory, name='reject_inventory'),
+
     path('stock_in', views.stock_in),
     path('stockin_add', views.stockin_add),
-    path('stockin_edit/<int:inventory_id>', views.stockin_edit, name='stockin_edit'),
-    path('stockin_delete/<int:inventory_id>', views.stockin_delete),
+    path('stockin_edit/<int:id>', views.stockin_edit, name='stockin_edit'),
+    path('stockin_delete/<int:id>', views.stockin_delete),
+    path('approve_stockin/<int:id>/', views.approve_stockin, name='approve_stockin'),
+    path('reject_stockin/<int:id>/', views.reject_stockin, name='reject_stockin'),
+
+    path('stock', views.stock),
+    path('stock_edit/<int:stock_id>', views.stock_edit, name='stock_edit'),
+    path('stock_delete/<int:stock_id>', views.stock_delete),
+
+    path('stock_out', views.stock_out),
+    path('stockout_add', views.stockout_add),
+    path('stockout_edit/<int:id>', views.stockout_edit, name='stockout_edit'),
+    path('stockout_delete/<int:id>', views.stockout_delete),
+    path('approve_stockout/<int:id>/', views.approve_stockout, name='approve_stockout'),
+    path('reject_stockout/<int:id>/', views.reject_stockout, name='reject_stockout'),
 
     path('item_measurement', views.item_measurement),
     path('item_measurement_add', views.item_measurement_add),
