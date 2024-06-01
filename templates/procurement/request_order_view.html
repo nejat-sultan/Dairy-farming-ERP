@@ -109,24 +109,6 @@
                       {% endif %}
                       </td>
                     
-
-                      {% comment %} <td class="project-actions">
-                        {% for orderdata in orderdatas %}
-                                {% if orderdata.request_approved == 'Approved' %}
-                                    <span class="badge badge-success">Approved</span>
-                                {% else %}
-                                    <button class="btn btn-success btn-sm" onclick="confirmApprove({{ orderdata.order_id }})">
-                                        Approve
-                                    </button>
-                                {% endif %}
-                        {% endfor %}
-                        {% for orderdata in orderdatas %}
-                        <button class="btn btn-danger btn-sm" onclick="confirmReject({{ orderdata.order_id }})">
-                            Reject
-                        </button>
-                        {% endfor %}
-                    </td> {% endcomment %}
-                    
                   </tr>
               </tbody>
 
@@ -268,16 +250,6 @@
                         
                       
                         <td class="project-actions">
-                            {% comment %} {% if d.status == 'Approved' %}
-                                <span class="badge badge-success">Approved</span>
-                            {% else %}
-                                <button class="btn btn-success btn-sm" onclick="confirmApproverfq({{ d.id }})">
-                                    Approve
-                                </button>
-                            {% endif %}
-                            <button class="btn btn-danger btn-sm" onclick="confirmRejectrfq({{ d.id }})">
-                                Reject
-                            </button> {% endcomment %}
      
                           {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
                             {% if d.status == 'Approved' %}

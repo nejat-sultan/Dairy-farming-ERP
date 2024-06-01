@@ -372,6 +372,13 @@ class FeedTime(models.Model):
 
 
 
+class ItemType(models.Model):
+    item_type_id = models.AutoField(primary_key=True)
+    item_type = models.CharField(max_length=100, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'item_type'
 
 class Item(models.Model):
     item_id = models.AutoField(primary_key=True)
@@ -428,7 +435,8 @@ class Order(models.Model):
 class OrderHasItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    type = models.CharField(max_length=45, null=True)
+    # type = models.CharField(max_length=45, null=True)
+    type = models.ForeignKey(ItemType, on_delete=models.CASCADE, null=True)
     quantity = models.CharField(max_length=45, null=True)
     item_measurement = models.ForeignKey(ItemMeasurement, null=True, on_delete=models.SET_NULL)
     extra_charges = models.FloatField(null=True)
@@ -459,7 +467,8 @@ class Stock(models.Model):
     stock_id = models.AutoField(primary_key=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     quantity = models.CharField(max_length=45)
-    type = models.CharField(max_length=45, null=True)
+    # type = models.CharField(max_length=45, null=True)
+    type = models.ForeignKey(ItemType, on_delete=models.CASCADE, null=True)
     approval_status = models.CharField(max_length=45, null=True)
     modified_date = models.DateTimeField(null=True)
     item_measurement = models.ForeignKey(ItemMeasurement, null=True, on_delete=models.SET_NULL)
@@ -472,7 +481,8 @@ class DirectlyAddedItem(models.Model):
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     quantity = models.CharField(max_length=45, null=True)
     measurement = models.ForeignKey(ItemMeasurement, on_delete=models.SET_NULL, null=True)
-    item_type = models.CharField(max_length=200, null=True)
+    # item_type = models.CharField(max_length=200, null=True)
+    item_type = models.ForeignKey(ItemType, on_delete=models.CASCADE, null=True)
     description = models.CharField(max_length=45, null=True)
     unit_price = models.FloatField()
     total_price = models.FloatField(null=True)
@@ -485,7 +495,8 @@ class Stockout(models.Model):
     id = models.AutoField(primary_key=True)
     requested_by = models.ForeignKey(Employee, on_delete=models.CASCADE,null=True, related_name='stockout_requests')
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='stockout_items')
-    item_type = models.CharField(max_length=200, null=True)
+    # item_type = models.CharField(max_length=200, null=True)
+    item_type = models.ForeignKey(ItemType, on_delete=models.CASCADE, null=True)
     measurement = models.ForeignKey(ItemMeasurement, on_delete=models.SET_NULL, null=True, related_name='stockout_items')
     approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='approved_stockouts')
     quantity = models.IntegerField()

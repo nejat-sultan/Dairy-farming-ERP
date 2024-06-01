@@ -133,10 +133,10 @@ urlpatterns = [
     path('feed_formulation_edit/<str:feed_formulation_id>', views.feed_formulation_edit, name='feed_formulation_edit'),
     path('feed_formulation_delete/<str:feed_formulation_id>', views.feed_formulation_delete),
 
-    # path('item_type', views.item_type),
-    # path('item_type_add', views.item_type_add),
-    # path('item_type_edit/<str:item_type_id>', views.item_type_edit, name='item_type_edit'),
-    # path('item_type_delete/<str:item_type_id>', views.item_type_delete),
+    path('item_type', views.item_type),
+    path('item_type_add', views.item_type_add),
+    path('item_type_edit/<str:item_type_id>', views.item_type_edit, name='item_type_edit'),
+    path('item_type_delete/<str:item_type_id>', views.item_type_delete),
 
     path('item', views.item),
     path('item_add', views.item_add),

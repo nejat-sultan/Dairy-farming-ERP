@@ -74,14 +74,6 @@
                   <label for="inputDescription">Date of Birth</label>
                   <input type="date" id="inputName" name="dob" value="{{ person.date_of_birth|date:'Y-m-d' }}" class="form-control">
                 </div>
-                {% comment %} <div class="form-group">
-                  <label for="inputName">Marital Status</label>
-                  <select id="inputStatus" name="marital_status" class="form-control custom-select">
-                      <option selected disabled>{{person.marital_status}}</option>
-                      <option>Married</option>
-                      <option>Single</option>
-                    </select>
-                </div> {% endcomment %}
                 <div class="form-group">
                   <label for="inputName">Marital Status</label>
                   <select id="inputStatus" name="marital_status" class="form-control custom-select">
@@ -140,7 +132,7 @@
                   </div>
                   <div class="form-group">
                       <label for="inputName">Salary</label>
-                      <input type="text" id="inputName" name="salary" value="{{employee.salary}}" class="form-control">
+                      <input type="number" id="inputName" name="salary" value="{{employee.salary}}" class="form-control">
                   </div>
                   <div class="form-group">
                       <label for="inputName">Hire Date</label>

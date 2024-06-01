@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+from django.forms import ValidationError
 from django.shortcuts import get_object_or_404, render,redirect
 from django.core.files.storage import FileSystemStorage
 from django.utils import timezone
@@ -7,7 +8,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, ItemType, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -311,6 +312,8 @@ def cattle_add(request):
         if cestimatedprice:
             try:
                 cestimatedprice = float(cestimatedprice)
+                if cestimatedprice <= 0:
+                    errors.append("Price must be a positive number.")
             except ValueError:
                 errors.append('Estimated price must be a number.')
         else:
@@ -371,6 +374,8 @@ def cattle_edit(request,farm_entity_id):
         if cestimatedprice:
             try:
                 cestimatedprice = float(cestimatedprice)
+                if cestimatedprice <= 0:
+                    errors.append("Price must be a positive number.")
             except ValueError:
                 errors.append('Estimated price must be a number.')
         else:
@@ -1649,6 +1654,8 @@ def job_add(request):
         if cjob_min_salary:
             try:
                 cjob_min_salary = float(cjob_min_salary)
+                if cjob_min_salary <= 0:
+                    errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Minimum Salary must be a number.')
         else:
@@ -1657,6 +1664,8 @@ def job_add(request):
         if cjob_max_salary:
             try:
                 cjob_max_salary = float(cjob_max_salary)
+                if cjob_max_salary <= 0:
+                    errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Maximum Salary must be a number.')
         else:
@@ -1688,6 +1697,8 @@ def job_edit(request,job_id):
         if cjob_min_salary:
             try:
                 cjob_min_salary = float(cjob_min_salary)
+                if cjob_min_salary <= 0:
+                    errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Minimum Salary must be a number.')
         else:
@@ -1696,6 +1707,8 @@ def job_edit(request,job_id):
         if cjob_max_salary:
             try:
                 cjob_max_salary = float(cjob_max_salary)
+                if cjob_max_salary <= 0:
+                    errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Maximum Salary must be a number.')
         else:
@@ -1775,6 +1788,53 @@ def feed_formulation_delete(request, feed_formulation_id):
     d.delete()
     messages.error(request, "Feed Formulation Deleted Successfully!")
     return redirect("/feed_formulation")
+
+
+@login_required(login_url='login')
+def item_type(request):
+    data = ItemType.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'procurement/item_type.html', context)
+
+@login_required(login_url='login')
+def item_type_add(request):
+    if request.method=="POST":
+        citem_type=request.POST.get('item_type')
+        cdate = datetime.now().date()
+
+        query = ItemType(item_type=citem_type, modified_date=cdate)
+        query.save()
+        messages.success(request, "Item Type Added Successfully!")
+        return redirect("/item_type")
+
+    return render(request, 'procurement/item_type_add.html')
+
+@login_required(login_url='login')
+def item_type_edit(request,item_type_id):
+    edit = ItemType.objects.get(item_type_id=item_type_id)
+    
+    if request.method == "POST":
+        citem_type=request.POST.get('item_type')
+        cdate = datetime.now().date()
+        
+        edit.item_type = citem_type
+        edit.modified_date = cdate
+        
+        edit.save()
+        messages.warning(request, "Item Type Updated Successfully!")
+        return redirect("/item_type")
+
+    d = ItemType.objects.get(item_type_id=item_type_id)
+    context = {"d": d}
+
+    return render(request, 'procurement/item_type_edit.html', context)
+
+def item_type_delete(request, item_type_id):
+    d = ItemType.objects.get(item_type_id=item_type_id)
+    d.delete()
+    messages.error(request, "Item Type Deleted Successfully!")
+    return redirect("/item_type")
 
 @login_required(login_url='login')
 def item(request):
@@ -2026,23 +2086,45 @@ def request_order_add(request):
         cquantity=request.POST.get('quantity')
         citem_measurement_id=request.POST.get('item_measurement_id')
 
-        # Add requested_date to the order object
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Item.objects.all(),
+                'data2': ItemMeasurement.objects.all(),
+                'data3': ItemType.objects.all(),
+            }
+ 
+            return render(request, 'procurement/request_order_add.html', context)
+        
         order.requested_date = datetime.now().date()
         order.request_approved = 'Pending'
         order.purchase_approved = 'Pending'
         order.inventory_approved = 'Pending'
         order.save()
 
-        query = OrderHasItem.objects.create(order=order, item_id=citem_name, type=citem_type, item_measurement_id=citem_measurement_id, quantity=cquantity)
+        query = OrderHasItem.objects.create(order=order, item_id=citem_name, type_id=citem_type, item_measurement_id=citem_measurement_id, quantity=cquantity)
         query.save()
         messages.success(request, "Order Request Added Successfully!")
         return redirect("/request_order")
      
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
+    type_data = ItemType.objects.all()
     context = {
         'data1': item_data,
-          'data2': measurement_data,
+        'data2': measurement_data,
+        'data3': type_data,
     }
 
     return render(request, 'procurement/request_order_add.html', context)
@@ -2056,9 +2138,32 @@ def request_order_edit(request,order_id):
         citem_type=request.POST.get('item_type')
         citem_measurement_id=request.POST.get('item_measurement_id')
         cquantity=request.POST.get('quantity')
+
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if errors:
+            context = {
+                'errors': errors,
+                "d": OrderHasItem.objects.get(order_id=order_id), 
+                "item": edit, 
+                "data1": Item.objects.all(),
+                "data2": ItemMeasurement.objects.all(),
+                'data3': ItemType.objects.all(),
+            }
+ 
+            return render(request, 'procurement/request_order_edit.html', context)
         
         edit.item_id = citem_name
-        edit.type = citem_type
+        edit.type_id = citem_type
         edit.item_measurement_id = citem_measurement_id
         edit.quantity = cquantity
         
@@ -2069,7 +2174,8 @@ def request_order_edit(request,order_id):
     d = OrderHasItem.objects.get(order_id=order_id)
     data1 = Item.objects.all()
     data2 = ItemMeasurement.objects.all()
-    context = {"d": d, "item": edit, "data1": data1, "data2": data2,}
+    type_data = ItemType.objects.all()
+    context = {"d": d, "item": edit, "data1": data1, "data2": data2, 'data3': type_data,}
 
     return render(request, 'procurement/request_order_edit.html', context)
 
@@ -2123,9 +2229,45 @@ def rfq_add(request, order_id):
     if request.method == "POST":
         csupplier_name = request.POST.get('supplier_name')
         citem_id = request.POST.get('item_id')
-        cquantity = int(request.POST.get('quantity'))
+        cquantity = request.POST.get('quantity')
         cprice = request.POST.get('price')
         cdate = datetime.now().date()
+
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if cprice:
+            try:
+                cprice = float(cprice)
+                if cprice <= 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append("Price must be a valid number.")
+        else:
+            cprice = None
+
+        if errors:
+            supplier_data = Supplier.objects.all()
+            existing_rfq = OrderHasItemSupplier.objects.filter(order_id=order_id)
+            order_item = get_object_or_404(OrderHasItem, order_id=order_id)
+            item = order_item.item
+
+            context = {
+                'errors': errors,
+                'data2': supplier_data,
+                'existing_rfq': existing_rfq,
+                'order_id': order_id,
+                'item': item,
+            }
+            return render(request, 'procurement/rfq_add.html', context)
 
         order_item = OrderHasItem.objects.get(order_id=order_id)
         order_item_quantity = int(order_item.quantity)
@@ -2148,8 +2290,8 @@ def rfq_add(request, order_id):
     item = order_item.item
     
     context = {
-        'data2' : supplier_data,
-        'existing_rfq' : existing_rfq,
+        'data2': supplier_data,
+        'existing_rfq': existing_rfq,
         'order_id': order_id,
         'item': item,
     }
@@ -2167,21 +2309,55 @@ def rfq_edit(request,id):
         cquantity=request.POST.get('quantity')
         cprice=request.POST.get('price')
         cdate = datetime.now().date()
+
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if cprice:
+            try:
+                cprice = float(cprice)
+                if cprice <= 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append("Price must be a valid number.")
+        else:
+            cprice = None
+
+        if errors:
+            d = OrderHasItemSupplier.objects.get(id=id)
+            order_data = OrderHasItem.objects.filter(order__request_approved='approved').values('item_id').distinct()
+            supplier_data = Supplier.objects.all()
+            item = get_object_or_404(Item, pk=edit.item_id)  
+
+            context = {
+                'data1': order_data,
+                'data2': supplier_data,
+                'd': d,
+                'item': item,
+                'errors': errors,
+            }
+
+            return render(request, 'procurement/rfq_edit.html', context)
         
-        # Update the attributes
         edit.supplier_id = csupplier_name
         edit.item_id = citem_id
         edit.quantity = cquantity
         edit.price = cprice
         edit.modified_date = cdate
-        
-        # Save the changes
+
         edit.save()
         messages.warning(request, "RFQ Updated Successfully!")
         return redirect(reverse('request_order_view', args=[edit.order_id]))
 
     d = OrderHasItemSupplier.objects.get(id=id)
-    # order_data = OrderHasItem.objects.filter(order__request_approved='approved')
     order_data = OrderHasItem.objects.filter(order__request_approved='approved').values('item_id').distinct()
     supplier_data = Supplier.objects.all()
     item = get_object_or_404(Item, item_id=edit.item_id)
@@ -2298,12 +2474,12 @@ def approve_inventory(request, id):
 
         item = order_has_item_supplier.item
         quantity = int(order_has_item_supplier.quantity)
-        item_type = order_has_item.type
+        type = order_has_item.type
         item_measurement = order_has_item.item_measurement
 
         existing_inventory_item = Stock.objects.filter(
             item=item,
-            type=item_type,
+            type=type,
             item_measurement=item_measurement
         ).first()
 
@@ -2315,7 +2491,7 @@ def approve_inventory(request, id):
             Stock.objects.create(
                 item=item,
                 quantity=str(quantity),
-                type=item_type,
+                type=type,
                 modified_date=timezone.now(),
                 item_measurement=item_measurement,
                 approval_status='Approved'
@@ -2416,15 +2592,17 @@ def stock_add(request):
             messages.success(request, "Stock updated successfully!")
             return redirect("/stock")
         else:
-            Stock.objects.create(quantity=cquantity,type=ctype,item_id=citem_id,item_measurement_id=citem_measurement_id,modified_date=cmodified_date)
+            Stock.objects.create(quantity=cquantity,type_id=ctype,item_id=citem_id,item_measurement_id=citem_measurement_id,modified_date=cmodified_date)
             messages.success(request, "Added to Stock Successfully!")
             return redirect("/stock")
     
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
+    type_data = ItemType.objects.all()
     context = {
         'data1': item_data,
         'data2': measurement_data,
+        'data3': type_data,
     }
 
     return render(request, 'inventory/stock_add.html', context)
@@ -2441,7 +2619,7 @@ def stock_edit(request,stock_id):
         cmodified_date = datetime.now().date()
         
         edit.quantity = cquantity
-        edit.type = ctype
+        edit.type_id = ctype
         edit.item_id = citem_id
         edit.item_measurement_id = citem_measurement_id
         edit.modified_date = cmodified_date
@@ -2453,8 +2631,9 @@ def stock_edit(request,stock_id):
     d = Stock.objects.get(stock_id=stock_id)
     data1 = Item.objects.all()
     data2 = ItemMeasurement.objects.all()
+    data3 = ItemType.objects.all()
         
-    context = {"d": d, "item": edit, "data1": data1, "data2": data2,}
+    context = {"d": d, "item": edit, "data1": data1, "data2": data2, "data3": data3,}
 
     return render(request, 'inventory/stock_edit.html', context)
 
@@ -2484,15 +2663,47 @@ def stockin_add(request):
         cdescription = request.POST.get('description')
         capproval_status = 'Pending'
 
-        DirectlyAddedItem.objects.create(quantity=cquantity,item_type=ctype,item_id=citem_id,measurement_id=citem_measurement_id,unit_price=cunit_price,description=cdescription,approval_status=capproval_status)
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if cunit_price:
+            try:
+                cunit_price = float(cunit_price)
+                if cunit_price <= 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append("Price must be a valid number.")
+        else:
+            cunit_price = None
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Item.objects.all(),
+                'data2': ItemMeasurement.objects.all(),
+                'data3': ItemType.objects.all(),
+            }
+            return render(request, 'inventory/stockin_add.html', context)
+
+        DirectlyAddedItem.objects.create(quantity=cquantity,item_type_id=ctype,item_id=citem_id,measurement_id=citem_measurement_id,unit_price=cunit_price,description=cdescription,approval_status=capproval_status)
         messages.success(request, "Stock request sent Successfully!")
         return redirect("/stock_in")
     
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
+    type_data = ItemType.objects.all()
     context = {
         'data1': item_data,
         'data2': measurement_data,
+        'data3': type_data,
     }
 
     return render(request, 'inventory/stockin_add.html', context)
@@ -2509,9 +2720,41 @@ def stockin_edit(request,id):
         cunit_price = request.POST.get('unit_price')
         cdescription = request.POST.get('description')
         capproval_status = 'Pending'
+
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if cunit_price:
+            try:
+                cunit_price = float(cunit_price)
+                if cunit_price <= 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append("Price must be a valid number.")
+        else:
+            cunit_price = None
+
+        if errors:
+            context = {
+                'errors': errors,
+                "d": DirectlyAddedItem.objects.get(id=id), 
+                "item": edit, 
+                'data1': Item.objects.all(),
+                'data2': ItemMeasurement.objects.all(),
+                'data3': ItemType.objects.all(),
+            }
+            return render(request, 'inventory/stockin_edit.html', context)
         
         edit.quantity = cquantity
-        edit.item_type = ctype
+        edit.item_type_id = ctype
         edit.item_id = citem_id
         edit.measurement_id = citem_measurement_id
         edit.unit_price = cunit_price
@@ -2525,8 +2768,9 @@ def stockin_edit(request,id):
     d = DirectlyAddedItem.objects.get(id=id)
     data1 = Item.objects.all()
     data2 = ItemMeasurement.objects.all()
+    data3 = ItemType.objects.all()
         
-    context = {"d": d, "item": edit, "data1": data1, "data2": data2,}
+    context = {"d": d, "item": edit, "data1": data1, "data2": data2, "data3": data3,}
 
     return render(request, 'inventory/stockin_edit.html', context)
 
@@ -2601,15 +2845,40 @@ def stockout_add(request):
         cstatus = 'Pending'
         cmodified_date = datetime.now().date()
 
-        Stockout.objects.create(quantity=cquantity,item_type=citem_type,item_id=citem_id,measurement_id=citem_measurement_id,status=cstatus,modified_date=cmodified_date)
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Item.objects.all(),
+                'data2': ItemMeasurement.objects.all(),
+                'data3': ItemType.objects.all(),
+            }
+            return render(request, 'inventory/stockout_add.html', context)
+
+        user_profile = UserProfile.objects.get(user=request.user)
+        crequested_by_id = user_profile.employee_id
+
+        Stockout.objects.create(quantity=cquantity,item_type_id=citem_type,item_id=citem_id,measurement_id=citem_measurement_id,status=cstatus,modified_date=cmodified_date,requested_by_id=crequested_by_id)
         messages.success(request, "Stock out request sent Successfully!")
         return redirect("/stock_out")
     
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
+    type_data = ItemType.objects.all()
     context = {
         'data1': item_data,
         'data2': measurement_data,
+        'data3': type_data,
     }
 
     return render(request, 'inventory/stockout_add.html', context)
@@ -2625,9 +2894,31 @@ def stockout_edit(request,id):
         citem_measurement_id=request.POST.get('item_measurement_id')
         cstatus = 'Pending'
         cmodified_date = datetime.now().date()
+
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if errors:
+            context = {
+                'errors': errors,
+                "d": Stockout.objects.get(id=id), 
+                "item": edit,
+                'data1': Item.objects.all(),
+                'data2': ItemMeasurement.objects.all(),
+                'data3': ItemType.objects.all(),
+            }
+            return render(request, 'inventory/stockout_edit.html', context)
         
         edit.quantity = cquantity
-        edit.item_type = ctype
+        edit.item_type_id = ctype
         edit.item_id = citem_id
         edit.measurement_id = citem_measurement_id
         edit.status = cstatus
@@ -2640,8 +2931,9 @@ def stockout_edit(request,id):
     d = Stockout.objects.get(id=id)
     data1 = Item.objects.all()
     data2 = ItemMeasurement.objects.all()
+    data3 = ItemType.objects.all()
         
-    context = {"d": d, "item": edit, "data1": data1, "data2": data2,}
+    context = {"d": d, "item": edit, "data1": data1, "data2": data2, "data3": data3,}
 
     return render(request, 'inventory/stockout_edit.html', context)
 
@@ -2670,6 +2962,8 @@ def approve_stockout(request, id):
         if requested_quantity > current_stock_quantity:
             return JsonResponse({'error': 'Requested quantity exceeds current stock'}, status=400)
         
+        user_profile = UserProfile.objects.get(user=request.user)
+        inventory.approved_by_id = user_profile.employee_id
         inventory.status = 'Approved'
         inventory.save()
         
@@ -2684,6 +2978,8 @@ def approve_stockout(request, id):
 def reject_stockout(request, id):
     try:
         inventory = get_object_or_404(Stockout, pk=id)
+        user_profile = UserProfile.objects.get(user=request.user)
+        inventory.approved_by_id = user_profile.employee_id
         inventory.status = 'Rejected'
         inventory.save()
 
@@ -2814,6 +3110,8 @@ def employee_add(request):
         if csalary:
             try:
                 csalary = float(csalary)
+                if csalary <= 0:
+                    errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
@@ -2946,6 +3244,8 @@ def employee_edit(request, farm_entity_id):
         if employee.salary:
             try:
                 employee.salary = float(employee.salary)
+                if employee.salary <= 0:
+                    errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
@@ -3106,6 +3406,8 @@ def add_experience(request):
         if csalary:
             try:
                 csalary = float(csalary)
+                if csalary <= 0:
+                    errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
@@ -3147,6 +3449,8 @@ def add_guarantee(request):
         if csalary_evaluation:
             try:
                 csalary_evaluation = float(csalary_evaluation)
+                if csalary_evaluation <= 0:
+                    errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
@@ -3187,6 +3491,8 @@ def add_jobhistory(request):
         if csalary:
             try:
                 csalary = float(csalary)
+                if csalary <= 0:
+                    errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
@@ -3293,15 +3599,6 @@ def leave_delete(request, leave_id):
     messages.error(request, "Request Deleted Successfully!")
     return redirect("/leave")
 
-# def approve_leave(request, leave_id):
-#     try:
-#         leave = EmployeeLeave.objects.get(pk=leave_id)
-#         leave.approval_status = 'Approved'
-#         leave.save()
-#         return JsonResponse({'message': 'Leave request approved successfully.'})
-#     except EmployeeLeave.DoesNotExist:
-#         return JsonResponse({'error': 'Leave not found.'}, status=404)
-
 def approve_leave(request, leave_id):
     try:
         leave = EmployeeLeave.objects.get(pk=leave_id)
@@ -3314,7 +3611,9 @@ def approve_leave(request, leave_id):
         if employee.available_leave_hours is not None:
             employee.available_leave_hours -= leave_duration
             employee.save()
-        
+
+        user_profile = UserProfile.objects.get(user=request.user)
+        leave.approved_by_farm_entity_id = user_profile.employee_id
         leave.approval_status = 'Approved'
         leave.save()
         
@@ -3328,6 +3627,8 @@ def approve_leave(request, leave_id):
 def reject_leave(request, leave_id):
     try:
         leave = EmployeeLeave.objects.get(pk=leave_id)
+        user_profile = UserProfile.objects.get(user=request.user)
+        leave.approved_by_farm_entity_id = user_profile.employee_id
         leave.approval_status = 'Rejected'
         leave.save()
         return JsonResponse({'message': 'Leave request Rejected successfully.'})
