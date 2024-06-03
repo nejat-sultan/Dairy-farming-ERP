@@ -112,8 +112,18 @@ urlpatterns = [
 
     path('shift', views.shift),
     path('shift_add', views.shift_add),
-    path('shift_edit/<str:shift_id>', views.shift_edit, name='shift_edit'),
-    path('shift_delete/<str:shift_id>', views.shift_delete),
+    path('shift_edit/<str:id>', views.shift_edit, name='shift_edit'),
+    path('shift_delete/<str:id>', views.shift_delete),
+
+    path('task', views.task),
+    path('task_add', views.task_add),
+    path('task_edit/<str:id>', views.task_edit, name='task_edit'),
+    path('task_delete/<str:id>', views.task_delete),
+
+    # path('assign_task', views.assign_task),
+    # path('assign_task_add', views.assign_task_add),
+    # path('assign_task_edit/<str:id>', views.assign_task_edit, name='assign_task_edit'),
+    # path('assign_task_delete/<str:id>', views.assign_task_delete),
 
     path('leave', views.leave),
     path('leave_add', views.leave_add),

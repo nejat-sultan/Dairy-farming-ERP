@@ -9,12 +9,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Shift Add</h1>
+            <h1>Task Add</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="../shift">Home</a></li>
-              <li class="breadcrumb-item active">Shift Add</li>
+              <li class="breadcrumb-item"><a href="../task">Home</a></li>
+              <li class="breadcrumb-item active">Task Add</li>
             </ol>
           </div>
         </div>
@@ -23,7 +23,7 @@
 
 
     <section class="content">
-    <form action="/shift_add" method="post">
+    <form action="/task_add" method="post">
       {% csrf_token %}
       <div class="row">
         <div class="col-md-12">
@@ -38,27 +38,13 @@
               </div>
             </div>
             <div class="card-body">
-              {% if errors %}
-                <div class="alert alert-danger">
-                  <ul>
-                    {% for error in errors %}
-                      <li>{{ error }}</li>
-                    {% endfor %}
-                  </ul>
-                </div>
-              {% endif %}
-
               <div class="form-group">
-                <label for="inputName">Shift</label>
-                <input type="text" id="inputName" name="shift_name" class="form-control" required>
+                <label for="inputName">Task Name</label>
+                <input type="text" id="inputName" name="task_name" class="form-control" required>
               </div>
               <div class="form-group">
-                <label for="inputName">Start Time</label>
-                <input type="datetime-local" id="inputName" name="shift_start_time" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="inputName">End Time</label>
-                <input type="datetime-local" id="inputName" name="shift_end_time" class="form-control">
+                <label for="inputName">Description</label>
+                <input type="text" id="inputName" name="description" class="form-control">
               </div>
             </div>
           </div>
@@ -67,8 +53,8 @@
       </div>
       <div class="row">
         <div class="col-12">
-          <a href="shift" class="btn btn-secondary">Back</a>
-          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Shift</button>
+          <a href="task" class="btn btn-secondary">Back</a>
+          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Task</button>
         </div>
       </div>
     </form>

@@ -143,15 +143,6 @@ class GuaranteeType(models.Model):
     class Meta:
         db_table = 'guarantee_type'
 
-# class Guarantee(models.Model):
-#     guarantee_id = models.AutoField(primary_key=True)
-#     guarantee_type = models.ForeignKey(GuaranteeType, on_delete=models.CASCADE)
-#     salary_evaluation = models.FloatField(null=True)
-#     person_farm_entity = models.ForeignKey(Employee, on_delete=models.CASCADE)
-
-#     class Meta:
-#         db_table = 'guarantee'
-
 class Guarantee(models.Model):
     farm_entity = models.OneToOneField(FarmEntity, on_delete=models.CASCADE, primary_key=True)
     name = models.CharField(max_length=200)
@@ -163,13 +154,34 @@ class Guarantee(models.Model):
         db_table = 'guarantee'
 
 class Shift(models.Model):
-    shift_id = models.AutoField(primary_key=True)
-    shift_name = models.CharField(max_length=45, null=True)
+    id = models.AutoField(primary_key=True)
+    shift_name = models.CharField(max_length=100, null=True)
     shift_start_time = models.DateTimeField(null=True)
     shift_end_time = models.DateTimeField(null=True)
+    modified_date = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'shift'
+
+class Task(models.Model):
+    id = models.AutoField(primary_key=True) 
+    task_name = models.CharField(max_length=200, null=False)
+    description = models.CharField(max_length=200, null=True, blank=True)
+    modified_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'task'
+
+class TaskAssignment(models.Model):
+    id = models.AutoField(primary_key=True)
+    shift = models.ForeignKey(Shift, on_delete=models.CASCADE)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE)
+    assigned_to = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    status = models.CharField(max_length=45, null=True)
+    due_time = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'task_assignment'
 
 class JobHistory(models.Model):
     id = models.AutoField(primary_key=True)
@@ -216,18 +228,6 @@ class CattleBreed(models.Model):
     class Meta:
         db_table = 'cattle_breed'
 
-# class Cattle(models.Model):
-#     cattle_id = models.CharField(max_length=30, primary_key=True)
-#     cattle_date_of_birth = models.DateTimeField(null=True)
-#     cattle_name = models.CharField(max_length=50, null=True)
-#     cattle_gender = models.CharField(max_length=15, null=True)
-#     estimated_price = models.FloatField(null=True)
-#     cattle_breed = models.ForeignKey(CattleBreed, on_delete=models.CASCADE)
-#     cattle_status = models.ForeignKey(CattleStatus, on_delete=models.CASCADE)
-    
-#     class Meta:
-#         db_table = 'cattle'
-
 class Cattle(models.Model):
     farm_entity = models.OneToOneField(FarmEntity,on_delete=models.CASCADE,primary_key=True)
     cattle_ear_id = models.CharField(max_length=30, null=True, blank=True)
@@ -268,16 +268,6 @@ class CattleHasVaccine(models.Model):
         db_table = 'cattle_has_vaccine'
         # unique_together = ['cattle_id', 'vaccine_id']
 
-# class CattlePregnancy(models.Model):
-#     cattle_pregnancy_id = models.AutoField(primary_key=True)
-#     cattle_pregnancy_type = models.CharField(max_length=45, null=True)
-#     cattle_pregnancy_date = models.DateField()
-#     cattle_expected_delivery_date = models.DateField(null=True)
-#     cattle_pregnancy_status = models.CharField(max_length=45, null=True)
-#     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
-
-#     class Meta:
-#         db_table = 'cattle_pregnancy'
 class PregnancyStatus(models.Model):
     pregnancy_status_id = models.AutoField(primary_key=True)
     pregnancy_status = models.CharField(max_length=100, null=True)
@@ -450,7 +440,7 @@ class OrderHasItem(models.Model):
         # unique_together = ('order', 'item',)
 
 class OrderHasItemSupplier(models.Model):
-    order = models.ForeignKey(OrderHasItem, on_delete=models.CASCADE)
+    order = models.ForeignKey(OrderHasItem, on_delete=models.CASCADE, related_name='supplier_items')
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE)
     price = models.FloatField(null=True)

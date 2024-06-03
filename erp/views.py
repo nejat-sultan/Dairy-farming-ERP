@@ -1,4 +1,6 @@
 from datetime import datetime
+import json
+import logging
 import os
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404, render,redirect
@@ -8,7 +10,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, ItemType, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, ItemType, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -1550,6 +1552,7 @@ def shift_add(request):
         cshift_name=request.POST.get('shift_name')
         cshift_start_time=request.POST.get('shift_start_time')
         cshift_end_time=request.POST.get('shift_end_time')
+        cdate = datetime.now().date()
 
         errors = []
         if cshift_start_time:
@@ -1574,7 +1577,7 @@ def shift_add(request):
             }
             return render(request, 'employee/shift_add.html', context)
 
-        query = Shift(shift_name=cshift_name, shift_start_time=cshift_start_time, shift_end_time=cshift_end_time)
+        query = Shift(shift_name=cshift_name, shift_start_time=cshift_start_time, shift_end_time=cshift_end_time,modified_date=cdate)
         query.save()
         messages.success(request, "Shift Added Successfully!")
         return redirect("/shift")
@@ -1582,13 +1585,14 @@ def shift_add(request):
     return render(request, 'employee/shift_add.html')
 
 @login_required(login_url='login')
-def shift_edit(request,shift_id):
-    edit = Shift.objects.get(shift_id=shift_id)
+def shift_edit(request,id):
+    edit = Shift.objects.get(id=id)
     
     if request.method == "POST":
         cshift_name=request.POST.get('shift_name')
         cshift_start_time=request.POST.get('shift_start_time')
         cshift_end_time=request.POST.get('shift_end_time')
+        cdate = datetime.now().date()
 
         errors = []
         if cshift_start_time:
@@ -1610,31 +1614,80 @@ def shift_edit(request,shift_id):
         if errors:
             context = {
                 'errors': errors,
-                'd': Shift.objects.get(shift_id=shift_id)
+                'd': Shift.objects.get(id=id)
             }
             return render(request, 'employee/shift_edit.html', context)
         
-        # Update the attributes
         edit.shift_name = cshift_name
         edit.shift_start_time = cshift_start_time
         edit.shift_end_time = cshift_end_time
+        edit.modified_date=cdate
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Shift Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/shift")
 
-    d = Shift.objects.get(shift_id=shift_id)
+    d = Shift.objects.get(id=id)
     context = {"d": d}
 
     return render(request, 'employee/shift_edit.html', context)
 
-def shift_delete(request, shift_id):
-    d = Shift.objects.get(shift_id=shift_id)
+def shift_delete(request, id):
+    d = Shift.objects.get(id=id)
     d.delete()
     messages.error(request, "Shift Deleted Successfully!")
     return redirect("/shift")
+
+
+@login_required(login_url='login')
+def task(request):
+    data = Task.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'employee/task.html', context)
+
+@login_required(login_url='login')
+def task_add(request):
+    if request.method=="POST":
+        ctask_name=request.POST.get('task_name')
+        cdescription=request.POST.get('description')
+        cdate = datetime.now().date()
+
+        query = Task(task_name=ctask_name, description=cdescription, modified_date=cdate)
+        query.save()
+        messages.success(request, "Task Added Successfully!")
+        return redirect("/task")
+
+    return render(request, 'employee/task_add.html')
+
+@login_required(login_url='login')
+def task_edit(request,id):
+    edit = Task.objects.get(id=id)
+    
+    if request.method == "POST":
+        ctask_name=request.POST.get('task_name')
+        cdescription=request.POST.get('description')
+        cdate = datetime.now().date()
+        
+        edit.task_name = ctask_name
+        edit.description = cdescription
+        edit.modified_date = cdate
+        
+        edit.save()
+        messages.warning(request, "Task Updated Successfully!")
+        return redirect("/task")
+
+    d = Task.objects.get(id=id)
+    context = {"d": d}
+
+    return render(request, 'employee/task_edit.html', context)
+
+def task_delete(request, id):
+    d = Task.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Task Deleted Successfully!")
+    return redirect("/task")
+
 
 @login_required(login_url='login')
 def job(request):
@@ -2270,7 +2323,7 @@ def rfq_add(request, order_id):
             return render(request, 'procurement/rfq_add.html', context)
 
         order_item = OrderHasItem.objects.get(order_id=order_id)
-        order_item_quantity = int(order_item.quantity)
+        order_item_quantity = float(order_item.quantity)
 
         order_supplier_quantity = OrderHasItemSupplier.objects.filter(order_id=order_id).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
         total_quantity = order_supplier_quantity + cquantity
@@ -2380,44 +2433,65 @@ def rfq_delete(request, id):
 
 def approve_rfq(request, id):
     try:
-        with transaction.atomic():
-            order_item_supplier = OrderHasItemSupplier.objects.get(pk=id)
-            order_item_supplier.status = 'Approved'
-            order_item_supplier.save()
-            
-            order_item = order_item_supplier.order
-            order = order_item.order
-            
-            order.purchase_approved = 'Approved'
-            order.purchase_approved_date = timezone.now()
-            order.save()
+        order_item_supplier = OrderHasItemSupplier.objects.get(pk=id)
+        order_item_supplier.status = 'Approved'
+        order_item_supplier.save()
 
-        return JsonResponse({'message': 'Purchase approved successfully.'})
+        return JsonResponse({'message': 'Request for quote approved successfully.'})
     except OrderHasItemSupplier.DoesNotExist:
-        return JsonResponse({'error': 'Order item supplier not found.'}, status=404)
-    except Order.DoesNotExist:
-        return JsonResponse({'error': 'Order not found.'}, status=404)
-
-
+        return JsonResponse({'error': 'Order has item supplier not found.'}, status=404)
+    
 def reject_rfq(request, id):
     try:
         with transaction.atomic():
             order_item_supplier = OrderHasItemSupplier.objects.get(pk=id)
             order_item_supplier.status = 'Rejected'
             order_item_supplier.save()
-            
-            order_item = order_item_supplier.order
-            order = order_item.order
-            
-            order.purchase_approved = 'Rejected'
-            order.purchase_approved_date = timezone.now()
-            order.save()
-
-        return JsonResponse({'message': 'Purchase approved successfully.'})
+        
+        return JsonResponse({'message': 'Request for quote rejected successfully.'})
     except OrderHasItemSupplier.DoesNotExist:
-        return JsonResponse({'error': 'Order item supplier not found.'}, status=404)
-    except Order.DoesNotExist:
-        return JsonResponse({'error': 'Order not found.'}, status=404)
+        return JsonResponse({'error': 'Order has item supplier not found.'}, status=404)
+
+# def approve_rfq(request, id):
+#     try:
+#         with transaction.atomic():
+#             order_item_supplier = OrderHasItemSupplier.objects.get(pk=id)
+#             order_item_supplier.status = 'Approved'
+#             order_item_supplier.save()
+            
+#             order_item = order_item_supplier.order
+#             order = order_item.order
+            
+#             order.purchase_approved = 'Approved'
+#             order.purchase_approved_date = timezone.now()
+#             order.save()
+
+#         return JsonResponse({'message': 'Purchase approved successfully.'})
+#     except OrderHasItemSupplier.DoesNotExist:
+#         return JsonResponse({'error': 'Order item supplier not found.'}, status=404)
+#     except Order.DoesNotExist:
+#         return JsonResponse({'error': 'Order not found.'}, status=404)
+
+
+# def reject_rfq(request, id):
+#     try:
+#         with transaction.atomic():
+#             order_item_supplier = OrderHasItemSupplier.objects.get(pk=id)
+#             order_item_supplier.status = 'Rejected'
+#             order_item_supplier.save()
+            
+#             order_item = order_item_supplier.order
+#             order = order_item.order
+            
+#             order.purchase_approved = 'Rejected'
+#             order.purchase_approved_date = timezone.now()
+#             order.save()
+
+#         return JsonResponse({'message': 'Purchase approved successfully.'})
+#     except OrderHasItemSupplier.DoesNotExist:
+#         return JsonResponse({'error': 'Order item supplier not found.'}, status=404)
+#     except Order.DoesNotExist:
+#         return JsonResponse({'error': 'Order not found.'}, status=404)
 
 
 @login_required(login_url='login')
@@ -2470,10 +2544,11 @@ def approve_inventory(request, id):
         order_has_item_supplier.inventory_status = 'Approved'
         order_has_item_supplier.save()
 
-        order_has_item = order_has_item_supplier.order
-
         item = order_has_item_supplier.item
-        quantity = int(order_has_item_supplier.quantity)
+        quantity = float(order_has_item_supplier.quantity)
+        
+        order_id = order_has_item_supplier.order_id 
+        order_has_item = get_object_or_404(OrderHasItem, order_id=order_id)
         type = order_has_item.type
         item_measurement = order_has_item.item_measurement
 
@@ -2483,8 +2558,10 @@ def approve_inventory(request, id):
             item_measurement=item_measurement
         ).first()
 
+        print("Existing Inventory Item:", existing_inventory_item)
+
         if existing_inventory_item:
-            existing_inventory_item.quantity = str(int(existing_inventory_item.quantity) + quantity)
+            existing_inventory_item.quantity = str(float(existing_inventory_item.quantity) + quantity)
             existing_inventory_item.modified_date = timezone.now()
             existing_inventory_item.save()
         else:
@@ -2586,7 +2663,7 @@ def stock_add(request):
         ).first()
 
         if existing_inventory_item:
-            existing_inventory_item.quantity = str(int(existing_inventory_item.quantity) + int(cquantity))
+            existing_inventory_item.quantity = str(float(existing_inventory_item.quantity) + float(cquantity))
             existing_inventory_item.modified_date = cmodified_date
             existing_inventory_item.save()
             messages.success(request, "Stock updated successfully!")
@@ -2788,7 +2865,7 @@ def approve_stockin(request, id):
         inventory.save()
 
         item = inventory.item
-        quantity = int(inventory.quantity)
+        quantity = float(inventory.quantity)
         item_type = inventory.item_type
         item_measurement = inventory.measurement
 
@@ -2799,7 +2876,7 @@ def approve_stockin(request, id):
         ).first()
 
         if existing_inventory_item:
-            existing_inventory_item.quantity = str(int(existing_inventory_item.quantity) + quantity)
+            existing_inventory_item.quantity = str(float(existing_inventory_item.quantity) + quantity)
             existing_inventory_item.modified_date = timezone.now()
             existing_inventory_item.save()
         else:
@@ -2956,8 +3033,8 @@ def approve_stockout(request, id):
         if not stock_item:
             return JsonResponse({'error': 'Stock item not found'}, status=404)
         
-        current_stock_quantity = int(stock_item.quantity)
-        requested_quantity = int(inventory.quantity)
+        current_stock_quantity = float(stock_item.quantity)
+        requested_quantity = float(inventory.quantity)
         
         if requested_quantity > current_stock_quantity:
             return JsonResponse({'error': 'Requested quantity exceeds current stock'}, status=400)

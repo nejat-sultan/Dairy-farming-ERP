@@ -8,12 +8,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Shift</h1>
+            <h1>Task</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="">Home</a></li>
-              <li class="breadcrumb-item active">Shift</li>
+              <li class="breadcrumb-item active">Task</li>
             </ol>
           </div>
         </div>
@@ -24,10 +24,10 @@
 
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Manage Shift</h3>
+          <h3 class="card-title">Manage Task</h3>
 
           <div class="card-tools">
-            <a class="btn" href="shift_add" style="background-color: #007f5c;color: #fff;">
+            <a class="btn" href="task_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -50,17 +50,14 @@
                       <th style="width: 10%">
                           Id
                       </th> 
-                      <th style="width: 20%">
-                        Shift
+                      <th style="width: 30%">
+                        Task Name
                       </th>
-                      <th style="width: 25%">
-                        Start Time
-                      </th>
-                      <th style="width: 25%">
-                        End Time
+                      <th style="width: 30%">
+                        Description
                       </th>
                     
-                      <th style="width: 20%"> Actions </th>
+                      <th style="width: 30%"> Actions </th>
                   </tr>
               </thead>
               <tbody>
@@ -70,17 +67,14 @@
                         {{d.id}}
                       </td>
                       <td>
-                        {{d.shift_name}}
+                        {{d.task_name}}
                       </td>
                       <td>
-                        {{d.shift_start_time}}
-                      </td>
-                      <td>
-                        {{d.shift_end_time}}
+                        {{d.description}}
                       </td>
 
                       <td class="project-actions">
-                          <a class="btn btn-info btn-sm" href="/shift_edit/{{d.id}}">
+                          <a class="btn btn-info btn-sm" href="/task_edit/{{d.id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
                           </a>
@@ -91,8 +85,9 @@
 
                           <script>
                             function confirmDelete(cattleId) {
-                                if (confirm("Are you sure you want to delete this Shift?")) {
-                                    window.location.href = "/shift_delete/" + cattleId;
+                                if (confirm("Are you sure you want to delete this Task?")) {
+                                    // If user confirms, redirect to the delete URL
+                                    window.location.href = "/task_delete/" + cattleId;
                                 }
                             }
                           </script>
