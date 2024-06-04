@@ -1,7 +1,14 @@
+import base64
 from datetime import datetime
 import json
 import logging
 import os
+import io
+
+import matplotlib # type: ignore
+matplotlib.use('agg') 
+import matplotlib.pyplot as plt # type: ignore
+import pandas as pd # type: ignore
 from django.forms import ValidationError
 from django.shortcuts import get_object_or_404, render,redirect
 from django.core.files.storage import FileSystemStorage
@@ -10,7 +17,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, Guarantee, GuaranteeType, Item, ItemType, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, Item, ItemType, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -191,13 +198,60 @@ def logout_user(request):
 # @allowed_users(allowed_roles=['Admin'])
 # @admin_only
 def index(request):
+    stock_data = Stock.objects.all().order_by('modified_date')
+    df = pd.DataFrame(list(stock_data.values('modified_date', 'quantity')))
+    
+    # if not df.empty:
+    #     df['modified_date'] = pd.to_datetime(df['modified_date'])
+    #     df.set_index('modified_date', inplace=True)
+
+    #     plt.figure(figsize=(10, 6))
+    #     plt.bar(df.index, df['quantity'], color='b', width=0.5) 
+    #     plt.title('Stock Report')
+    #     plt.xlabel('Date')
+    #     plt.ylabel('Quantity')
+    #     plt.grid(True)
+
+    #     img = io.BytesIO()
+    #     plt.savefig(img, format='png')
+    #     img.seek(0)
+    #     plt.close()  
+
+    #     plot_img_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
+    # else:
+    #     plot_img_base64 = None
+
+    milk_data = MilkProduction.objects.all().order_by('milk_time')
+    df = pd.DataFrame(list(milk_data.values('milk_time', 'amount_in_liter')))
+    
+    if not df.empty:
+        df['milk_time'] = pd.to_datetime(df['milk_time'])
+        df.set_index('milk_time', inplace=True)
+        df = df.resample('W').sum()
+
+        # Plot the data as a bar chart
+        plt.figure(figsize=(10, 6))
+        plt.bar(df.index, df['amount_in_liter'], color='b')
+        plt.title('Weekly Milk Production')
+        plt.xlabel('Week')
+        plt.ylabel('Milk Production (Liters)')
+        plt.grid(True)
+
+        img = io.BytesIO()
+        plt.savefig(img, format='png')
+        img.seek(0)
+        plt.close()  
+
+        plot_img_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
+    else:
+        plot_img_base64 = None
    
     dash1 = Dashboard()
     dash1.amount =  OrderHasItemSupplier.objects.filter(status='approved').count()
     dash1.description = 'Purchase Orders'
 
     dash2 = Dashboard()
-    dash2.amount = 0
+    dash2.amount = Stock.objects.all().count()
     dash2.description = 'Stock Available'
 
     dash3 = Dashboard()
@@ -235,6 +289,7 @@ def index(request):
     print("Cattle Photos Dictionary:", cattle_photos)  
 
     context = {
+        'plot_img_base64': plot_img_base64,
         'dash1': dash1, 
         'dash2': dash2, 
         'dash3': dash3, 
@@ -248,6 +303,7 @@ def index(request):
     }
 
     return render(request, 'index.html',context)
+    
 
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin','Veterinarian'])
@@ -1243,6 +1299,282 @@ def milk_production_delete(request, milk_production_id):
     return redirect("/milk_production")
 
 @login_required(login_url='login')
+def feed_formulation(request):
+    data = FeedFormulation.objects.all()
+    context = {"data1":data}
+
+    return render(request, 'feed/feed_formulation.html', context)
+
+@login_required(login_url='login')
+def feed_formulation_add(request):
+    if request.method=="POST":
+        cname=request.POST.get('name')
+        cstart_age_in_weeks=request.POST.get('start_age_in_weeks')
+        cend_age_in_weeks=request.POST.get('end_age_in_weeks')
+        cmodified_date=datetime.now().date()
+
+        query = FeedFormulation(name=cname, start_age_in_weeks=cstart_age_in_weeks, end_age_in_weeks=cend_age_in_weeks, modified_date= cmodified_date)
+        query.save()
+        messages.success(request, "Feed Formulation Added Successfully!")
+        return redirect("/feed_formulation")
+
+    return render(request, 'feed/feed_formulation_add.html')
+
+@login_required(login_url='login')
+def feed_formulation_edit(request,id):
+    edit = FeedFormulation.objects.get(id=id)
+    
+    if request.method == "POST":
+        cname=request.POST.get('name')
+        cstart_age_in_weeks=request.POST.get('start_age_in_weeks')
+        cend_age_in_weeks=request.POST.get('end_age_in_weeks')
+        cmodified_date=datetime.now().date()
+        
+        edit.name = cname
+        edit.start_age_in_weeks = cstart_age_in_weeks
+        edit.end_age_in_weeks = cend_age_in_weeks
+        edit.modified_date = cmodified_date
+        
+        edit.save()
+        messages.warning(request, "Feed Formulation Updated Successfully!")
+        return redirect("/feed_formulation")
+
+    d = FeedFormulation.objects.get(id=id)
+    context = {"d": d}
+
+    return render(request, 'feed/feed_formulation_edit.html', context)
+
+def feed_formulation_delete(request, id):
+    d = FeedFormulation.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Feed Formulation Deleted Successfully!")
+    return redirect("/feed_formulation")
+
+@login_required(login_url='login')
+def ingredient(request):
+    data = FeedIngredient.objects.all()
+    item_data = Item.objects.all()
+    measurement_data = ItemMeasurement.objects.all()
+    formulation_data = FeedFormulation.objects.all()
+    context = {"data1":data, "item_data":item_data, "measurement_data":measurement_data, "formulation_data":formulation_data,}
+
+    return render(request, 'feed/ingredient.html', context)
+
+@login_required(login_url='login')
+def ingredient_add(request):
+    if request.method=="POST":
+        cfeed_formulation_id=request.POST.get('feed_formulation_id')
+        citem_id=request.POST.get('item_id')
+        citem_measurement_id=request.POST.get('item_measurement_id')
+        cquantity=request.POST.get('quantity')
+        cmodified_date=datetime.now().date()
+
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Item.objects.all(),
+                'data2': ItemMeasurement.objects.all(),
+                'data3': FeedFormulation.objects.all(),
+            }
+ 
+            return render(request, 'feed/ingredient_add.html', context)
+
+        query = FeedIngredient(feed_formulation_id=cfeed_formulation_id, item_id=citem_id, item_measurement_id=citem_measurement_id, quantity=cquantity, modified_date=cmodified_date)
+        query.save()
+        messages.success(request, "Feed Ingredient Added Successfully!")
+        return redirect("/ingredient")
+    
+    item_data = Item.objects.all()
+    measurement_data = ItemMeasurement.objects.all()
+    formulation_data = FeedFormulation.objects.all()
+
+    context = {"data1":item_data, 'data2': measurement_data, 'data3': formulation_data,}
+
+    return render(request, 'feed/ingredient_add.html', context)
+
+@login_required(login_url='login')
+def ingredient_edit(request,id):
+    edit = FeedIngredient.objects.get(id=id)
+    
+    if request.method == "POST":
+        cfeed_formulation_id=request.POST.get('feed_formulation_id')
+        citem_id=request.POST.get('item_id')
+        citem_measurement_id=request.POST.get('item_measurement_id')
+        cquantity=request.POST.get('quantity')
+        cmodified_date=datetime.now().date()
+
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            cquantity = None
+
+        if errors:
+            context = {
+                'errors': errors,
+                "d": FeedIngredient.objects.get(id=id),
+                "item": edit,
+                'data1': Item.objects.all(),
+                'data2': ItemMeasurement.objects.all(),
+                'data3': ItemType.objects.all(),
+            }
+ 
+            return render(request, 'feed/ingredient_edit.html', context)
+        
+        edit.feed_formulation_id = cfeed_formulation_id
+        edit.item_id = citem_id
+        edit.item_measurement_id = citem_measurement_id
+        edit.quantity = cquantity
+        edit.modified_date = cmodified_date
+        
+        edit.save()
+        messages.warning(request, "Feed Ingredient Updated Successfully!")
+        return redirect("/ingredient")
+
+    d = FeedIngredient.objects.get(id=id)
+    item_data = Item.objects.all()
+    measurement_data = ItemMeasurement.objects.all()
+    formulation_data = FeedFormulation.objects.all()
+    context = {"d": d,"item": edit, "data1":item_data, 'data2': measurement_data, 'data3': formulation_data,}
+
+    return render(request, 'feed/ingredient_edit.html', context)
+
+def ingredient_delete(request, id):
+    d = FeedIngredient.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Feed Ingredient Deleted Successfully!")
+    return redirect("/ingredient")
+
+
+@login_required(login_url='login')
+def cattle_has_feed(request):
+    data = CattleHasFeed.objects.all()
+    cattle_data = Cattle.objects.all()
+    shift_data = Shift.objects.all()
+    formulation_data = FeedFormulation.objects.all()
+    context = {"data1":data, "cattle_data":cattle_data, "shift_data":shift_data, "formulation_data":formulation_data,}
+
+    return render(request, 'feed/cattle_has_feed.html', context)
+
+@login_required(login_url='login')
+def cattle_has_feed_add(request):
+    if request.method=="POST":
+        ccattle_farm_entity_id=request.POST.get('cattle_farm_entity_id')
+        cfeed_formulation_id=request.POST.get('feed_formulation_id')
+        cshift_id=request.POST.get('shift_id')
+        cfeed_time=request.POST.get('feed_time')
+        cconsumption_status=request.POST.get('consumption_status')
+        cmodified_date=datetime.now().date()
+
+        errors = []
+        if cfeed_time:
+            try:
+                cfeed_time = datetime.strptime(cfeed_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Feed Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cfeed_time = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Cattle.objects.all(),
+                'data2': Shift.objects.all(),
+                'data3': FeedFormulation.objects.all(),
+            }
+ 
+            return render(request, 'feed/cattle_has_feed_add.html', context)
+
+        query = CattleHasFeed(cattle_farm_entity_id=ccattle_farm_entity_id, feed_formulation_id=cfeed_formulation_id, shift_id=cshift_id, feed_time=cfeed_time,consumption_status=cconsumption_status, modified_date=cmodified_date)
+        query.save()
+        messages.success(request, "Cattle Feed Added Successfully!")
+        return redirect("/cattle_has_feed")
+    
+    cattle_data = Cattle.objects.all()
+    shift_data = Shift.objects.all()
+    formulation_data = FeedFormulation.objects.all()
+
+    context = {"data1":cattle_data, 'data2': shift_data, 'data3': formulation_data,}
+
+    return render(request, 'feed/cattle_has_feed_add.html', context)
+
+@login_required(login_url='login')
+def cattle_has_feed_edit(request,id):
+    edit = CattleHasFeed.objects.get(id=id)
+    
+    if request.method == "POST":
+        ccattle_farm_entity_id=request.POST.get('cattle_farm_entity_id')
+        cfeed_formulation_id=request.POST.get('feed_formulation_id')
+        cshift_id=request.POST.get('shift_id')
+        cfeed_time=request.POST.get('feed_time')
+        cconsumption_status=request.POST.get('consumption_status')
+        cmodified_date=datetime.now().date()
+
+        errors = []
+        if cfeed_time:
+            try:
+                cfeed_time = datetime.strptime(cfeed_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Feed Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cfeed_time = None 
+
+        if errors:
+            context = {
+                'errors': errors,
+                "d": CattleHasFeed.objects.get(id=id),
+                "item": edit,
+                'data1': Cattle.objects.all(),
+                'data2': Shift.objects.all(),
+                'data3': FeedFormulation.objects.all(),
+            }
+
+            return render(request, 'feed/cattle_has_feed_edit.html', context)
+        
+        edit.cattle_farm_entity_id = ccattle_farm_entity_id
+        edit.feed_formulation_id = cfeed_formulation_id
+        edit.shift_id = cshift_id
+        edit.feed_time = cfeed_time
+        edit.consumption_status = cconsumption_status
+        edit.modified_date = cmodified_date
+        
+        edit.save()
+        messages.warning(request, "Cattle Feed Updated Successfully!")
+        return redirect("/cattle_has_feed")
+
+    d = CattleHasFeed.objects.get(id=id)
+    cattle_data = Cattle.objects.all()
+    shift_data = Shift.objects.all()
+    formulation_data = FeedFormulation.objects.all()
+    context = {"d": d,"item": edit, "data1":cattle_data, 'data2': shift_data, 'data3': formulation_data,}
+
+    return render(request, 'feed/cattle_has_feed_edit.html', context)
+
+def cattle_has_feed_delete(request, id):
+    d = CattleHasFeed.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Cattle Feed Deleted Successfully!")
+    return redirect("/cattle_has_feed")
+
+
+
+@login_required(login_url='login')
 def person_type(request):
     data = PersonType.objects.all()
     context = {"data1":data}
@@ -1688,6 +2020,131 @@ def task_delete(request, id):
     messages.error(request, "Task Deleted Successfully!")
     return redirect("/task")
 
+@login_required(login_url='login')
+def assign_task(request):
+    user = request.user
+    if user.groups.filter(name='Admin').exists():
+        data = TaskAssignment.objects.all()
+    else:
+        user_profile = get_object_or_404(UserProfile, user=user)
+        assigned_person = user_profile.employee
+        data = TaskAssignment.objects.filter(assigned_to=assigned_person)
+
+    task_data = Task.objects.all()
+    shift_data = Shift.objects.all()
+    employee_data = Employee.objects.all()
+
+    context = {"data1":data,'task_data': task_data,'shift_data': shift_data, 'employee_data': employee_data}
+
+    return render(request, 'employee/assign_task.html', context)
+
+@login_required(login_url='login')
+def assign_task_add(request):
+    if request.method=="POST":
+        ctask_id=request.POST.get('task_id')
+        cshift_id=request.POST.get('shift_id')
+        cassigned_to_id=request.POST.get('assigned_to_id')
+        cdue_time=request.POST.get('due_time')
+
+        errors = []
+        if cdue_time:
+            try:
+                cdue_time = datetime.strptime(cdue_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Due Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cdue_time = None 
+            
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Task.objects.all(),
+                'data2': Shift.objects.all(),
+                'data3': Employee.objects.all(),
+
+            }
+            return render(request, 'employee/assign_task_add.html', context)
+
+        query = TaskAssignment.objects.create(task_id=ctask_id, shift_id=cshift_id, assigned_to_id=cassigned_to_id, due_time=cdue_time)
+        query.save()
+        messages.success(request, "Task Assignment Added Successfully!")
+        return redirect("/assign_task")
+     
+    task_data = Task.objects.all()
+    shift_data = Shift.objects.all()
+    employee_data = Employee.objects.all()
+    context = {
+        'data1': task_data,
+        'data2': shift_data,
+        'data3': employee_data,
+    }
+
+    return render(request, 'employee/assign_task_add.html', context)
+
+@login_required(login_url='login')
+def assign_task_edit(request,id):
+    edit = TaskAssignment.objects.get(id=id)
+    if request.method=="POST":
+        ctask_id=request.POST.get('task_id')
+        cshift_id=request.POST.get('shift_id')
+        cassigned_to_id=request.POST.get('assigned_to_id')
+        cdue_time=request.POST.get('due_time')
+
+        errors = []
+        if cdue_time:
+            try:
+                cdue_time = datetime.strptime(cdue_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Invalid Due Time format. Use YYYY-MM-DDTHH:MM format.')
+        else:
+            cdue_time = None 
+            
+        if errors:
+            context = {
+                'errors': errors,
+                'd': TaskAssignment.objects.get(id=id),
+                'data1': Task.objects.all(),
+                'data2': Shift.objects.all(),
+                'data3': Employee.objects.all(),
+
+            }
+            return render(request, 'employee/assign_task_edit.html', context)
+
+        edit.task_id = ctask_id
+        edit.shift_id = cshift_id
+        edit.assigned_to_id = cassigned_to_id
+        edit.due_time = cdue_time
+        
+        edit.save()
+        messages.warning(request, "Assigned Task Updated Successfully!")
+        return redirect("/assign_task")
+
+    d = TaskAssignment.objects.get(id=id)
+    task_data = Task.objects.all()
+    shift_data = Shift.objects.all()
+    employee_data = Employee.objects.all()
+    context = {'d': d,'data1': task_data,'data2': shift_data,'data3': employee_data,}
+
+    return render(request, 'employee/assign_task_edit.html', context)
+
+def assign_task_delete(request, id):
+    d = TaskAssignment.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Task Assignment Deleted Successfully!")
+    return redirect("/assign_task")
+
+def update_status(request):
+    if request.method == 'POST':
+        task_id = request.POST.get('id')
+        status = request.POST.get('status')
+        task = TaskAssignment.objects.get(id=task_id)
+        task.status = status
+        task.save()
+        messages.success(request, 'Status updated successfully.')
+        return redirect('/assign_task')  
+    else:
+        messages.error(request, 'Invalid request method.')
+        return redirect('/assign_task') 
 
 @login_required(login_url='login')
 def job(request):
@@ -1795,52 +2252,6 @@ def job_delete(request, job_id):
     d.delete()
     messages.error(request, "Job Deleted Successfully!")
     return redirect("/job")
-
-@login_required(login_url='login')
-def feed_formulation(request):
-    data = FeedFormulation.objects.all()
-    context = {"data1":data}
-
-    return render(request, 'cattle/feed_formulation.html', context)
-
-@login_required(login_url='login')
-def feed_formulation_add(request):
-    if request.method=="POST":
-        cfeed_formulation_description=request.POST.get('feed_formulation_description')
-
-        query = FeedFormulation(feed_formulation_description=cfeed_formulation_description)
-        query.save()
-        messages.success(request, "Feed Formulation Added Successfully!")
-        return redirect("/feed_formulation")
-
-    return render(request, 'cattle/feed_formulation_add.html')
-
-@login_required(login_url='login')
-def feed_formulation_edit(request,feed_formulation_id):
-    edit = FeedFormulation.objects.get(feed_formulation_id=feed_formulation_id)
-    
-    if request.method == "POST":
-        cfeed_formulation_description=request.POST.get('feed_formulation_description')
-        
-        # Update the attributes
-        edit.feed_formulation_description = cfeed_formulation_description
-        
-        # Save the changes
-        edit.save()
-        messages.warning(request, "Feed Formulation Updated Successfully!")
-        # Optionally, redirect to a success page or another view
-        return redirect("/feed_formulation")
-
-    d = FeedFormulation.objects.get(feed_formulation_id=feed_formulation_id)
-    context = {"d": d}
-
-    return render(request, 'cattle/feed_formulation_edit.html', context)
-
-def feed_formulation_delete(request, feed_formulation_id):
-    d = FeedFormulation.objects.get(feed_formulation_id=feed_formulation_id)
-    d.delete()
-    messages.error(request, "Feed Formulation Deleted Successfully!")
-    return redirect("/feed_formulation")
 
 
 @login_required(login_url='login')

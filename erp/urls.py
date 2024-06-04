@@ -120,10 +120,11 @@ urlpatterns = [
     path('task_edit/<str:id>', views.task_edit, name='task_edit'),
     path('task_delete/<str:id>', views.task_delete),
 
-    # path('assign_task', views.assign_task),
-    # path('assign_task_add', views.assign_task_add),
-    # path('assign_task_edit/<str:id>', views.assign_task_edit, name='assign_task_edit'),
-    # path('assign_task_delete/<str:id>', views.assign_task_delete),
+    path('assign_task', views.assign_task),
+    path('assign_task_add', views.assign_task_add),
+    path('assign_task_edit/<str:id>', views.assign_task_edit, name='assign_task_edit'),
+    path('assign_task_delete/<str:id>', views.assign_task_delete),
+    path('update_status', views.update_status),
 
     path('leave', views.leave),
     path('leave_add', views.leave_add),
@@ -140,8 +141,18 @@ urlpatterns = [
 
     path('feed_formulation', views.feed_formulation),
     path('feed_formulation_add', views.feed_formulation_add),
-    path('feed_formulation_edit/<str:feed_formulation_id>', views.feed_formulation_edit, name='feed_formulation_edit'),
-    path('feed_formulation_delete/<str:feed_formulation_id>', views.feed_formulation_delete),
+    path('feed_formulation_edit/<str:id>', views.feed_formulation_edit, name='feed_formulation_edit'),
+    path('feed_formulation_delete/<str:id>', views.feed_formulation_delete),
+
+    path('ingredient', views.ingredient),
+    path('ingredient_add', views.ingredient_add),
+    path('ingredient_edit/<str:id>', views.ingredient_edit, name='ingredient_edit'),
+    path('ingredient_delete/<str:id>', views.ingredient_delete),
+
+    path('cattle_has_feed', views.cattle_has_feed),
+    path('cattle_has_feed_add', views.cattle_has_feed_add),
+    path('cattle_has_feed_edit/<str:id>', views.cattle_has_feed_edit, name='cattle_has_feed_edit'),
+    path('cattle_has_feed_delete/<str:id>', views.cattle_has_feed_delete),
 
     path('item_type', views.item_type),
     path('item_type_add', views.item_type_add),

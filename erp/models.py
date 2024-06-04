@@ -331,35 +331,6 @@ class CattleHealthCheckupHasMedicine(models.Model):
         db_table = 'cattle_health_checkup_has_medicine'
         # unique_together = (('cattle_health_checkup', 'medicine'),)
 
-class FeedFormulation(models.Model):
-    feed_formulation_id = models.AutoField(primary_key=True)
-    feed_formulation_description = models.CharField(max_length=255)
-
-    class Meta:
-        db_table = 'feed_formulation'
-
-class FeedTimeCategory(models.Model):
-    feed_time_category_id = models.AutoField(primary_key=True)
-    feed_time_category = models.CharField(max_length=200, null=True)
-    start_time = models.CharField(max_length=45, null=True)
-    end_time = models.CharField(max_length=45, null=True)
-
-    class Meta:
-        db_table = 'feed_time_category'
-
-class FeedTime(models.Model):
-    feed_time_id = models.AutoField(primary_key=True)
-    feed_time = models.DateTimeField(null=True)
-    feed_time_status = models.CharField(max_length=45, null=True)
-    cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
-    formulation = models.ForeignKey(FeedFormulation, on_delete=models.CASCADE)
-    feed_time_category = models.ForeignKey(FeedTimeCategory, on_delete=models.CASCADE)
-    person_farm_entity = models.ForeignKey(Employee, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'feed_time'
-
-
 
 
 class ItemType(models.Model):
@@ -495,6 +466,45 @@ class Stockout(models.Model):
 
     class Meta:
         db_table = 'stockout'
+
+
+
+class FeedFormulation(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, null=True)
+    start_age_in_weeks = models.CharField(max_length=45, null=True)
+    end_age_in_weeks = models.CharField(max_length=45, null=True)
+    modified_date = models.CharField(max_length=45, null=True)
+
+    class Meta:
+        db_table = 'feed_formulation'
+
+class FeedIngredient(models.Model):
+    id = models.AutoField(primary_key=True)
+    feed_formulation = models.ForeignKey(FeedFormulation, on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)
+    item_measurement = models.ForeignKey(ItemMeasurement, on_delete=models.CASCADE, null=True)
+    quantity = models.IntegerField(null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'feed_ingredient'
+
+class CattleHasFeed(models.Model):
+    id = models.AutoField(primary_key=True)
+    cattle_farm_entity = models.ForeignKey(Cattle, on_delete=models.CASCADE)
+    feed_formulation = models.ForeignKey(FeedFormulation, on_delete=models.CASCADE)
+    shift = models.ForeignKey(Shift, on_delete=models.CASCADE)
+    feed_time = models.DateTimeField(null=True)
+    consumption_status = models.CharField(max_length=45, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'cattle_has_feed'
+
+
+
+
 
 class SaleType(models.Model):
     sale_type_id = models.AutoField(primary_key=True)

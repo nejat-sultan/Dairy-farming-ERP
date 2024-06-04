@@ -4,7 +4,6 @@
 {% block content %}
 
   <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
     <section class="content-header">
       <div class="container-fluid">
         <div class="row mb-2">
@@ -18,11 +17,11 @@
             </ol>
           </div>
         </div>
-      </div><!-- /.container-fluid -->
+      </div>
     </section>
 
     <section class="content">
-      <form action="/feed_formulation_edit/{{d.feed_formulation_id}}" method="post">
+      <form action="/feed_formulation_edit/{{d.id}}" method="post">
         {% csrf_token %}
         <div class="row">
           <div class="col-md-12">
@@ -37,15 +36,33 @@
                 </div>
               </div>
               <div class="card-body">
-                <div class="form-group">
-                  <label for="inputDescription">Feed Formulation Description</label>
-                  <input type="text" id="inputName" name="feed_formulation_description" value="{{d.feed_formulation_description}}" class="form-control" required>
+                {% if errors %}
+                <div class="alert alert-danger">
+                  <ul>
+                    {% for error in errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
                 </div>
+              {% endif %}
+              
+                  <div class="form-group">
+                    <label for="inputName">Name</label>
+                    <input type="text" id="inputName" name="name" value="{{d.name}}" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="inputName">Start Age(weeks)</label>
+                    <input type="text" id="inputName" name="start_age_in_weeks" value="{{d.start_age_in_weeks}}" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="inputName">End Age(Weeks)</label>
+                    <input type="text" id="inputName" name="end_age_in_weeks" value="{{d.end_age_in_weeks}}" class="form-control" required>
+                  </div>
               </div>
             </div>
           </div>
-          
         </div>
+        
         <div class="row">
           <div class="col-12">
             <a href="../feed_formulation" class="btn btn-secondary">Back</a>
