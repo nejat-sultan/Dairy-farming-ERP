@@ -11,7 +11,7 @@
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="/">Home</a></li>
+                        <li class="breadcrumb-item"><a href="../../group">Home</a></li>
                         <li class="breadcrumb-item active">Create Roles</li>
                     </ol>
                 </div>
@@ -49,11 +49,19 @@
                                 {{ form.name.label_tag }}
                                 {{ form.name }}
                             </div>
-                            {% comment %} <div class="form-group">
+                            <div class="form-group">
                                 {{ form.permissions.label_tag }}
-                                {{ form.permissions }}
-                            </div> {% endcomment %}
-                            
+                                {% comment %} {{ form.permissions }} {% endcomment %}
+                                {% for permission in form.permissions.field.queryset %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="{{ permission.id }}" id="permission{{ permission.id }}" name="permissions"
+                                            {% if permission in group_permissions %} checked {% endif %}>
+                                        <label class="form-check-label" for="permission{{ permission.id }}">
+                                            {{ permission.name }}
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div> 
                         </div>
                     </div>
                 </div>
@@ -62,6 +70,7 @@
                 <div class="col-12">
                     <a href="../../group" class="btn btn-secondary">Back</a>
                     <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Create Role</button>
+                    <br><br>
                 </div>
             </div>
         </form>

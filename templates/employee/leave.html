@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load custom_filters %}
 
 {% block content %}
 
@@ -29,10 +29,12 @@
           <h3 class="card-title">Leave Requests</h3>
 
           <div class="card-tools">
+            {% if not request.user|is_allowed_user:"Supervisor" %} 
             <a class="btn" href="leave_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
+            {% endif %}
             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
               <i class="fas fa-minus"></i>
             </button>
@@ -96,10 +98,12 @@
                       </td>
 
                       <td class="project-actions">
+                        {% if not request.user|is_allowed_user:"Labor Employees" %} 
                         <a class="btn btn-sm" href="/leave_view/{{d.leave_id}}" style="background-color: #007f5c;color: #fff;">
                           <i class="fas fa-eye">
                           </i>
                         </a>
+                        {% endif %}
                         <a class="btn btn-info btn-sm" href="/leave_edit/{{d.leave_id}}">
                             <i class="fas fa-pencil-alt"></i>
                         </a>

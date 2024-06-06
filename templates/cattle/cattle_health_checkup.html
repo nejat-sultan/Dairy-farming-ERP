@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load custom_filters %}
 
 {% block content %}
 
@@ -26,10 +26,12 @@
           <h3 class="card-title">Manage Cattle Health Checkup</h3>
 
           <div class="card-tools">
+            {% if request.user|is_allowed_user:"Admin, Vet" %} 
             <a class="btn" href="cattle_health_checkup_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
+            {% endif %}
             <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
               <i class="fas fa-minus"></i>
             </button>

@@ -1,5 +1,7 @@
 import base64
+from collections import defaultdict
 from datetime import datetime
+from django.utils.timezone import now, timedelta
 import json
 import logging
 import os
@@ -13,11 +15,11 @@ from django.forms import ValidationError
 from django.shortcuts import get_object_or_404, render,redirect
 from django.core.files.storage import FileSystemStorage
 from django.utils import timezone
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, Item, ItemType, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -25,16 +27,19 @@ from .forms import CreateUserForm, GroupAssignmentForm, GroupCreationForm
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
 from django.utils.dateparse import parse_date
 from django.http import JsonResponse
 from django.db import transaction
 from django.db.models import Sum
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.decorators import permission_required
 
 
 @login_required(login_url='login')
 def user(request):
+    # if not request.user.has_perm('erp.view_user'):
+    #     return HttpResponse('You are not authorised to view this page', status=403)
     user_profiles = UserProfile.objects.select_related('user', 'employee').all()
     context = {
         'user_profiles': user_profiles,
@@ -43,6 +48,8 @@ def user(request):
 
 @login_required(login_url='login')
 def register(request):
+    # if not request.user.has_perm('erp.add_user'):
+    #     return HttpResponse('You are not authorised to view this page', status=403)
     form = CreateUserForm()
     if request.method == 'POST':
         form = CreateUserForm(request.POST)
@@ -63,6 +70,8 @@ def register(request):
 
 @login_required(login_url='login')
 def edit_user(request, user_id):
+    # if not request.user.has_perm('erp.change_user'):
+    #     return HttpResponse('You are not authorised to view this page', status=403)
     user_profile = get_object_or_404(UserProfile, user_id=user_id)
     user = user_profile.user
     employees = Employee.objects.select_related('person_farm_entity').all()
@@ -98,6 +107,8 @@ def edit_user(request, user_id):
 
 
 def user_delete(request, id):
+    # if not request.user.has_perm('erp.delete_user'):
+    #     return HttpResponse('You are not authorised to view this page', status=403)
     try:
         user = User.objects.get(pk=id)
         user_profile = user.userprofile
@@ -112,16 +123,21 @@ def user_delete(request, id):
 
 @login_required(login_url='login')
 def group(request):
+    # if not request.user.has_perm('erp.view_group'):
+    #     return HttpResponse('You are not authorised to view this page', status=403)
     groups = Group.objects.all()
     context = {"groups":groups}
     return render(request, 'auth/group.html', context)
 
 @login_required(login_url='login')
 def create_group(request):
+    # if not request.user.has_perm('erp.add_group'):
+    #     return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         form = GroupCreationForm(request.POST)
         if form.is_valid():
-            form.save()
+            group = form.save()
+            group.permissions.set(form.cleaned_data['permissions'])
             return redirect('group') 
     else:
         form = GroupCreationForm()
@@ -129,24 +145,39 @@ def create_group(request):
 
 @login_required(login_url='login')
 def edit_group(request, id):
+    # if not request.user.has_perm('erp.change_group'):
+    #     return HttpResponse('You are not authorised to view this page', status=403)
     group = get_object_or_404(Group, id=id)
+    all_permissions = Permission.objects.all()  
+    assigned_permissions = group.permissions.all() 
     
     if request.method == 'POST':
         name = request.POST.get('name')
+        selected_permissions = request.POST.getlist('permissions')
         
         if name:
             group.name = name
             group.save()
-            
+        
+        # Clear existing permissions and add selected ones
+        group.permissions.clear()
+        for permission_id in selected_permissions:
+            permission = Permission.objects.get(id=permission_id)
+            group.permissions.add(permission)
+        
         messages.success(request, "Group updated successfully!")
-        return redirect("/group") 
+        return redirect("/group")
 
-    context = {'group': group}
-
+    context = {
+        'group': group, 
+        'all_permissions': all_permissions,
+        'assigned_permissions': assigned_permissions
+    }
     return render(request, 'auth/edit_group.html', context)
-
-
+    
 def group_delete(request, id):
+    # if not request.user.has_perm('erp.delete_group'):
+    #     return HttpResponse('You are not authorised to view this page', status=403)
     d = Group.objects.get(id=id)
     d.delete()
     messages.error(request, "Role Deleted Successfully!")
@@ -195,57 +226,62 @@ def logout_user(request):
     return redirect("/login")
 
 @login_required(login_url='login')
-# @allowed_users(allowed_roles=['Admin'])
-# @admin_only
 def index(request):
-    stock_data = Stock.objects.all().order_by('modified_date')
-    df = pd.DataFrame(list(stock_data.values('modified_date', 'quantity')))
-    
-    # if not df.empty:
-    #     df['modified_date'] = pd.to_datetime(df['modified_date'])
-    #     df.set_index('modified_date', inplace=True)
-
-    #     plt.figure(figsize=(10, 6))
-    #     plt.bar(df.index, df['quantity'], color='b', width=0.5) 
-    #     plt.title('Stock Report')
-    #     plt.xlabel('Date')
-    #     plt.ylabel('Quantity')
-    #     plt.grid(True)
-
-    #     img = io.BytesIO()
-    #     plt.savefig(img, format='png')
-    #     img.seek(0)
-    #     plt.close()  
-
-    #     plot_img_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
-    # else:
-    #     plot_img_base64 = None
-
-    milk_data = MilkProduction.objects.all().order_by('milk_time')
+    end_date = now()
+    start_date = end_date - timedelta(days=7)
+    # Query MilkProduction data for the last week
+    milk_data = MilkProduction.objects.filter(milk_time__range=(start_date, end_date)).order_by('milk_time')
+    # Process the data into a DataFrame
     df = pd.DataFrame(list(milk_data.values('milk_time', 'amount_in_liter')))
-    
+    # Resample data to daily totals
     if not df.empty:
         df['milk_time'] = pd.to_datetime(df['milk_time'])
         df.set_index('milk_time', inplace=True)
-        df = df.resample('W').sum()
+        daily_data = df.resample('D').sum()
 
-        # Plot the data as a bar chart
-        plt.figure(figsize=(10, 6))
-        plt.bar(df.index, df['amount_in_liter'], color='b')
-        plt.title('Weekly Milk Production')
-        plt.xlabel('Week')
-        plt.ylabel('Milk Production (Liters)')
-        plt.grid(True)
-
-        img = io.BytesIO()
-        plt.savefig(img, format='png')
-        img.seek(0)
-        plt.close()  
-
-        plot_img_base64 = base64.b64encode(img.getvalue()).decode('utf-8')
+        labels = [date.strftime('%Y-%m-%d') for date in daily_data.index]
+        data = list(daily_data['amount_in_liter'])
     else:
-        plot_img_base64 = None
-   
+        labels = []
+        data = []
+
+    chart_data = {
+        'labels': labels,
+        'datasets': [{
+            'label': 'Daily Milk Production (Liters)',
+            'data': data,
+            'backgroundColor': '#007f5c',
+            'borderColor': '#007f5c',
+            'borderWidth': 1,
+            'fill': False
+        }]
+    }
+    chart_data_json = json.dumps(chart_data)
+
+
+    stock_data = Stock.objects.all()
+    stock_dict = defaultdict(float)
+    
+    for stock in stock_data:
+        item_name = stock.item.name
+        quantity = float(stock.quantity)
+        stock_dict[item_name] += quantity
+
+    labels = list(stock_dict.keys())
+    quantities = list(stock_dict.values())
+
+    chart_data2 = {
+        'labels': labels,
+        'datasets': [{
+            'label': 'Quantity in Stock',
+            'data': quantities,
+            'backgroundColor': 'rgba(0, 127, 92, 0.2)',
+            'borderColor': '#007f5c',
+            'borderWidth': 1
+        }]
+    }
+    chart_data_json2 = json.dumps(chart_data2)
+    
     dash1 = Dashboard()
     dash1.amount =  OrderHasItemSupplier.objects.filter(status='approved').count()
     dash1.description = 'Purchase Orders'
@@ -280,6 +316,7 @@ def index(request):
     cattle = Cattle.objects.all()[:10]
     # photos = CattlePhoto.objects.all()
     breeds = CattleBreed.objects.all()
+    stocks = Stock.objects.all()
 
     cattle_photos = {}
     for cow in cattle:
@@ -289,7 +326,9 @@ def index(request):
     print("Cattle Photos Dictionary:", cattle_photos)  
 
     context = {
-        'plot_img_base64': plot_img_base64,
+        # 'plot_img_base64': plot_img_base64,
+        'chart_data_json': chart_data_json,
+        'chart_data_json2': chart_data_json2,
         'dash1': dash1, 
         'dash2': dash2, 
         'dash3': dash3, 
@@ -298,8 +337,11 @@ def index(request):
         'dash6': dash6, 
         'dash7': dash7,
 
+        'stocks':stocks,
+
         "data1":data,'orderdatas': orderdatas,'item_data': item_data,
         'cattle': cattle,'cattle_photos': cattle_photos,'breeds': breeds,
+
     }
 
     return render(request, 'index.html',context)
@@ -308,14 +350,17 @@ def index(request):
 @login_required(login_url='login')
 # @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle(request):
+    if not request.user.has_perm('erp.view_cattle'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Cattle.objects.all()
     context = {"data":data}
 
     return render(request, 'cattle/cattle.html', context)
 
 @login_required(login_url='login')
-# @allowed_users(allowed_roles=['Admin'])
 def cattle_view(request, farm_entity_id):
+    if not request.user.has_perm('erp.view_cattle'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     cattle = get_object_or_404(Cattle, farm_entity_id=farm_entity_id)
     photos = CattlePhoto.objects.filter(cattle=cattle)
     breeds = CattleBreed.objects.filter(cattle=cattle)
@@ -324,7 +369,9 @@ def cattle_view(request, farm_entity_id):
     productions = MilkProduction.objects.filter(cattle=cattle).order_by('-milk_time')[:5]
     vaccinations = CattleHasVaccine.objects.filter(cattle=cattle).order_by('-cattle_given_time')[:5]
     healths = CattleHealthCheckup.objects.filter(cattle=cattle).order_by('-cattle_id')[:5]
+    symptoms = HealthCheckupSymptoms.objects.filter(cattle_health_checkup__in=healths).order_by('-modified_date')[:5]
     medicines = CattleHealthCheckupHasMedicine.objects.filter(cattle_health_checkup__in=healths).order_by('-modified_date')[:5]
+    feeds = CattleHasFeed.objects.filter(cattle_farm_entity=cattle).order_by('-feed_time')[:5]
     
     
     context = {
@@ -335,15 +382,18 @@ def cattle_view(request, farm_entity_id):
         'productions': productions,
         'vaccinations': vaccinations,
         'healths': healths,
+        'symptoms': symptoms,
         'medicines': medicines,
+        'feeds': feeds,
     }
 
     return render(request, 'cattle/cattle_view.html', context)
 
 
 @login_required(login_url='login')
-# @allowed_users(allowed_roles=['Admin'])
 def cattle_add(request):
+    if not request.user.has_perm('erp.add_cattle'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == "POST":
         cid = request.POST.get('id')
         cdob = request.POST.get('dob')
@@ -404,8 +454,9 @@ def cattle_add(request):
     return render(request, 'cattle/cattle_add.html', context)
 
 @login_required(login_url='login')
-# @allowed_users(allowed_roles=['Admin'])
 def cattle_edit(request,farm_entity_id):
+    if not request.user.has_perm('erp.change_cattle'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Cattle.objects.get(farm_entity_id=farm_entity_id)
     
     if request.method == "POST":
@@ -472,15 +523,18 @@ def cattle_edit(request,farm_entity_id):
     return render(request, 'cattle/cattle_edit.html', context)
 
 
-# @allowed_users(allowed_roles=['Admin'])
 def cattle_delete(request, farm_entity_id):
+    if not request.user.has_perm('erp.delete_cattle'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Cattle.objects.get(farm_entity_id=farm_entity_id)
     d.delete()
     messages.error(request, "Cattle Deleted Successfully!")
     return redirect("/cattle")
 
-# Django view function to handle adding a photo
+
 def add_photo(request):
+    if not request.user.has_perm('erp.add_photo'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cattle_id = request.POST.get('cattle_id')
         photo_description = request.POST.get('photo_description')
@@ -517,6 +571,8 @@ def add_photo(request):
 
 @login_required(login_url='login')
 def cattle_status(request):
+    if not request.user.has_perm('erp.view_cattlestatus'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = CattleStatus.objects.all()
     context = {"data1":data}
 
@@ -524,6 +580,8 @@ def cattle_status(request):
 
 @login_required(login_url='login')
 def cattle_status_add(request):
+    if not request.user.has_perm('erp.add_cattlestatus'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cstatus=request.POST.get('status')
         cdate = datetime.now().date()
@@ -537,6 +595,8 @@ def cattle_status_add(request):
 
 @login_required(login_url='login')
 def cattle_status_edit(request,cattle_status_id):
+    if not request.user.has_perm('erp.change_cattlestatus'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = CattleStatus.objects.get(cattle_status_id=cattle_status_id)
     
     if request.method == "POST":
@@ -556,6 +616,8 @@ def cattle_status_edit(request,cattle_status_id):
 
 @login_required(login_url='login')
 def cattle_status_delete(request, cattle_status_id):
+    if not request.user.has_perm('erp.delete_cattlestatus'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = CattleStatus.objects.get(cattle_status_id=cattle_status_id)
     d.delete()
     messages.error(request, "Cattle Status Deleted Successfully!")
@@ -563,6 +625,8 @@ def cattle_status_delete(request, cattle_status_id):
 
 @login_required(login_url='login')
 def cattle_breed(request):
+    if not request.user.has_perm('erp.view_cattlebreed'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = CattleBreed.objects.all()
     context = {"data1":data}
 
@@ -570,6 +634,8 @@ def cattle_breed(request):
 
 @login_required(login_url='login')
 def cattle_breed_add(request):
+    if not request.user.has_perm('erp.add_cattlebreed'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cbreed_type=request.POST.get('breed_type')
         cbreed_description=request.POST.get('breed_description')
@@ -584,6 +650,8 @@ def cattle_breed_add(request):
 
 @login_required(login_url='login')
 def cattle_breed_edit(request,cattle_breed_id):
+    if not request.user.has_perm('erp.change_cattlebreed'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = CattleBreed.objects.get(cattle_breed_id=cattle_breed_id)
     
     if request.method == "POST":
@@ -605,6 +673,8 @@ def cattle_breed_edit(request,cattle_breed_id):
     return render(request, 'cattle/cattle_breed_edit.html', context)
 
 def cattle_breed_delete(request, cattle_breed_id):
+    if not request.user.has_perm('erp.delete_cattlebreed'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = CattleBreed.objects.get(cattle_breed_id=cattle_breed_id)
     d.delete()
     messages.error(request, "Cattle Breed Deleted Successfully!")
@@ -612,6 +682,8 @@ def cattle_breed_delete(request, cattle_breed_id):
 
 @login_required(login_url='login')
 def pregnancy_status(request):
+    if not request.user.has_perm('erp.view_pregnancystatus'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = PregnancyStatus.objects.all()
     context = {"data1":data}
 
@@ -619,6 +691,8 @@ def pregnancy_status(request):
 
 @login_required(login_url='login')
 def pregnancy_status_add(request):
+    if not request.user.has_perm('erp.add_pregnancystatus'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cstatus=request.POST.get('status')
         cdate = datetime.now().date()
@@ -632,6 +706,8 @@ def pregnancy_status_add(request):
 
 @login_required(login_url='login')
 def pregnancy_status_edit(request,pregnancy_status_id):
+    if not request.user.has_perm('erp.change_pregnancystatus'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = PregnancyStatus.objects.get(pregnancy_status_id=pregnancy_status_id)
     
     if request.method == "POST":
@@ -651,6 +727,8 @@ def pregnancy_status_edit(request,pregnancy_status_id):
 
 @login_required(login_url='login')
 def pregnancy_status_delete(request, pregnancy_status_id):
+    if not request.user.has_perm('erp.delete_pregnancystatus'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = PregnancyStatus.objects.get(pregnancy_status_id=pregnancy_status_id)
     d.delete()
     messages.error(request, "Pregnancy Status Deleted Successfully!")
@@ -658,8 +736,9 @@ def pregnancy_status_delete(request, pregnancy_status_id):
 
 
 @login_required(login_url='login')
-# @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy(request):
+    if not request.user.has_perm('erp.view_cattlepregnancy'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = CattlePregnancy.objects.all()
     cattle = Cattle.objects.all()
 
@@ -668,8 +747,9 @@ def cattle_pregnancy(request):
     return render(request, 'cattle/cattle_pregnancy.html', context)
 
 @login_required(login_url='login')
-# @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy_add(request):
+    if not request.user.has_perm('erp.add_cattlepregnancy'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cpregnancy_type=request.POST.get('pregnancy_type')
         cpregnancy_date=request.POST.get('pregnancy_date')
@@ -714,8 +794,9 @@ def cattle_pregnancy_add(request):
     return render(request, 'cattle/cattle_pregnancy_add.html', context)
 
 @login_required(login_url='login')
-# @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy_edit(request,cattle_pregnancy_id):
+    if not request.user.has_perm('erp.change_cattlepregnancy'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = CattlePregnancy.objects.get(cattle_pregnancy_id=cattle_pregnancy_id)
     
     if request.method == "POST":
@@ -763,8 +844,9 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
 
     return render(request, 'cattle/cattle_pregnancy_edit.html', context)
 
-# @allowed_users(allowed_roles=['Admin','Veterinarian'])
 def cattle_pregnancy_delete(request, cattle_pregnancy_id):
+    if not request.user.has_perm('erp.delete_cattlepregnancy'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = CattlePregnancy.objects.get(cattle_pregnancy_id=cattle_pregnancy_id)
     d.delete()
     messages.error(request, "Cattle Pregnancy Deleted Successfully!")
@@ -772,6 +854,8 @@ def cattle_pregnancy_delete(request, cattle_pregnancy_id):
 
 @login_required(login_url='login')
 def vaccine(request):
+    if not request.user.has_perm('erp.view_vaccine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Vaccine.objects.all()
     context = {"data1":data}
 
@@ -779,6 +863,8 @@ def vaccine(request):
 
 @login_required(login_url='login')
 def vaccine_add(request):
+    if not request.user.has_perm('erp.add_vaccine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cvaccine_name=request.POST.get('vaccine_name')
         cvaccine_benefit=request.POST.get('vaccine_benefit')
@@ -793,6 +879,8 @@ def vaccine_add(request):
 
 @login_required(login_url='login')
 def vaccine_edit(request,vaccine_id):
+    if not request.user.has_perm('erp.change_vaccine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     # Fetch the vaccine object by its id
     edit = Vaccine.objects.get(vaccine_id=vaccine_id)
     
@@ -815,6 +903,8 @@ def vaccine_edit(request,vaccine_id):
     return render(request, 'cattle/vaccine_edit.html', context)
 
 def vaccine_delete(request, vaccine_id):
+    if not request.user.has_perm('erp.delete_vaccine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Vaccine.objects.get(vaccine_id=vaccine_id)
     d.delete()
     messages.error(request, "Vaccine Deleted Successfully!")
@@ -822,6 +912,8 @@ def vaccine_delete(request, vaccine_id):
 
 @login_required(login_url='login')
 def cattle_has_vaccine(request):
+    if not request.user.has_perm('erp.view_cattlehasvaccine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = CattleHasVaccine.objects.all()
     cattle = Cattle.objects.all()
     vaccine = Vaccine.objects.all()
@@ -832,6 +924,8 @@ def cattle_has_vaccine(request):
 
 @login_required(login_url='login')
 def cattle_has_vaccine_add(request):
+    if not request.user.has_perm('erp.add_cattlehasvaccine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cvaccine_name=request.POST.get('vaccine_name')
         cgiven_time=request.POST.get('given_time')
@@ -870,6 +964,8 @@ def cattle_has_vaccine_add(request):
 
 @login_required(login_url='login')
 def cattle_has_vaccine_edit(request,id):
+    if not request.user.has_perm('erp.change_cattlehasvaccine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = CattleHasVaccine.objects.get(id=id)
     
     if request.method == "POST":
@@ -914,6 +1010,8 @@ def cattle_has_vaccine_edit(request,id):
 
 
 def cattle_has_vaccine_delete(request, id):
+    if not request.user.has_perm('erp.delete_cattlehasvaccine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = CattleHasVaccine.objects.get(id=id)
     d.delete()
     messages.error(request, "Cattle Vaccination Deleted Successfully!")
@@ -921,6 +1019,8 @@ def cattle_has_vaccine_delete(request, id):
 
 @login_required(login_url='login')
 def medicine(request):
+    if not request.user.has_perm('erp.view_medicine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Medicine.objects.all()
     context = {"data1":data}
 
@@ -928,6 +1028,8 @@ def medicine(request):
 
 @login_required(login_url='login')
 def medicine_add(request):
+    if not request.user.has_perm('erp.add_medicine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cname=request.POST.get('name')
         cbenefit=request.POST.get('benefit')
@@ -942,6 +1044,8 @@ def medicine_add(request):
 
 @login_required(login_url='login')
 def medicine_edit(request, id):
+    if not request.user.has_perm('erp.change_medicine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Medicine.objects.get(id=id)
     
     if request.method == "POST":
@@ -963,6 +1067,8 @@ def medicine_edit(request, id):
     return render(request, 'cattle/medicine_edit.html', context)
 
 def medicine_delete(request, id):
+    if not request.user.has_perm('erp.delete_medicine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Medicine.objects.get(id=id)
     d.delete()
     messages.error(request, "Medicine Deleted Successfully!")
@@ -970,6 +1076,8 @@ def medicine_delete(request, id):
 
 @login_required(login_url='login')
 def cattle_health_checkup(request):
+    if not request.user.has_perm('erp.view_cattlehealthcheckup'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = CattleHealthCheckup.objects.all()
     cattle = Cattle.objects.all()
     person = Person.objects.all()
@@ -981,15 +1089,20 @@ def cattle_health_checkup(request):
 
 @login_required(login_url='login')
 def cattle_health_checkup_view(request, id):
+    if not request.user.has_perm('erp.view_cattlehealthcheckup'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     health = get_object_or_404(CattleHealthCheckup, id=id)
+    symptom_data = HealthCheckupSymptoms.objects.filter(cattle_health_checkup_id=id)
     medicine_data = CattleHealthCheckupHasMedicine.objects.filter(cattle_health_checkup_id=id)
 
-    context = {"health":health, "medicine_data":medicine_data,}
+    context = {"health":health, "medicine_data":medicine_data, "symptom_data":symptom_data}
 
     return render(request, 'cattle/cattle_health_checkup_view.html', context)
 
 @login_required(login_url='login')
 def cattle_health_checkup_add(request):
+    if not request.user.has_perm('erp.add_cattlehealthcheckup'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         ccattle_id=request.POST.get('cattle_id')
         cfindings=request.POST.get('findings')
@@ -1012,6 +1125,8 @@ def cattle_health_checkup_add(request):
 
 @login_required(login_url='login')
 def cattle_health_checkup_edit(request, id):
+    if not request.user.has_perm('erp.change_cattlehealthcheckup'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = CattleHealthCheckup.objects.get(id=id)
     
     if request.method == "POST":
@@ -1035,6 +1150,8 @@ def cattle_health_checkup_edit(request, id):
     return render(request, 'cattle/cattle_health_checkup_edit.html', context)
 
 def cattle_health_checkup_delete(request, id):
+    if not request.user.has_perm('erp.delete_cattlehealthcheckup'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = CattleHealthCheckup.objects.get(id=id)
     d.delete()
     messages.error(request, "Checkup Deleted Successfully!")
@@ -1042,6 +1159,8 @@ def cattle_health_checkup_delete(request, id):
 
 @login_required(login_url='login')
 def checkup_medicine_add(request, id):
+    if not request.user.has_perm('erp.add_cattlehealthcheckuphasmedicine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == "POST":
         checkup_id = request.POST.get('checkup_id')
         instruction = request.POST.get('instruction')
@@ -1071,6 +1190,8 @@ def checkup_medicine_add(request, id):
 
 @login_required(login_url='login')
 def checkup_medicine_edit(request, id):
+    if not request.user.has_perm('erp.change_cattlehealthcheckuphasmedicine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = get_object_or_404(CattleHealthCheckupHasMedicine, id=id)
     
     if request.method == "POST":
@@ -1101,14 +1222,84 @@ def checkup_medicine_edit(request, id):
     return render(request, 'cattle/checkup_medicine_edit.html', context)
 
 def checkup_medicine_delete(request, id):
+    if not request.user.has_perm('erp.delete_cattlehealthcheckuphasmedicine'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = CattleHealthCheckupHasMedicine.objects.get(id=id)
     id = d.id
     d.delete()
     messages.error(request, "Medicine Deleted Successfully!")
     return redirect('/cattle_health_checkup')
 
+
+@login_required(login_url='login')
+def checkup_symptom_add(request, id):
+    if not request.user.has_perm('erp.add_healthcheckupsymptoms'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method == "POST":
+        checkup_id = request.POST.get('checkup_id')
+        symptom = request.POST.get('symptom')
+        modified_date = datetime.now()
+        checkup_id = request.POST.get('checkup_id')
+
+        query = HealthCheckupSymptoms(
+            cattle_health_checkup_id=checkup_id,
+            symptom=symptom,
+            modified_date=modified_date,
+        )
+        query.save()
+        messages.success(request, "Cattle Symptom Added Successfully!")
+        return redirect(f"/cattle_health_checkup_view/{id}")
+    
+    checkup_data = CattleHealthCheckup.objects.all()
+
+    context = {
+        'data1': checkup_data,
+        'current_checkup_id': id,
+    }
+
+    return render(request, 'cattle/checkup_symptom_add.html', context)
+
+@login_required(login_url='login')
+def checkup_symptom_edit(request, id):
+    if not request.user.has_perm('erp.change_healthcheckupsymptoms'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    edit = get_object_or_404(HealthCheckupSymptoms, id=id)
+    
+    if request.method == "POST":
+        checkup_id = request.POST.get('checkup_id')
+        symptom = request.POST.get('symptom')
+        modified_date = datetime.now()
+        
+        edit.cattle_health_checkup_id = checkup_id
+        edit.symptom = symptom
+        edit.modified_date = modified_date
+        
+        edit.save()
+        messages.warning(request, "Symptom Updated Successfully!")
+        return redirect('/cattle_health_checkup')
+
+    d = HealthCheckupSymptoms.objects.get(id=id)
+    
+    context = {
+        'd': d,
+    }
+
+    return render(request, 'cattle/checkup_symptom_edit.html', context)
+
+def checkup_symptom_delete(request, id):
+    if not request.user.has_perm('erp.delete_healthcheckupsymptoms'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = HealthCheckupSymptoms.objects.get(id=id)
+    id = d.id
+    d.delete()
+    messages.error(request, "Symptom Deleted Successfully!")
+    return redirect('/cattle_health_checkup')
+
+
 @login_required(login_url='login')
 def milk_production(request):
+    if not request.user.has_perm('erp.view_milkproduction'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = MilkProduction.objects.all()
     cattle = Cattle.objects.all()
 
@@ -1118,6 +1309,8 @@ def milk_production(request):
 
 @login_required(login_url='login')
 def milk_production_add(request):
+    if not request.user.has_perm('erp.add_milkproduction'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         camount_in_liter=request.POST.get('amount_in_liter')
         cmilk_time=request.POST.get('milk_time')
@@ -1198,6 +1391,8 @@ def milk_production_add(request):
 
 @login_required(login_url='login')
 def milk_production_edit(request,milk_production_id):
+    if not request.user.has_perm('erp.change_milkproduction'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     # Fetch the vaccine object by its id
     edit = MilkProduction.objects.get(milk_production_id=milk_production_id)
     
@@ -1293,6 +1488,8 @@ def milk_production_edit(request,milk_production_id):
     return render(request, 'cattle/milk_production_edit.html', context)
 
 def milk_production_delete(request, milk_production_id):
+    if not request.user.has_perm('erp.delete_milkproduction'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = MilkProduction.objects.get(milk_production_id=milk_production_id)
     d.delete()
     messages.error(request, "Milk Production Deleted Successfully!")
@@ -1300,6 +1497,8 @@ def milk_production_delete(request, milk_production_id):
 
 @login_required(login_url='login')
 def feed_formulation(request):
+    if not request.user.has_perm('erp.view_feedformulation'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = FeedFormulation.objects.all()
     context = {"data1":data}
 
@@ -1307,6 +1506,8 @@ def feed_formulation(request):
 
 @login_required(login_url='login')
 def feed_formulation_add(request):
+    if not request.user.has_perm('erp.add_feedformulation'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cname=request.POST.get('name')
         cstart_age_in_weeks=request.POST.get('start_age_in_weeks')
@@ -1322,6 +1523,8 @@ def feed_formulation_add(request):
 
 @login_required(login_url='login')
 def feed_formulation_edit(request,id):
+    if not request.user.has_perm('erp.change_feedformulation'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = FeedFormulation.objects.get(id=id)
     
     if request.method == "POST":
@@ -1345,6 +1548,8 @@ def feed_formulation_edit(request,id):
     return render(request, 'feed/feed_formulation_edit.html', context)
 
 def feed_formulation_delete(request, id):
+    if not request.user.has_perm('erp.delete_feedformulation'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = FeedFormulation.objects.get(id=id)
     d.delete()
     messages.error(request, "Feed Formulation Deleted Successfully!")
@@ -1352,6 +1557,8 @@ def feed_formulation_delete(request, id):
 
 @login_required(login_url='login')
 def ingredient(request):
+    if not request.user.has_perm('erp.view_feedingredient'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = FeedIngredient.objects.all()
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
@@ -1362,6 +1569,8 @@ def ingredient(request):
 
 @login_required(login_url='login')
 def ingredient_add(request):
+    if not request.user.has_perm('erp.add_feedingredient'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cfeed_formulation_id=request.POST.get('feed_formulation_id')
         citem_id=request.POST.get('item_id')
@@ -1405,6 +1614,8 @@ def ingredient_add(request):
 
 @login_required(login_url='login')
 def ingredient_edit(request,id):
+    if not request.user.has_perm('erp.change_feedingredient'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = FeedIngredient.objects.get(id=id)
     
     if request.method == "POST":
@@ -1456,6 +1667,8 @@ def ingredient_edit(request,id):
     return render(request, 'feed/ingredient_edit.html', context)
 
 def ingredient_delete(request, id):
+    if not request.user.has_perm('erp.delete_feedingredient'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = FeedIngredient.objects.get(id=id)
     d.delete()
     messages.error(request, "Feed Ingredient Deleted Successfully!")
@@ -1464,6 +1677,8 @@ def ingredient_delete(request, id):
 
 @login_required(login_url='login')
 def cattle_has_feed(request):
+    if not request.user.has_perm('erp.view_cattlehasfeed'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = CattleHasFeed.objects.all()
     cattle_data = Cattle.objects.all()
     shift_data = Shift.objects.all()
@@ -1474,6 +1689,8 @@ def cattle_has_feed(request):
 
 @login_required(login_url='login')
 def cattle_has_feed_add(request):
+    if not request.user.has_perm('erp.add_cattlehasfeed'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         ccattle_farm_entity_id=request.POST.get('cattle_farm_entity_id')
         cfeed_formulation_id=request.POST.get('feed_formulation_id')
@@ -1516,6 +1733,8 @@ def cattle_has_feed_add(request):
 
 @login_required(login_url='login')
 def cattle_has_feed_edit(request,id):
+    if not request.user.has_perm('erp.change_cattlehasfeed'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = CattleHasFeed.objects.get(id=id)
     
     if request.method == "POST":
@@ -1567,6 +1786,8 @@ def cattle_has_feed_edit(request,id):
     return render(request, 'feed/cattle_has_feed_edit.html', context)
 
 def cattle_has_feed_delete(request, id):
+    if not request.user.has_perm('erp.delete_cattlehasfeed'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = CattleHasFeed.objects.get(id=id)
     d.delete()
     messages.error(request, "Cattle Feed Deleted Successfully!")
@@ -1576,6 +1797,8 @@ def cattle_has_feed_delete(request, id):
 
 @login_required(login_url='login')
 def person_type(request):
+    if not request.user.has_perm('erp.view_persontype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = PersonType.objects.all()
     context = {"data1":data}
 
@@ -1583,6 +1806,8 @@ def person_type(request):
 
 @login_required(login_url='login')
 def person_type_add(request):
+    if not request.user.has_perm('erp.add_persontype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cperson_type=request.POST.get('person_type')
         cdate = datetime.now().date()
@@ -1596,6 +1821,8 @@ def person_type_add(request):
 
 @login_required(login_url='login')
 def person_type_edit(request,person_type_id):
+    if not request.user.has_perm('erp.change_persontype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = PersonType.objects.get(person_type_id=person_type_id)
     
     if request.method == "POST":
@@ -1618,6 +1845,8 @@ def person_type_edit(request,person_type_id):
     return render(request, 'person/person_type_edit.html', context)
 
 def person_type_delete(request, person_type_id):
+    if not request.user.has_perm('erp.delete_persontype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = PersonType.objects.get(person_type_id=person_type_id)
     d.delete()
     messages.error(request, "Person Type Deleted Successfully!")
@@ -1625,6 +1854,8 @@ def person_type_delete(request, person_type_id):
 
 @login_required(login_url='login')
 def person_title(request):
+    if not request.user.has_perm('erp.view_persontitle'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = PersonTitle.objects.all()
     context = {"data1":data}
 
@@ -1632,6 +1863,8 @@ def person_title(request):
 
 @login_required(login_url='login')
 def person_title_add(request):
+    if not request.user.has_perm('erp.add_persontitle'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cperson_title=request.POST.get('person_title')
         cdate = datetime.now().date()
@@ -1645,6 +1878,8 @@ def person_title_add(request):
 
 @login_required(login_url='login')
 def person_title_edit(request,person_title_id):
+    if not request.user.has_perm('erp.change_persontitle'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = PersonTitle.objects.get(person_title_id=person_title_id)
     
     if request.method == "POST":
@@ -1667,6 +1902,8 @@ def person_title_edit(request,person_title_id):
     return render(request, 'person/person_title_edit.html', context)
 
 def person_title_delete(request, person_title_id):
+    if not request.user.has_perm('erp.delete_persontitle'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = PersonTitle.objects.get(person_title_id=person_title_id)
     d.delete()
     messages.error(request, "Person Title Deleted Successfully!")
@@ -1674,6 +1911,8 @@ def person_title_delete(request, person_title_id):
 
 @login_required(login_url='login')
 def contact_type(request):
+    if not request.user.has_perm('erp.view_contacttype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = ContactType.objects.all()
     context = {"data1":data}
 
@@ -1681,6 +1920,8 @@ def contact_type(request):
 
 @login_required(login_url='login')
 def contact_type_add(request):
+    if not request.user.has_perm('erp.add_contacttype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         ccontact_type=request.POST.get('contact_type')
         ccontact_type_desc=request.POST.get('description')
@@ -1695,6 +1936,8 @@ def contact_type_add(request):
 
 @login_required(login_url='login')
 def contact_type_edit(request,contact_id):
+    if not request.user.has_perm('erp.change_contacttype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = ContactType.objects.get(contact_id=contact_id)
     
     if request.method == "POST":
@@ -1719,6 +1962,8 @@ def contact_type_edit(request,contact_id):
     return render(request, 'person/contact_type_edit.html', context)
 
 def contact_type_delete(request, contact_id):
+    if not request.user.has_perm('erp.delete_contacttype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = ContactType.objects.get(contact_id=contact_id)
     d.delete()
     messages.error(request, "Contact Type Deleted Successfully!")
@@ -1726,6 +1971,8 @@ def contact_type_delete(request, contact_id):
 
 @login_required(login_url='login')
 def sale_type(request):
+    if not request.user.has_perm('erp.view_saletype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = SaleType.objects.all()
     context = {"data1":data}
 
@@ -1733,6 +1980,8 @@ def sale_type(request):
 
 @login_required(login_url='login')
 def sale_type_add(request):
+    if not request.user.has_perm('erp.add_saletype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         csale_type=request.POST.get('sale_type')
         cdate = datetime.now().date()
@@ -1746,6 +1995,8 @@ def sale_type_add(request):
 
 @login_required(login_url='login')
 def sale_type_edit(request,sale_type_id):
+    if not request.user.has_perm('erp.change_saletype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = SaleType.objects.get(sale_type_id=sale_type_id)
     
     if request.method == "POST":
@@ -1768,6 +2019,8 @@ def sale_type_edit(request,sale_type_id):
     return render(request, 'sales/sale_type_edit.html', context)
 
 def sale_type_delete(request, sale_type_id):
+    if not request.user.has_perm('erp.delete_saletype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = SaleType.objects.get(sale_type_id=sale_type_id)
     d.delete()
     messages.error(request, "Sale Type Deleted Successfully!")
@@ -1775,6 +2028,8 @@ def sale_type_delete(request, sale_type_id):
 
 @login_required(login_url='login')
 def region(request):
+    if not request.user.has_perm('erp.view_region'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Region.objects.all()
     context = {"data1":data}
 
@@ -1782,6 +2037,8 @@ def region(request):
 
 @login_required(login_url='login')
 def region_add(request):
+    if not request.user.has_perm('erp.add_region'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cregion=request.POST.get('region')
         cdate = datetime.now().date()
@@ -1795,6 +2052,8 @@ def region_add(request):
 
 @login_required(login_url='login')
 def region_edit(request,region_id):
+    if not request.user.has_perm('erp.change_region'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Region.objects.get(region_id=region_id)
     
     if request.method == "POST":
@@ -1817,6 +2076,8 @@ def region_edit(request,region_id):
     return render(request, 'person/region_edit.html', context)
 
 def region_delete(request, region_id):
+    if not request.user.has_perm('erp.delete_region'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Region.objects.get(region_id=region_id)
     d.delete()
     messages.error(request, "Region Deleted Successfully!")
@@ -1824,6 +2085,8 @@ def region_delete(request, region_id):
 
 @login_required(login_url='login')
 def guarantee_type(request):
+    if not request.user.has_perm('erp.view_guaranteetype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = GuaranteeType.objects.all()
     context = {"data1":data}
 
@@ -1831,6 +2094,8 @@ def guarantee_type(request):
 
 @login_required(login_url='login')
 def guarantee_type_add(request):
+    if not request.user.has_perm('erp.add_guaranteetype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cguarantee_type=request.POST.get('guarantee_type')
         cdate = datetime.now().date()
@@ -1844,6 +2109,8 @@ def guarantee_type_add(request):
 
 @login_required(login_url='login')
 def guarantee_type_edit(request,guarantee_type_id):
+    if not request.user.has_perm('erp.change_guaranteetype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = GuaranteeType.objects.get(guarantee_type_id=guarantee_type_id)
     
     if request.method == "POST":
@@ -1866,6 +2133,8 @@ def guarantee_type_edit(request,guarantee_type_id):
     return render(request, 'employee/guarantee_type_edit.html', context)
 
 def guarantee_type_delete(request, guarantee_type_id):
+    if not request.user.has_perm('erp.delete_guaranteetype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = GuaranteeType.objects.get(guarantee_type_id=guarantee_type_id)
     d.delete()
     messages.error(request, "Guarantee Type Deleted Successfully!")
@@ -1873,6 +2142,8 @@ def guarantee_type_delete(request, guarantee_type_id):
 
 @login_required(login_url='login')
 def shift(request):
+    if not request.user.has_perm('erp.view_shift'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Shift.objects.all()
     context = {"data1":data}
 
@@ -1880,6 +2151,8 @@ def shift(request):
 
 @login_required(login_url='login')
 def shift_add(request):
+    if not request.user.has_perm('erp.add_shift'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cshift_name=request.POST.get('shift_name')
         cshift_start_time=request.POST.get('shift_start_time')
@@ -1918,6 +2191,8 @@ def shift_add(request):
 
 @login_required(login_url='login')
 def shift_edit(request,id):
+    if not request.user.has_perm('erp.change_shift'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Shift.objects.get(id=id)
     
     if request.method == "POST":
@@ -1965,6 +2240,8 @@ def shift_edit(request,id):
     return render(request, 'employee/shift_edit.html', context)
 
 def shift_delete(request, id):
+    if not request.user.has_perm('erp.delete_shift'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Shift.objects.get(id=id)
     d.delete()
     messages.error(request, "Shift Deleted Successfully!")
@@ -1973,6 +2250,8 @@ def shift_delete(request, id):
 
 @login_required(login_url='login')
 def task(request):
+    if not request.user.has_perm('erp.view_task'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Task.objects.all()
     context = {"data1":data}
 
@@ -1980,6 +2259,8 @@ def task(request):
 
 @login_required(login_url='login')
 def task_add(request):
+    if not request.user.has_perm('erp.add_task'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         ctask_name=request.POST.get('task_name')
         cdescription=request.POST.get('description')
@@ -1994,6 +2275,8 @@ def task_add(request):
 
 @login_required(login_url='login')
 def task_edit(request,id):
+    if not request.user.has_perm('erp.change_task'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Task.objects.get(id=id)
     
     if request.method == "POST":
@@ -2015,6 +2298,8 @@ def task_edit(request,id):
     return render(request, 'employee/task_edit.html', context)
 
 def task_delete(request, id):
+    if not request.user.has_perm('erp.delete_task'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Task.objects.get(id=id)
     d.delete()
     messages.error(request, "Task Deleted Successfully!")
@@ -2022,6 +2307,8 @@ def task_delete(request, id):
 
 @login_required(login_url='login')
 def assign_task(request):
+    if not request.user.has_perm('erp.view_taskassignment'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     user = request.user
     if user.groups.filter(name='Admin').exists():
         data = TaskAssignment.objects.all()
@@ -2040,6 +2327,8 @@ def assign_task(request):
 
 @login_required(login_url='login')
 def assign_task_add(request):
+    if not request.user.has_perm('erp.add_taskassignment'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         ctask_id=request.POST.get('task_id')
         cshift_id=request.POST.get('shift_id')
@@ -2083,6 +2372,8 @@ def assign_task_add(request):
 
 @login_required(login_url='login')
 def assign_task_edit(request,id):
+    if not request.user.has_perm('erp.change_taskassignment'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = TaskAssignment.objects.get(id=id)
     if request.method=="POST":
         ctask_id=request.POST.get('task_id')
@@ -2128,6 +2419,8 @@ def assign_task_edit(request,id):
     return render(request, 'employee/assign_task_edit.html', context)
 
 def assign_task_delete(request, id):
+    if not request.user.has_perm('erp.delete_taskassignment'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = TaskAssignment.objects.get(id=id)
     d.delete()
     messages.error(request, "Task Assignment Deleted Successfully!")
@@ -2148,6 +2441,8 @@ def update_status(request):
 
 @login_required(login_url='login')
 def job(request):
+    if not request.user.has_perm('erp.view_job'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Job.objects.all()
     context = {"data1":data}
 
@@ -2155,6 +2450,8 @@ def job(request):
 
 @login_required(login_url='login')
 def job_add(request):
+    if not request.user.has_perm('erp.add_job'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cjob_title=request.POST.get('job_title')
         cjob_min_salary=request.POST.get('job_min_salary')
@@ -2196,6 +2493,8 @@ def job_add(request):
 
 @login_required(login_url='login')
 def job_edit(request,job_id):
+    if not request.user.has_perm('erp.change_job'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Job.objects.get(job_id=job_id)
     
     if request.method == "POST":
@@ -2248,6 +2547,8 @@ def job_edit(request,job_id):
     return render(request, 'employee/job_edit.html', context)
 
 def job_delete(request, job_id):
+    if not request.user.has_perm('erp.delete_job'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Job.objects.get(job_id=job_id)
     d.delete()
     messages.error(request, "Job Deleted Successfully!")
@@ -2256,6 +2557,8 @@ def job_delete(request, job_id):
 
 @login_required(login_url='login')
 def item_type(request):
+    if not request.user.has_perm('erp.view_itemtype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = ItemType.objects.all()
     context = {"data1":data}
 
@@ -2263,6 +2566,8 @@ def item_type(request):
 
 @login_required(login_url='login')
 def item_type_add(request):
+    if not request.user.has_perm('erp.add_itemtype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         citem_type=request.POST.get('item_type')
         cdate = datetime.now().date()
@@ -2276,6 +2581,8 @@ def item_type_add(request):
 
 @login_required(login_url='login')
 def item_type_edit(request,item_type_id):
+    if not request.user.has_perm('erp.change_itemtype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = ItemType.objects.get(item_type_id=item_type_id)
     
     if request.method == "POST":
@@ -2295,6 +2602,8 @@ def item_type_edit(request,item_type_id):
     return render(request, 'procurement/item_type_edit.html', context)
 
 def item_type_delete(request, item_type_id):
+    if not request.user.has_perm('erp.delete_itemtype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = ItemType.objects.get(item_type_id=item_type_id)
     d.delete()
     messages.error(request, "Item Type Deleted Successfully!")
@@ -2302,6 +2611,8 @@ def item_type_delete(request, item_type_id):
 
 @login_required(login_url='login')
 def item(request):
+    if not request.user.has_perm('erp.view_item'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Item.objects.all()
     context = {"data1":data}
 
@@ -2309,6 +2620,8 @@ def item(request):
 
 @login_required(login_url='login')
 def item_add(request):
+    if not request.user.has_perm('erp.add_item'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cname=request.POST.get('name')
         cdate = datetime.now().date()
@@ -2322,6 +2635,8 @@ def item_add(request):
 
 @login_required(login_url='login')
 def item_edit(request,item_id):
+    if not request.user.has_perm('erp.change_item'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Item.objects.get(item_id=item_id)
     
     if request.method == "POST":
@@ -2344,6 +2659,8 @@ def item_edit(request,item_id):
     return render(request, 'procurement/item_edit.html', context)
 
 def item_delete(request, item_id):
+    if not request.user.has_perm('erp.delete_item'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Item.objects.get(item_id=item_id)
     d.delete()
     messages.error(request, "Item Deleted Successfully!")
@@ -2351,6 +2668,8 @@ def item_delete(request, item_id):
 
 @login_required(login_url='login')
 def supplier_type(request):
+    if not request.user.has_perm('erp.view_suppliertype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = SupplierType.objects.all()
     context = {"data1":data}
 
@@ -2358,6 +2677,8 @@ def supplier_type(request):
 
 @login_required(login_url='login')
 def supplier_type_add(request):
+    if not request.user.has_perm('erp.add_suppliertype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         csupplier_type=request.POST.get('supplier_type')
         cdate = datetime.now().date()
@@ -2371,6 +2692,8 @@ def supplier_type_add(request):
 
 @login_required(login_url='login')
 def supplier_type_edit(request,supplier_type_id):
+    if not request.user.has_perm('erp.change_suppliertype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = SupplierType.objects.get(supplier_type_id=supplier_type_id)
     
     if request.method == "POST":
@@ -2393,6 +2716,8 @@ def supplier_type_edit(request,supplier_type_id):
     return render(request, 'procurement/supplier_type_edit.html', context)
 
 def supplier_type_delete(request, supplier_type_id):
+    if not request.user.has_perm('erp.delete_suppliertype'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = SupplierType.objects.get(supplier_type_id=supplier_type_id)
     d.delete()
     messages.error(request, "Supplier Type Deleted Successfully!")
@@ -2400,6 +2725,8 @@ def supplier_type_delete(request, supplier_type_id):
 
 @login_required(login_url='login')
 def supplier(request):
+    if not request.user.has_perm('erp.view_supplier'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Supplier.objects.all()
     type_data = SupplierType.objects.all()
 
@@ -2409,6 +2736,8 @@ def supplier(request):
 
 @login_required(login_url='login')
 def supplier_add(request):
+    if not request.user.has_perm('erp.add_supplier'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == "POST":
         csupplier_name = request.POST.get('supplier_name')
         csupplier_type = request.POST.get('supplier_type')
@@ -2435,6 +2764,8 @@ def supplier_add(request):
 
 @login_required(login_url='login')
 def supplier_edit(request,farm_entity_id):
+    if not request.user.has_perm('erp.change_supplier'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Supplier.objects.get(farm_entity_id=farm_entity_id)
     
     if request.method == "POST":
@@ -2464,6 +2795,8 @@ def supplier_edit(request,farm_entity_id):
     return render(request, 'procurement/supplier_edit.html', context)
 
 def supplier_delete(request, farm_entity_id):
+    if not request.user.has_perm('erp.delete_supplier'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Supplier.objects.get(farm_entity_id=farm_entity_id)
     d.delete()
     messages.error(request, "Supplier Deleted Successfully!")
@@ -2471,6 +2804,8 @@ def supplier_delete(request, farm_entity_id):
 
 @login_required(login_url='login')
 def add_supplier_contact(request):
+    if not request.user.has_perm('erp.add_suppliercontact'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         csupplier_id = request.POST.get('supplier_id')
         ccontact_type = request.POST.get('contact_type')
@@ -2491,6 +2826,8 @@ def add_supplier_contact(request):
 
 @login_required(login_url='login')
 def add_supplier_address(request):
+    if not request.user.has_perm('erp.add_supplieraddress'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         csupplier_id = request.POST.get('supplier_id')
         cregion = request.POST.get('region')
@@ -2520,6 +2857,8 @@ def add_supplier_address(request):
 
 @login_required(login_url='login')
 def request_order(request):
+    if not request.user.has_perm('erp.view_order'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = OrderHasItem.objects.all()
     orderdatas = Order.objects.all()
     item_data = Item.objects.all()
@@ -2531,6 +2870,8 @@ def request_order(request):
 
 @login_required(login_url='login')
 def request_order_view(request, order_id):
+    if not request.user.has_perm('erp.view_order'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     order = get_object_or_404(OrderHasItem, order_id=order_id)
     orderdatas = Order.objects.filter(order_id=order_id)
     rfq_data = OrderHasItemSupplier.objects.filter(order_id=order_id)
@@ -2542,6 +2883,8 @@ def request_order_view(request, order_id):
 
 @login_required(login_url='login')
 def request_order_add(request):
+    if not request.user.has_perm('erp.add_order'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         order = Order.objects.create()
 
@@ -2595,6 +2938,8 @@ def request_order_add(request):
 
 @login_required(login_url='login')
 def request_order_edit(request,order_id):
+    if not request.user.has_perm('erp.change_order'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = OrderHasItem.objects.get(order_id=order_id)
     
     if request.method == "POST":
@@ -2644,6 +2989,8 @@ def request_order_edit(request,order_id):
     return render(request, 'procurement/request_order_edit.html', context)
 
 def request_order_delete(request, order_id):
+    if not request.user.has_perm('erp.delete_order'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     try:
         order_item = OrderHasItem.objects.get(order_id=order_id)
         order = order_item.order
@@ -2682,6 +3029,8 @@ def reject_request(request, order_id):
 
 @login_required(login_url='login')
 def rfq(request):
+    if not request.user.has_perm('erp.view_orderhasitemsupplier'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = OrderHasItemSupplier.objects.all()
     context = {"data1":data}
 
@@ -2690,6 +3039,8 @@ def rfq(request):
 
 @login_required(login_url='login')
 def rfq_add(request, order_id):
+    if not request.user.has_perm('erp.add_orderhasitemsupplier'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == "POST":
         csupplier_name = request.POST.get('supplier_name')
         citem_id = request.POST.get('item_id')
@@ -2764,6 +3115,8 @@ def rfq_add(request, order_id):
 
 @login_required(login_url='login')
 def rfq_edit(request,id):
+    if not request.user.has_perm('erp.change_orderhasitemsupplier'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     # edit = OrderHasItemSupplier.objects.get(id=id)
     edit = get_object_or_404(OrderHasItemSupplier, id=id)
     
@@ -2836,6 +3189,8 @@ def rfq_edit(request,id):
     return render(request, 'procurement/rfq_edit.html', context)
 
 def rfq_delete(request, id):
+    if not request.user.has_perm('erp.delete_orderhasitemsupplier'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = OrderHasItemSupplier.objects.get(id=id)
     order_id = d.order_id
     d.delete()
@@ -2863,50 +3218,11 @@ def reject_rfq(request, id):
     except OrderHasItemSupplier.DoesNotExist:
         return JsonResponse({'error': 'Order has item supplier not found.'}, status=404)
 
-# def approve_rfq(request, id):
-#     try:
-#         with transaction.atomic():
-#             order_item_supplier = OrderHasItemSupplier.objects.get(pk=id)
-#             order_item_supplier.status = 'Approved'
-#             order_item_supplier.save()
-            
-#             order_item = order_item_supplier.order
-#             order = order_item.order
-            
-#             order.purchase_approved = 'Approved'
-#             order.purchase_approved_date = timezone.now()
-#             order.save()
-
-#         return JsonResponse({'message': 'Purchase approved successfully.'})
-#     except OrderHasItemSupplier.DoesNotExist:
-#         return JsonResponse({'error': 'Order item supplier not found.'}, status=404)
-#     except Order.DoesNotExist:
-#         return JsonResponse({'error': 'Order not found.'}, status=404)
-
-
-# def reject_rfq(request, id):
-#     try:
-#         with transaction.atomic():
-#             order_item_supplier = OrderHasItemSupplier.objects.get(pk=id)
-#             order_item_supplier.status = 'Rejected'
-#             order_item_supplier.save()
-            
-#             order_item = order_item_supplier.order
-#             order = order_item.order
-            
-#             order.purchase_approved = 'Rejected'
-#             order.purchase_approved_date = timezone.now()
-#             order.save()
-
-#         return JsonResponse({'message': 'Purchase approved successfully.'})
-#     except OrderHasItemSupplier.DoesNotExist:
-#         return JsonResponse({'error': 'Order item supplier not found.'}, status=404)
-#     except Order.DoesNotExist:
-#         return JsonResponse({'error': 'Order not found.'}, status=404)
-
 
 @login_required(login_url='login')
 def purchase_order(request):
+    if not request.user.has_perm('erp.view_orderhasitemsupplier'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     approved_supp = OrderHasItemSupplier.objects.filter(status='approved').values('id','supplier_id', 'order_id', 'item_id', 'quantity', 'price', 'status', 'modified_date','inventory_status').distinct()
     item_data = Item.objects.all()
     supplier_data = Supplier.objects.all()
@@ -2918,6 +3234,7 @@ def purchase_order(request):
 
 @login_required(login_url='login')
 def generate_purchase_order(request, order_id):
+    
     data = OrderHasItemSupplier.objects.filter(order_id=order_id, status='approved')
     item_data = Item.objects.all()
     supplier_data = Supplier.objects.all()
@@ -2990,6 +3307,7 @@ def approve_inventory(request, id):
         return JsonResponse({'error': str(e)}, status=500)
 
 def reject_inventory(request, id):
+
     try:
         order_has_item_supplier = get_object_or_404(OrderHasItemSupplier, pk=id)
         order_has_item_supplier.inventory_status = 'Rejected'
@@ -3002,6 +3320,8 @@ def reject_inventory(request, id):
 
 @login_required(login_url='login')
 def item_measurement(request):
+    if not request.user.has_perm('erp.view_itemmeasurement'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = ItemMeasurement.objects.all()
     context = {"data1":data}
 
@@ -3009,6 +3329,8 @@ def item_measurement(request):
 
 @login_required(login_url='login')
 def item_measurement_add(request):
+    if not request.user.has_perm('erp.add_itemmeasurement'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cmeasurement=request.POST.get('measurement')
         cdescription=request.POST.get('description')
@@ -3023,6 +3345,8 @@ def item_measurement_add(request):
 
 @login_required(login_url='login')
 def item_measurement_edit(request,id):
+    if not request.user.has_perm('erp.change_itemmeasurement'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = ItemMeasurement.objects.get(id=id)
     
     if request.method == "POST":
@@ -3044,6 +3368,8 @@ def item_measurement_edit(request,id):
     return render(request, 'inventory/item_measurement_edit.html', context)
 
 def item_measurement_delete(request, id):
+    if not request.user.has_perm('erp.delete_itemmeasurement'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = ItemMeasurement.objects.get(id=id)
     d.delete()
     messages.error(request, "Item Measurement Deleted Successfully!")
@@ -3052,6 +3378,8 @@ def item_measurement_delete(request, id):
 
 @login_required(login_url='login')
 def stock(request):
+    if not request.user.has_perm('erp.view_stock'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Stock.objects.all()
     context = {"data1":data}
 
@@ -3060,6 +3388,8 @@ def stock(request):
 
 @login_required(login_url='login')
 def stock_add(request):
+    if not request.user.has_perm('erp.add_stock'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cquantity=request.POST.get('quantity')
         ctype=request.POST.get('type')
@@ -3097,6 +3427,8 @@ def stock_add(request):
 
 @login_required(login_url='login')
 def stock_edit(request,stock_id):
+    if not request.user.has_perm('erp.change_stock'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Stock.objects.get(stock_id=stock_id)
     
     if request.method == "POST":
@@ -3126,6 +3458,8 @@ def stock_edit(request,stock_id):
     return render(request, 'inventory/stock_edit.html', context)
 
 def stock_delete(request, stock_id):
+    if not request.user.has_perm('erp.delete_stock'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Stock.objects.get(stock_id=stock_id)
     d.delete()
     messages.error(request, "Stock Deleted Successfully!")
@@ -3134,6 +3468,8 @@ def stock_delete(request, stock_id):
 
 @login_required(login_url='login')
 def stock_in(request):
+    if not request.user.has_perm('erp.view_directlyaddeditem'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = DirectlyAddedItem.objects.all()
     context = {"data1":data}
 
@@ -3142,6 +3478,8 @@ def stock_in(request):
 
 @login_required(login_url='login')
 def stockin_add(request):
+    if not request.user.has_perm('erp.add_directlyaddeditem'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cquantity=request.POST.get('quantity')
         ctype=request.POST.get('type')
@@ -3198,6 +3536,8 @@ def stockin_add(request):
 
 @login_required(login_url='login')
 def stockin_edit(request,id):
+    if not request.user.has_perm('erp.change_directlyaddeditem'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = DirectlyAddedItem.objects.get(id=id)
     
     if request.method == "POST":
@@ -3263,6 +3603,8 @@ def stockin_edit(request,id):
     return render(request, 'inventory/stockin_edit.html', context)
 
 def stockin_delete(request, id):
+    if not request.user.has_perm('erp.delete_directlyaddeditem'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = DirectlyAddedItem.objects.get(id=id)
     d.delete()
     messages.error(request, "Stock request Deleted Successfully!")
@@ -3317,6 +3659,8 @@ def reject_stockin(request, id):
 
 @login_required(login_url='login')
 def stock_out(request):
+    if not request.user.has_perm('erp.view_stockout'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Stockout.objects.all()
     context = {"data1":data}
 
@@ -3325,6 +3669,8 @@ def stock_out(request):
 
 @login_required(login_url='login')
 def stockout_add(request):
+    if not request.user.has_perm('erp.add_stockout'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cquantity=request.POST.get('quantity')
         citem_type=request.POST.get('item_type')
@@ -3373,6 +3719,8 @@ def stockout_add(request):
 
 @login_required(login_url='login')
 def stockout_edit(request,id):
+    if not request.user.has_perm('erp.change_stockout'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Stockout.objects.get(id=id)
     
     if request.method == "POST":
@@ -3426,6 +3774,8 @@ def stockout_edit(request,id):
     return render(request, 'inventory/stockout_edit.html', context)
 
 def stockout_delete(request, id):
+    if not request.user.has_perm('erp.delete_stockout'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Stockout.objects.get(id=id)
     d.delete()
     messages.error(request, "Stockout Deleted Successfully!")
@@ -3480,6 +3830,8 @@ def reject_stockout(request, id):
 
 @login_required(login_url='login')
 def department(request):
+    if not request.user.has_perm('erp.view_department'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Department.objects.all()
     context = {"data1":data}
 
@@ -3487,6 +3839,8 @@ def department(request):
 
 @login_required(login_url='login')
 def department_add(request):
+    if not request.user.has_perm('erp.add_department'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cdepartment=request.POST.get('department')
 
@@ -3499,6 +3853,8 @@ def department_add(request):
 
 @login_required(login_url='login')
 def department_edit(request,department_id):
+    if not request.user.has_perm('erp.change_department'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = Department.objects.get(department_id=department_id)
     
     if request.method == "POST":
@@ -3515,6 +3871,8 @@ def department_edit(request,department_id):
     return render(request, 'employee/department_edit.html', context)
 
 def department_delete(request, department_id):
+    if not request.user.has_perm('erp.delete_department'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Department.objects.get(department_id=department_id)
     d.delete()
     messages.error(request, "Department Deleted Successfully!")
@@ -3522,6 +3880,8 @@ def department_delete(request, department_id):
 
 @login_required(login_url='login')
 def employee(request):
+    if not request.user.has_perm('erp.view_employee'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = Person.objects.all()
     context = {"data1":data}
 
@@ -3529,6 +3889,8 @@ def employee(request):
 
 @login_required(login_url='login')
 def employee_view(request, farm_entity_id):
+    if not request.user.has_perm('erp.view_employee'):
+        return HttpResponse('You are not authorised to view this page', status=403)
 
     farm_entity = get_object_or_404(FarmEntity, pk=farm_entity_id)
     person = get_object_or_404(Person, farm_entity=farm_entity)
@@ -3554,6 +3916,8 @@ def employee_view(request, farm_entity_id):
 
 @login_required(login_url='login')
 def employee_add(request):
+    if not request.user.has_perm('erp.add_employee'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == "POST":
         ctitle = request.POST.get('title')
         ctype = request.POST.get('type')
@@ -3685,6 +4049,8 @@ def employee_add(request):
 
 @login_required(login_url='login')
 def employee_edit(request, farm_entity_id):
+    if not request.user.has_perm('erp.change_employee'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     farm_entity = get_object_or_404(FarmEntity, pk=farm_entity_id)
     person = get_object_or_404(Person, farm_entity=farm_entity)
     employee = get_object_or_404(Employee, person_farm_entity=person)
@@ -3799,6 +4165,8 @@ def employee_edit(request, farm_entity_id):
 
 
 def employee_delete(request, farm_entity_id):
+    if not request.user.has_perm('erp.delete_employee'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     farm_entity = get_object_or_404(FarmEntity, farm_entity_id=farm_entity_id)
 
     # Delete related objects
@@ -3815,6 +4183,8 @@ def employee_delete(request, farm_entity_id):
 
 @login_required(login_url='login')
 def add_contact(request):
+    if not request.user.has_perm('erp.add_contact'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
         ccontact_type = request.POST.get('contact_type')
@@ -3835,6 +4205,8 @@ def add_contact(request):
 
 @login_required(login_url='login')
 def add_address(request):
+    if not request.user.has_perm('erp.add_address'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
         cregion = request.POST.get('region')
@@ -3864,6 +4236,8 @@ def add_address(request):
 
 @login_required(login_url='login')
 def add_experience(request):
+    if not request.user.has_perm('erp.add_experience'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
         ccompany = request.POST.get('company')
@@ -3925,6 +4299,8 @@ def add_experience(request):
 
 @login_required(login_url='login')
 def add_guarantee(request):
+    if not request.user.has_perm('erp.add_guarantee'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
         cguarantee_type = request.POST.get('guarantee_type')
@@ -3966,6 +4342,8 @@ def add_guarantee(request):
 
 @login_required(login_url='login')
 def add_jobhistory(request):
+    if not request.user.has_perm('erp.add_jobhistory'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
         cjob_id = request.POST.get('job_id')
@@ -4028,6 +4406,8 @@ def add_jobhistory(request):
 
 @login_required(login_url='login')
 def leave(request):
+    if not request.user.has_perm('erp.view_employeeleave'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     data = EmployeeLeave.objects.all()
     context = {"data1":data}
 
@@ -4035,6 +4415,8 @@ def leave(request):
 
 @login_required(login_url='login')
 def leave_view(request, leave_id):
+    if not request.user.has_perm('erp.view_employeeleave'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     leave = get_object_or_404(EmployeeLeave, leave_id=leave_id)
     context = {"leave":leave}
 
@@ -4043,6 +4425,8 @@ def leave_view(request, leave_id):
 
 @login_required(login_url='login')
 def leave_add(request):
+    if not request.user.has_perm('erp.add_employeeleave'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cstart_date=request.POST.get('start_date')
         cend_date=request.POST.get('end_date')
@@ -4061,6 +4445,8 @@ def leave_add(request):
 
 @login_required(login_url='login')
 def leave_edit(request,leave_id):
+    if not request.user.has_perm('erp.change_employeeleave'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     edit = EmployeeLeave.objects.get(leave_id=leave_id)
     
     if request.method == "POST":
@@ -4082,6 +4468,8 @@ def leave_edit(request,leave_id):
     return render(request, 'employee/leave_edit.html', context)
 
 def leave_delete(request, leave_id):
+    if not request.user.has_perm('erp.delete_employeeleave'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = EmployeeLeave.objects.get(leave_id=leave_id)
     d.delete()
     messages.error(request, "Request Deleted Successfully!")

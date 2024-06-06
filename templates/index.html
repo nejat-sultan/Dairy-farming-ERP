@@ -69,15 +69,52 @@
           </div>
         </div>
 
-      {% comment %} <div>
-          <h2>Weekly Milk Production</h2>
-          {% if plot_img_base64 %}
-          <img src="data:image/png;base64,{{ plot_img_base64}}" alt="Milk Production Plot">
-          {% else %}
-          <p>No milk production data available.</p>
-          {% endif %}
-      </div>   {% endcomment %}
-
+        <div class="row">
+          <div class="col-6">
+            <div> <canvas id="myChart"></canvas> </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                  const ctx = document.getElementById('myChart').getContext('2d');
+                  const chartData = JSON.parse('{{ chart_data_json|escapejs }}');
+                  
+                  new Chart(ctx, {
+                      type: 'line',
+                      data: chartData,
+                      options: {
+                          scales: {
+                              y: {
+                                  beginAtZero: true
+                              }
+                          }
+                      }
+                  });
+              });
+            </script>
+          </div>
+          <div class="col-6">
+            <div> <canvas id="myChart2"></canvas> </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                  const ctx = document.getElementById('myChart2').getContext('2d');
+                  const chartData2 = JSON.parse('{{ chart_data_json2|escapejs }}');
+                  
+                  new Chart(ctx, {
+                      type: 'bar',
+                      data: chartData2,
+                      options: {
+                          scales: {
+                              y: {
+                                  beginAtZero: true
+                              }
+                          }
+                      }
+                  });
+              });
+            </script>
+          </div>
+        </div>
+    
+        <br><br>
         <div class="row">
           <div class="col-8">
             <div class="card">
@@ -144,7 +181,6 @@
               <div class="card-footer clearfix">
                 <a href="request_order" class="btn btn-sm btn-secondary float-right">View All Orders</a>
               </div>
-            
             </div>
           </div>
 

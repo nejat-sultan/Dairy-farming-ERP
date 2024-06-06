@@ -68,6 +68,10 @@ urlpatterns = [
     path('checkup_medicine_edit/<str:id>', views.checkup_medicine_edit, name='checkup_medicine_edit'),
     path('checkup_medicine_delete/<str:id>', views.checkup_medicine_delete), 
 
+    path('checkup_symptom_add/<int:id>/', views.checkup_symptom_add, name='checkup_symptom_add'),
+    path('checkup_symptom_edit/<str:id>', views.checkup_symptom_edit, name='checkup_symptom_edit'),
+    path('checkup_symptom_delete/<str:id>', views.checkup_symptom_delete), 
+
     path('milk_production', views.milk_production),
     path('milk_production_add', views.milk_production_add),
     path('milk_production_edit/<str:milk_production_id>', views.milk_production_edit, name='milk_production_edit'),

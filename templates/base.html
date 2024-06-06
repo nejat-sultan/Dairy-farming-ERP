@@ -152,7 +152,7 @@
       </li>
       <li class="nav-item">
 
-        <span><a href="logout"> Logout</a></span>
+        <span><a href="../../logout"> Logout</a></span>
         {% comment %} <a class="nav-link" data-widget="control-sidebar" data-controlsidebar-slide="true" href="" role="button">
           <i class="fas fa-th-large"></i>
         </a> {% endcomment %}
@@ -237,7 +237,7 @@
             </a>
           </li>
 
-
+          {% if not request.user|is_allowed_user:"Labor Employees, Store Clerk" %} 
           <li class="nav-header">Livestock Operations</li> 
           <li class="nav-item">
             <a href="#" class="nav-link">
@@ -248,7 +248,7 @@
               </p>
             </a> 
             <ul class="nav nav-treeview pl-3">
-              {% comment %} {% if request.user|is_allowed_user:"Admin" %}  {% endcomment %}
+              {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../cattle" class="nav-link">
                   <i class="nav-icon fas fa-table"></i>
@@ -257,8 +257,9 @@
                   </p>
                 </a>
               </li>
-              {% comment %} {% endif %}
-              {% if request.user|is_allowed_user:"Admin, Veterinarian" %}  {% endcomment %}
+              {% endif %}
+              
+              {% if request.user|is_allowed_user:"Admin, Vet, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../cattle_health_checkup" class="nav-link">
                   <i class="fas fa-hospital nav-icon"></i>
@@ -267,26 +268,29 @@
                 </a>
                 
               </li>
-              {% comment %} {% endif %} 
-              {% if request.user|is_allowed_user:"Admin, Veterinarian" %}  {% endcomment %}
+              {% endif %} 
+              {% if request.user|is_allowed_user:"Admin, Vet, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../cattle_has_vaccine" class="nav-link">
                   <i class="fas fa-syringe nav-icon"></i>
                   <p>Vaccination</p>
                 </a>
               </li>
-              {% comment %} {% endif %} 
-              {% if request.user|is_allowed_user:"Admin, Veterinarian" %}  {% endcomment %}
+              {% endif %} 
+              {% if request.user|is_allowed_user:"Admin, Vet, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../cattle_pregnancy" class="nav-link">
                   <i class="nav-icon fas fa-horse"></i>
                   <p>Reproduction</p>
                 </a>
               </li>
-              {% comment %} {% endif %}  {% endcomment %}
+              {% endif %}  
             </ul>
           </li>
+          {% endif %} 
           
+          {% if not request.user|is_allowed_user:"Vet" %} 
+          {% if not request.user|is_allowed_user:"Store Clerk, Data Entry Clerk" %} 
           <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-seedling"></i>
@@ -296,6 +300,7 @@
               </p>
             </a> 
             <ul class="nav nav-treeview pl-3">
+              {% if request.user|is_allowed_user:"Admin, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../feed_formulation" class="nav-link">
                   <i class="nav-icon fas fa-seedling"></i>
@@ -304,6 +309,8 @@
                   </p>
                 </a>
               </li>
+              {% endif %} 
+              {% if request.user|is_allowed_user:"Admin, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../ingredient" class="nav-link">
                   <i class="nav-icon fas fa-flask"></i>
@@ -312,6 +319,8 @@
                   </p>
                 </a>
               </li>
+              {% endif %} 
+              {% if request.user|is_allowed_user:"Admin, Labor Employees, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../cattle_has_feed" class="nav-link">
                   <i class="nav-icon fas fa-utensils"></i>
@@ -320,6 +329,7 @@
                   </p>
                 </a>
               </li>
+              {% endif %} 
             </ul>
           </li>
 
@@ -332,6 +342,7 @@
               </p>
             </a> 
             <ul class="nav nav-treeview pl-3">
+              {% if request.user|is_allowed_user:"Admin, Labor Employees, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../milk_production" class="nav-link">
                   <i class="nav-icon fas fa-warehouse"></i>
@@ -339,10 +350,12 @@
                     Milk Production </p>
                 </a>
               </li>
+              {% endif %} 
             </ul>
           </li>
+          {% endif %}
 
-
+          {% if not request.user|is_allowed_user:"Labor Employees" %} 
           <li class="nav-header">Business Operations</li>
           <li class="nav-item">
             <a href="#" class="nav-link">
@@ -353,6 +366,7 @@
               </p>
             </a> 
             <ul class="nav nav-treeview pl-3">
+              {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../supplier" class="nav-link">
                   <i class="nav-icon fas fa-user-tie"></i>
@@ -361,6 +375,8 @@
                   </p>
                 </a>
               </li> 
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin,  Store Clerk, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../request_order" class="nav-link">
                   <i class="nav-icon fas fa-question"></i>
@@ -369,6 +385,8 @@
                   </p>
                 </a>
               </li>
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin,  Store Clerk, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../purchase_order" class="nav-link">
                   <i class="nav-icon fas fa-coins"></i>
@@ -377,10 +395,12 @@
                   </p>
                 </a>
               </li>
+              {% endif %}
             </ul>
           </li>
 
           <li class="nav-item">
+            {% if not request.user|is_allowed_user:"Store Clerk" %} 
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-lightbulb"></i>
               <p>
@@ -388,7 +408,9 @@
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a> 
+            {% endif %}
             <ul class="nav nav-treeview pl-3">
+              {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="#" class="nav-link">
                   <i class="nav-icon fas fa-user-alt"></i>
@@ -396,8 +418,9 @@
                     Manage Customer
                   </p>
                 </a>
-                
               </li>
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="#" class="nav-link">
                   <i class="nav-icon fas fa-lightbulb"></i>
@@ -406,12 +429,14 @@
                   </p>
                 </a>
               </li>
+              {% endif %}
             </ul>
           </li>
-
+          {% endif %}
 
           <li class="nav-header">Resource Management</li>
           <li class="nav-item">
+            {% if not request.user|is_allowed_user:"Store Clerk" %} 
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-users"></i>
               <p>
@@ -419,7 +444,9 @@
                 <i class="fas fa-angle-left right"></i>
               </p>
             </a> 
+            {% endif %}
             <ul class="nav nav-treeview pl-3">
+              {% if request.user|is_allowed_user:"Admin, Supervisor,Data Entry Clerk, Owner" %} 
               <li class="nav-item">
                 <a href="../../department" class="nav-link">
                   <i class="nav-icon fas fa-building"></i>
@@ -428,6 +455,8 @@
                   </p>
                 </a>
               </li>
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Supervisor, Data Entry Clerk, Owner" %} 
               <li class="nav-item">
                 <a href="../../employee" class="nav-link">
                   <i class="nav-icon fas fa-table"></i>
@@ -436,27 +465,35 @@
                   </p>
                 </a>
               </li>
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../shift" class="nav-link">
                   <i class="nav-icon fas fa-layer-group"></i>
                   <p>Manage Shift</p>
                 </a>
               </li>
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Labor Employees, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../assign_task" class="nav-link">
                   <i class="nav-icon fas fa-briefcase"></i>
                   <p>Task Assignment</p>
                 </a>
               </li>
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Labor Employees, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../leave" class="nav-link">
                   <i class="nav-icon fas fa-arrow-right"></i>
                   <p>Leave Management</p>
                 </a>
-              </li>    
+              </li> 
+              {% endif %}   
             </ul>
           </li>
 
+          {% if not request.user|is_allowed_user:"Data Entry Clerk" %} 
           <li class="nav-item">
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-archive"></i>
@@ -466,44 +503,55 @@
               </p>
             </a> 
             <ul class="nav nav-treeview pl-3">
+              {% if request.user|is_allowed_user:"Admin, Store Clerk, Labor Employees Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../stock" class="nav-link">
                   <i class="nav-icon fas fa-store"></i>
                   <p>Manage Stock</p>
                 </a>
               </li>
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Store Clerk, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../stock_in" class="nav-link">
                   <i class="nav-icon fas fa-store"></i>
                   <p>Stock In</p>
                 </a>
               </li>
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Store Clerk, Labor Employees, Supervisor, Owner" %} 
               <li class="nav-item">
                 <a href="../../stock_out" class="nav-link">
                   <i class="nav-icon fas fa-store-slash"></i>
                   <p>Stock Out</p>
                 </a>
               </li>
+              {% endif %}
             </ul>
           </li>
+          {% endif %}
           
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-dollar-sign"></i>
-              <p>Finance Management</p>
-            </a>
-          </li>
+          {% if not request.user|is_allowed_user:"Labor Employees, Store Clerk" %} 
+            {% if not request.user|is_allowed_user:"Data Entry Clerk" %} 
+            <li class="nav-item">
+              <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-dollar-sign"></i>
+                <p>Finance Management</p>
+              </a>
+            </li>
 
-          <li class="nav-header">Reports</li>
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon 	fas fa-poll"></i>
-              <p>Report & Analytics</p>
-            </a>
-          </li>
+            <li class="nav-header">Reports</li>
+            <li class="nav-item">
+              <a href="#" class="nav-link">
+                <i class="nav-icon 	fas fa-poll"></i>
+                <p>Report & Analytics</p>
+              </a>
+            </li>
+            {% endif %}
 
             <li class="nav-header">Settings
             <li class="nav-item">
+              {% if not request.user|is_allowed_user:"Data Entry Clerk" %} 
               <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-user"></i>
                 <p>
@@ -511,6 +559,8 @@
                   <i class="fas fa-angle-left right"></i>
                 </p>
               </a> 
+              {% endif %}
+              {% if request.user|is_allowed_user:"Admin, Supervisor, Owner" %} 
               <ul class="nav nav-treeview">
                 <li class="nav-item">
                   <a href="../../user" class="nav-link">
@@ -525,6 +575,7 @@
                   </a>
                 </li>
               </ul>
+              {% endif %}
             </li>
 
             <li class="nav-item">
@@ -544,36 +595,46 @@
                     </p>
                   </a>
                     <ul class="nav nav-treeview pl-3">
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../cattle_breed" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Cattle Breed</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item"> 
                         <a href="../../cattle_status" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Cattle Status</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item"> 
                         <a href="../../pregnancy_status" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Pregnancy Status</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item"> 
                         <a href="../../vaccine" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Vaccine</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item"> 
                         <a href="../../medicine" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Medicine</p>
                         </a>
                       </li>
+                      {% endif %}
                     </ul>
                 </li>
                 
@@ -585,48 +646,62 @@
                     </p>
                   </a>
                     <ul class="nav nav-treeview pl-3">
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../person_type" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Person Type</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../person_title" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Person Title</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../contact_type" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Contact Type</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../region" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Region</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../guarantee_type" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Guarantee Type</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../job" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Job</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../task" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Task</p>
                         </a>
                       </li>
+                      {% endif %}
                     </ul>
                 </li>
 
@@ -638,18 +713,23 @@
                     </p>
                   </a>
                     <ul class="nav nav-treeview pl-3">
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../supplier_type" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Supplier Type</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../item_type" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Item Type</p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../item" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
@@ -658,6 +738,8 @@
                           </p>
                         </a>
                       </li>
+                      {% endif %}
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../item_measurement" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
@@ -666,6 +748,7 @@
                           </p>
                         </a>
                       </li>
+                      {% endif %}
                     </ul>
                 </li>
 
@@ -677,17 +760,20 @@
                     </p>
                   </a>
                     <ul class="nav nav-treeview pl-3">
+                      {% if request.user|is_allowed_user:"Admin, Data Entry Clerk, Supervisor, Owner" %} 
                       <li class="nav-item">
                         <a href="../../sale_type" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Sale Type</p>
                         </a>
                       </li>
+                      {% endif %}
                     </ul>
                 </li>
-                
+                {% endif %}
               </ul>
             </li>
+            {% endif %}
           </li>
         </ul>
       </nav>
@@ -800,7 +886,6 @@
 <script src="{% static 'plugins/summernote/summernote-bs4.min.js' %}"></script>
 <script src="{% static 'plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js' %}"></script>
 <script src="{% static 'dist/js/adminlte.js' %}"></script>
-<script src="{% static 'dist/js/demo.js' %}"></script>
 <script src="{% static 'dist/js/pages/dashboard.js' %}"></script>
 </body>
 </html>

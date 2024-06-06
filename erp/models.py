@@ -331,6 +331,15 @@ class CattleHealthCheckupHasMedicine(models.Model):
         db_table = 'cattle_health_checkup_has_medicine'
         # unique_together = (('cattle_health_checkup', 'medicine'),)
 
+class HealthCheckupSymptoms(models.Model):
+    id = models.AutoField(primary_key=True)
+    symptom = models.CharField(max_length=200, null=True)
+    cattle_health_checkup = models.ForeignKey(CattleHealthCheckup, on_delete=models.CASCADE)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'health_checkup_symptoms'
+
 
 
 class ItemType(models.Model):

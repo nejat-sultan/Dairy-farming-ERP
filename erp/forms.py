@@ -53,6 +53,7 @@ class GroupCreationForm(forms.ModelForm):
         fields = ['name', 'permissions']  
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'role'}),
+            'permissions': forms.CheckboxSelectMultiple(), 
         }
 
 class GroupAssignmentForm(forms.Form):

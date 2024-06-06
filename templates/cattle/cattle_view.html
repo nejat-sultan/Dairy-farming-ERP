@@ -64,102 +64,11 @@
             {% comment %} <p>Raw denim you probably haven't heard of them jean shorts Austin. Nesciunt tofu stumptown aliqua butcher retro keffiyeh dreamcatcher synth. Cosby sweater eu banh mi, qui irure terr.</p> {% endcomment %}
             <hr>
 
-
-            {% comment %} <h4>Available Colors</h4>
-            <div class="btn-group btn-group-toggle" data-toggle="buttons">
-              <label class="btn btn-default text-center active">
-                <input type="radio" name="color_option" id="color_option_a1" autocomplete="off" checked>
-                Green
-                <br>
-                <i class="fas fa-circle fa-2x text-green"></i>
-              </label>
-              <label class="btn btn-default text-center">
-                <input type="radio" name="color_option" id="color_option_a2" autocomplete="off">
-                Blue
-                <br>
-                <i class="fas fa-circle fa-2x text-blue"></i>
-              </label>
-              <label class="btn btn-default text-center">
-                <input type="radio" name="color_option" id="color_option_a3" autocomplete="off">
-                Purple
-                <br>
-                <i class="fas fa-circle fa-2x text-purple"></i>
-              </label>
-              <label class="btn btn-default text-center">
-                <input type="radio" name="color_option" id="color_option_a4" autocomplete="off">
-                Red
-                <br>
-                <i class="fas fa-circle fa-2x text-red"></i>
-              </label>
-              <label class="btn btn-default text-center">
-                <input type="radio" name="color_option" id="color_option_a5" autocomplete="off">
-                Orange
-                <br>
-                <i class="fas fa-circle fa-2x text-orange"></i>
-              </label>
-            </div> {% endcomment %}
-
-            {% comment %} <h4 class="mt-3">Size <small>Please select one</small></h4>
-            <div class="btn-group btn-group-toggle" data-toggle="buttons">
-              <label class="btn btn-default text-center">
-                <input type="radio" name="color_option" id="color_option_b1" autocomplete="off">
-                <span class="text-xl">S</span>
-                <br>
-                Small
-              </label>
-              <label class="btn btn-default text-center">
-                <input type="radio" name="color_option" id="color_option_b2" autocomplete="off">
-                <span class="text-xl">M</span>
-                <br>
-                Medium
-              </label>
-              <label class="btn btn-default text-center">
-                <input type="radio" name="color_option" id="color_option_b3" autocomplete="off">
-                <span class="text-xl">L</span>
-                <br>
-                Large
-              </label>
-              <label class="btn btn-default text-center">
-                <input type="radio" name="color_option" id="color_option_b4" autocomplete="off">
-                <span class="text-xl">XL</span>
-                <br>
-                Xtra-Large
-              </label>
-            </div> {% endcomment %}
-
             <div class="bg-gray py-2 px-3 mt-4">
               <h2 class="mb-0">
                 Estimated Price: {{cattle.estimated_price}}
               </h2>
             </div>
-
-            {% comment %} <div class="mt-4">
-              <div class="btn btn-primary btn-lg btn-flat">
-                <i class="fas fa-cart-plus fa-lg mr-2"></i>
-                Add to Cart
-              </div>
-
-              <div class="btn btn-default btn-lg btn-flat">
-                <i class="fas fa-heart fa-lg mr-2"></i>
-                Add to Wishlist
-              </div>
-            </div> {% endcomment %}
-
-            {% comment %} <div class="mt-4 product-share">
-              <a href="#" class="text-gray">
-                <i class="fab fa-facebook-square fa-2x"></i>
-              </a>
-              <a href="#" class="text-gray">
-                <i class="fab fa-twitter-square fa-2x"></i>
-              </a>
-              <a href="#" class="text-gray">
-                <i class="fas fa-envelope-square fa-2x"></i>
-              </a>
-              <a href="#" class="text-gray">
-                <i class="fas fa-rss-square fa-2x"></i>
-              </a>
-            </div> {% endcomment %}
-
           </div>
         </div>
         <div class="row mt-4">
@@ -168,6 +77,7 @@
               <a style="color: #007f5c;" class="nav-item nav-link active" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">Last Milk Production</a>
               <a style="color: #007f5c;" class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="false">Vaccination</a>
               <a style="color: #007f5c;" class="nav-item nav-link" id="health-tab" data-toggle="tab" href="#health" role="tab" aria-controls="health" aria-selected="false">Health</a>
+              <a style="color: #007f5c;" class="nav-item nav-link" id="feed-tab" data-toggle="tab" href="#feed" role="tab" aria-controls="feed" aria-selected="false">Feed</a>
             </div>
           </nav>
           <div class="tab-content p-3" id="nav-tabContent">
@@ -228,6 +138,7 @@
                       <thead>
                           <tr>
                               <th>Findings</th>
+                              <th>Symptoms</th>
                               <th>Medicine</th>
                           </tr>
                       </thead>
@@ -235,6 +146,15 @@
                           {% for health in healths %}
                               <tr>
                                   <td>{{ health.findings }}</td>
+                                  <td>
+                                    {% if health.healthcheckupsymptoms_set.all %}
+                                        {% for symptom_entry in health.healthcheckupsymptoms_set.all %}
+                                            {{ symptom_entry.symptom }},
+                                        {% endfor %}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
                                   <td>
                                       {% if health.cattlehealthcheckuphasmedicine_set.all %}
                                           {% for medicine_entry in health.cattlehealthcheckuphasmedicine_set.all %}
@@ -250,6 +170,30 @@
                   </table>
               {% endif %}
             </div>
+            <div class="tab-pane fade" id="feed" role="tabpanel" aria-labelledby="feed-tab"> 
+              {% if vaccinations %}
+                <h4 class="mt-0">Last 5 Feed Informations</h4>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Feed Formulation</th>
+                            <th>Feed Time</th>
+                            <th>Consumption Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feed in feeds %}
+                            <tr>
+                                <td>{{ feed.feed_formulation.name }}</td>
+                                <td>{{ feed.feed_time }}</td>
+                                <td>{{ feed.consumption_status }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+              {% endif %}
+            </div>
+
           </div>
         </div> 
 
