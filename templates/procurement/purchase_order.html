@@ -118,6 +118,22 @@
         </div>
       </div>
 
+      <div class="pagination">
+        <span class="step-links">
+            {% if approved_supp.has_previous %}
+                <a href="?page={{ approved_supp.previous_page_number }}">Previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ approved_supp.number }} of {{ approved_supp.paginator.num_pages }}.
+            </span>
+
+            {% if approved_supp.has_next %}
+                <a href="?page={{ approved_supp.next_page_number }}">Next</a>
+            {% endif %}
+        </span>
+      </div>
+
     </section>
   </div>
 

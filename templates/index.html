@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load custom_filters %}
 
 {% block content %}
 
@@ -23,6 +24,45 @@
     <section class="content">
       <div class="container-fluid">
 
+        <div class="card">
+          <div class="card-body">
+            {% if overdue_cattle %}
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> The following cattle have overdue vaccinations:
+                    <ul>
+                        {% for cattle in overdue_cattle %}
+                            <li>
+                                {{ cattle.name }} - Last Vaccination: {{ cattle.last_vaccination }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <div class="alert alert-success">
+                    No cattle have overdue health checkups.
+                </div>
+            {% endif %}
+
+            {% if low_quantity_items %}
+            <div class="alert alert-warning">
+                <strong>Warning:</strong> The following items have quantity below 5:
+                <ul>
+                    {% for item in low_quantity_items %}
+                    <li>{{ item.item.name }} - Quantity: {{ item.quantity }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <div class="alert alert-success">
+                All items have sufficient quantity.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+
+        {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_storeclerkdashboard" or request.user|has_permission:"erp.view_laboremployeedashboard" %}
+        {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_storeclerkdashboard" or request.user|has_permission:"erp.view_vetdashboard" or request.user|has_permission:"erp.view_dataentryclerkdashboard" %}
         <div class="row">
           <div class="col-12 col-sm-6 col-md-3">
             <div class="info-box">
@@ -58,6 +98,7 @@
             </div>
           </div>
        
+          {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_dataentryclerkdashboard" or request.user|has_permission:"erp.view_vetdashboard" or request.user|has_permission:"erp.view_laboremployeeclerkdashboard" %}
           <div class="col-12 col-sm-6 col-md-3">
             <div class="info-box mb-3">
               <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-users"></i></span>
@@ -67,10 +108,13 @@
               </div>
             </div>
           </div>
+          {% endif %}
         </div>
+        {% endif %}
 
         <div class="row">
           <div class="col-6">
+            {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_dataentryclerkdashboard" or request.user|has_permission:"erp.view_vetdashboard" or request.user|has_permission:"erp.view_laboremployeedashboard" %}
             <div> <canvas id="myChart"></canvas> </div>
             <script>
               document.addEventListener('DOMContentLoaded', function() {
@@ -90,6 +134,43 @@
                   });
               });
             </script>
+            {% endif %}
+
+            {% if request.user|has_permission:"erp.view_storeclerkdashboard" %}
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Recently Added Items</h3>
+
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+           
+              <div class="card-body p-0">
+                <ul class="products-list product-list-in-card pr-2">
+                {% for d in stocks %}
+                  <li class="item">
+                    <div class="product-info">
+                      <a href="#" class="product-title">{{d.item.name}}
+                        <span class="badge badge-warning float-right">{{d.quantity}}</span></a>
+                      <span class="product-description">
+                        {{d.type.item_type}}
+                      </span>
+                    </div>
+                  </li>
+                {% endfor %}
+                </ul>
+              </div>  
+           
+              <div class="card-footer text-center">
+                <a href="stock" class="uppercase">View All</a>
+              </div>
+       
+            </div>
+            {% endif %}
+
           </div>
           <div class="col-6">
             <div> <canvas id="myChart2"></canvas> </div>
@@ -115,8 +196,11 @@
         </div>
     
         <br><br>
+        {% endif %}
+
         <div class="row">
           <div class="col-8">
+            {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_storeclerkdashboard" %}
             <div class="card">
               <div class="card-header border-transparent">
                 <h3 class="card-title">Latest Orders</h3>
@@ -153,13 +237,6 @@
                           {% endfor %}
                         </td>
                         <td>
-                          {% comment %} <span class="badge badge-success">
-                            {% for orderdata in orderdatas %}
-                              {% if orderdata.order_id == d.order_id %}
-                                {{ orderdata.request_approved }}
-                              {% endif %}
-                            {% endfor %}
-                          </span> {% endcomment %}
                           <span class="badge {% for orderdata in orderdatas %}{% if orderdata.order_id == d.order_id %}{% if orderdata.request_approved == 'Approved' %}badge-success{% elif orderdata.request_approved == 'Pending' %}badge-warning{% elif orderdata.request_approved == 'Rejected' %}badge-danger{% endif %}{% endif %}{% endfor %}">
                             {% for orderdata in orderdatas %}
                             {% if orderdata.order_id == d.order_id %}
@@ -182,8 +259,166 @@
                 <a href="request_order" class="btn btn-sm btn-secondary float-right">View All Orders</a>
               </div>
             </div>
+            {% endif %}
+
+            {% if request.user|has_permission:"erp.view_dataentryclerkdashboard" %}
+            <div class="card">
+              <div class="card-header border-transparent">
+                <h3 class="card-title">Employees</h3>
+
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+       
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table m-0">
+                    <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>First Name</th>
+                      <th>Middle Name</th>
+                      <th>Gender</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      {% for d in employeedatas %}
+                      <tr>
+                        <td>
+                          {{d.farm_entity_id}}
+                        </td>
+                        <td>
+                        {{ d.first_name}}
+                        </td>
+                        <td>
+                          {{ d.middle_name}}
+                        </td>
+                        <td>
+                          {{d.gender}}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+             
+              <div class="card-footer clearfix">
+                <a href="employee" class="btn btn-sm btn-secondary float-right">View All Employees</a>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if request.user|has_permission:"erp.view_vetdashboard" %}
+            <div class="card">
+              <div class="card-header border-transparent">
+                <h3 class="card-title">Recent Health Checks</h3>
+
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+       
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table m-0">
+                    <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Cattle</th>
+                      <th>Findings</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      {% for d in healthdatas %}
+                      <tr>
+                        <td>
+                          {{d.id}}
+                        </td>
+                        <td>
+                        {{ d.cattle.cattle_name}}
+                        </td>
+                        <td>
+                          {{ d.findings}}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+             
+              <div class="card-footer clearfix">
+                <a href="employee" class="btn btn-sm btn-secondary float-right">View All Checkups</a>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
+            <div class="card">
+              <div class="card-header border-transparent">
+                <h3 class="card-title">Tasks Assigned</h3>
+
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+       
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table m-0">
+                    <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Task</th>
+                      <th>Shift</th>
+                      <th>Due Time</th>
+                      <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                      {% for d in task %}
+                      <tr>
+                        <td>
+                          {{d.id}}
+                        </td>
+                        <td>
+                          {{d.task.task_name}}
+                        </td>
+                        <td>
+                          {{d.shift.shift_name}}
+                        </td>
+                        <td>
+                          {{d.due_time}}
+                        </td>
+                        <td>
+                          <span class="badge {% if d.status == 'Completed' %}badge-success{% elif d.status == 'On Progress' %}badge-warning {% endif %}">
+                            {{ d.status }}
+                          </span>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+             
+              <div class="card-footer clearfix">
+                <a href="assign_task" class="btn btn-sm btn-secondary float-right">View All</a>
+              </div>
+            </div>
+
+            {% endif %}
           </div>
 
+          {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_dataentryclerkdashboard" %}
           <div class="col-md-4">
             <div class="info-box mb-3 bg-warning">
               <span class="info-box-icon"><i class="fas fa-user-tie"></i></span>
@@ -254,6 +489,97 @@
        
             </div>
           </div>
+          {% endif %}
+
+          
+          {% if request.user|has_permission:"erp.view_vetdashboard" %}
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Recent Pregnancy Status</h3>
+
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+           
+              <div class="card-body p-0">
+                <ul class="products-list product-list-in-card pl-0 pr-2">
+                {% for d in cattlepregnancy %}
+                  <li class="item">
+                    <div class="product-info">
+                      <a href="#" class="product-title">{{d.cattle.cattle_name}}
+                        <span class="badge badge-warning float-right">{{d.pregnancy_status.pregnancy_status}}</span></a>
+                      <span class="product-description">
+                        {{d.cattle_pregnancy_type}}
+                      </span>
+                    </div>
+                  </li>
+                {% endfor %}
+                </ul>
+              </div>  
+           
+              <div class="card-footer text-center">
+                <a href="cattle_pregnancy" class="uppercase">View All</a>
+              </div>
+            </div>
+
+            <div>
+              <canvas id="vaccinationChart"></canvas>
+            </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('vaccinationChart').getContext('2d');
+                const chartData = JSON.parse('{{ chart_data_json3|escapejs }}');
+    
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: chartData
+                });
+            });
+            </script>
+          </div>
+          {% endif %}
+
+          {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Recently Added Leave</h3>
+
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+           
+              <div class="card-body p-0">
+                <ul class="products-list product-list-in-card pl-2 pr-2">
+                {% for d in leave %}
+                  <li class="item">
+                    <div class="product-info">
+                      <a href="#" class="product-title">{{d.reason}}
+                        <span class="badge badge-warning float-right">{{d.approval_status}}</span></a>
+                      <span class="product-description">
+                        {{d.start_date}} -  {{d.end_date}}
+                      </span>
+                    </div>
+                  </li>
+                {% endfor %}
+                </ul>
+              </div>  
+           
+              <div class="card-footer text-center">
+                <a href="leave" class="uppercase">View All request</a>
+              </div>
+       
+            </div>
+          </div>
+          {% endif %}
+      
         </div>
 
       </div>

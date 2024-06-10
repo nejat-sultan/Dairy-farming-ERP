@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Stock Report</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="">Home</a></li>
+                        <li class="breadcrumb-item active">Stock Report</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Stock</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <form method="get" id="stock-form">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="start_date">Start Date:</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="end_date">End Date:</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="item">Item:</label>
+                                <select class="form-control" id="item" name="item">
+                                    <option value="">All</option>
+                                    {% for item in item_list %}
+                                    <option value="{{ item.item_id }}" {% if request.GET.item == item.item_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ item.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn" style="background-color: #007f5c;color: #fff;">Apply Filters</button>
+                    <button type="button" class="btn btn-secondary" id="clear-filters">Clear Filters</button>
+                </form>
+            </div>
+
+            {% comment %} {% if filters_applied %} {% endcomment %}
+            <div class="card-body p-0">
+                <table class="table table-striped projects">
+                    <thead>
+                        <tr>
+                            <th>Stock ID</th>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Item Type</th>
+                            <th>Approval Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in stock_data %}
+                        <tr>
+                            <td>{{ entry.stock_id }}</td>
+                            <td>{{ entry.item.name }}</td>
+                            <td>{{ entry.quantity }}</td>
+                            <td>{{ entry.type.item_type }}</td>
+                            <td>{{ entry.approval_status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% comment %} {% endif %} {% endcomment %}
+        </div>
+
+        <div class="pagination">
+            <span class="step-links">
+                {% if stock_data.has_previous %}
+                    <a href="?page={{ stock_data.previous_page_number }}">Previous</a>
+                {% endif %}
+
+                <span class="current">
+                    Page {{ stock_data.number }} of {{ stock_data.paginator.num_pages }}.
+                </span>
+
+                {% if stock_data.has_next %}
+                    <a href="?page={{ stock_data.next_page_number }}">Next</a>
+                {% endif %}
+            </span>
+        </div>
+
+
+    </section>
+</div>
+
+<style>
+    .status-highlight {
+        background-color: #f0ad4e;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+    document.getElementById('clear-filters').addEventListener('click', function() {
+        window.location.href = window.location.pathname;
+    });
+</script>
+{% endblock %}
+
+

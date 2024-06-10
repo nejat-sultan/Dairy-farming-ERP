@@ -19,7 +19,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -34,6 +34,7 @@ from django.db import transaction
 from django.db.models import Sum
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import permission_required
+from .utils import get_low_quantity_items, get_overdue_vaccines, paginate_data 
 
 
 @login_required(login_url='login')
@@ -71,7 +72,7 @@ def register(request):
 @login_required(login_url='login')
 def edit_user(request, user_id):
     # if not request.user.has_perm('erp.change_user'):
-    #     return HttpResponse('You are not authorised to view this page', status=403)
+    #    return HttpResponse('You are not authorised to view this page', status=403)
     user_profile = get_object_or_404(UserProfile, user_id=user_id)
     user = user_profile.user
     employees = Employee.objects.select_related('person_farm_entity').all()
@@ -227,6 +228,7 @@ def logout_user(request):
 
 @login_required(login_url='login')
 def index(request):
+#milk production report
     end_date = now()
     start_date = end_date - timedelta(days=7)
     # Query MilkProduction data for the last week
@@ -258,7 +260,7 @@ def index(request):
     }
     chart_data_json = json.dumps(chart_data)
 
-
+#stock report
     stock_data = Stock.objects.all()
     stock_dict = defaultdict(float)
     
@@ -281,7 +283,29 @@ def index(request):
         }]
     }
     chart_data_json2 = json.dumps(chart_data2)
+
+    #vaccination report
+    total_cattle_count = Cattle.objects.count()
+
+    # Get vaccinated cattle count
+    vaccinated_cattle_count = CattleHasVaccine.objects.values('cattle').distinct().count()
+
+    # Calculate non-vaccinated cattle count
+    non_vaccinated_cattle_count = total_cattle_count - vaccinated_cattle_count
+
+    # Prepare the data for the chart
+    chart_data3 = {
+        'labels': ['Vaccinated', 'Non-Vaccinated'],
+        'datasets': [{
+            'data': [vaccinated_cattle_count, non_vaccinated_cattle_count],
+            'backgroundColor': ['rgba(0, 127, 92, 0.2)','rgba(255, 99, 132, 0.2)'],
+            'borderColor': ['rgba(0, 127, 92, 1)','rgba(255, 99, 132, 1)'],
+            'borderWidth': 1
+        }]
+    }
+    chart_data_json3 = json.dumps(chart_data3)
     
+
     dash1 = Dashboard()
     dash1.amount =  OrderHasItemSupplier.objects.filter(status='approved').count()
     dash1.description = 'Purchase Orders'
@@ -317,7 +341,20 @@ def index(request):
     # photos = CattlePhoto.objects.all()
     breeds = CattleBreed.objects.all()
     stocks = Stock.objects.all()
+    employeedatas = Person.objects.all()[:10]
+    healthdatas = CattleHealthCheckup.objects.all()[:10]
+    cattlepregnancy = CattlePregnancy.objects.all()[:10]
 
+    current_user = request.user
+    user_profile = UserProfile.objects.get(user=current_user)
+    current_employee = user_profile.employee
+
+    leave = EmployeeLeave.objects.filter(person_farm_entity_id=current_employee)[:10]
+    task = TaskAssignment.objects.filter(assigned_to=current_employee)[:10]
+
+    overdue_cattle = get_overdue_vaccines()
+    low_quantity_items = get_low_quantity_items()
+ 
     cattle_photos = {}
     for cow in cattle:
         photo = CattlePhoto.objects.filter(cattle=cow).first()
@@ -329,6 +366,7 @@ def index(request):
         # 'plot_img_base64': plot_img_base64,
         'chart_data_json': chart_data_json,
         'chart_data_json2': chart_data_json2,
+        'chart_data_json3': chart_data_json3,
         'dash1': dash1, 
         'dash2': dash2, 
         'dash3': dash3, 
@@ -340,10 +378,11 @@ def index(request):
         'stocks':stocks,
 
         "data1":data,'orderdatas': orderdatas,'item_data': item_data,
-        'cattle': cattle,'cattle_photos': cattle_photos,'breeds': breeds,
+        'cattle': cattle,'cattle_photos': cattle_photos,'breeds': breeds, 
+        'employeedatas':employeedatas,'healthdatas':healthdatas,'cattlepregnancy':cattlepregnancy,'leave':leave,'task':task,
+        'overdue_cattle': overdue_cattle,'low_quantity_items': low_quantity_items,
 
     }
-
     return render(request, 'index.html',context)
     
 
@@ -353,7 +392,8 @@ def cattle(request):
     if not request.user.has_perm('erp.view_cattle'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Cattle.objects.all()
-    context = {"data":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data":paginated_data}
 
     return render(request, 'cattle/cattle.html', context)
 
@@ -533,7 +573,7 @@ def cattle_delete(request, farm_entity_id):
 
 
 def add_photo(request):
-    if not request.user.has_perm('erp.add_photo'):
+    if not request.user.has_perm('erp.add_cattlephoto'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cattle_id = request.POST.get('cattle_id')
@@ -574,7 +614,8 @@ def cattle_status(request):
     if not request.user.has_perm('erp.view_cattlestatus'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = CattleStatus.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'cattle/cattle_status.html', context)
 
@@ -628,7 +669,8 @@ def cattle_breed(request):
     if not request.user.has_perm('erp.view_cattlebreed'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = CattleBreed.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'cattle/cattle_breed.html', context)
 
@@ -685,7 +727,8 @@ def pregnancy_status(request):
     if not request.user.has_perm('erp.view_pregnancystatus'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = PregnancyStatus.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'cattle/pregnancy_status.html', context)
 
@@ -742,7 +785,8 @@ def cattle_pregnancy(request):
     data = CattlePregnancy.objects.all()
     cattle = Cattle.objects.all()
 
-    context = {"data1":data, 'cattle': cattle,}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data, 'cattle': cattle,}
 
     return render(request, 'cattle/cattle_pregnancy.html', context)
 
@@ -857,7 +901,8 @@ def vaccine(request):
     if not request.user.has_perm('erp.view_vaccine'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Vaccine.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'cattle/vaccine.html', context)
 
@@ -918,7 +963,8 @@ def cattle_has_vaccine(request):
     cattle = Cattle.objects.all()
     vaccine = Vaccine.objects.all()
 
-    context = {"data1":data, 'cattle': cattle, 'vaccine': vaccine,}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data, 'cattle': cattle, 'vaccine': vaccine,}
 
     return render(request, 'cattle/cattle_has_vaccine.html', context)
 
@@ -1022,7 +1068,8 @@ def medicine(request):
     if not request.user.has_perm('erp.view_medicine'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Medicine.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'cattle/medicine.html', context)
 
@@ -1083,7 +1130,9 @@ def cattle_health_checkup(request):
     person = Person.objects.all()
     employee = Employee.objects.all()
 
-    context = {"data1":data, 'cattle': cattle, 'person': person, 'employee': employee,}
+    paginated_data = paginate_data(request, data, 10) 
+
+    context = {"data1":paginated_data, 'cattle': cattle, 'person': person, 'employee': employee,}
 
     return render(request, 'cattle/cattle_health_checkup.html', context)
 
@@ -1303,7 +1352,9 @@ def milk_production(request):
     data = MilkProduction.objects.all()
     cattle = Cattle.objects.all()
 
-    context = {"data1":data, 'cattle': cattle,}
+    paginated_data = paginate_data(request, data, 10) 
+
+    context = {"data1":paginated_data, 'cattle': cattle,}
 
     return render(request, 'cattle/milk_production.html', context)
 
@@ -1500,9 +1551,24 @@ def feed_formulation(request):
     if not request.user.has_perm('erp.view_feedformulation'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = FeedFormulation.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'feed/feed_formulation.html', context)
+
+@login_required(login_url='login')
+def feed_formulation_view(request, id):
+    if not request.user.has_perm('erp.view_feedformulation'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    feed = get_object_or_404(FeedFormulation, id=id)
+    ingredient_data = FeedIngredient.objects.filter(feed_formulation_id=id)
+
+    item_data = Item.objects.all()
+    measurement_data = ItemMeasurement.objects.all()
+
+    context = {"feed":feed, "ingredient_data":ingredient_data, "item_data":item_data, "measurement_data":measurement_data,}
+
+    return render(request, 'feed/feed_formulation_view.html', context)
 
 @login_required(login_url='login')
 def feed_formulation_add(request):
@@ -1556,19 +1622,7 @@ def feed_formulation_delete(request, id):
     return redirect("/feed_formulation")
 
 @login_required(login_url='login')
-def ingredient(request):
-    if not request.user.has_perm('erp.view_feedingredient'):
-        return HttpResponse('You are not authorised to view this page', status=403)
-    data = FeedIngredient.objects.all()
-    item_data = Item.objects.all()
-    measurement_data = ItemMeasurement.objects.all()
-    formulation_data = FeedFormulation.objects.all()
-    context = {"data1":data, "item_data":item_data, "measurement_data":measurement_data, "formulation_data":formulation_data,}
-
-    return render(request, 'feed/ingredient.html', context)
-
-@login_required(login_url='login')
-def ingredient_add(request):
+def ingredient_add(request, id):
     if not request.user.has_perm('erp.add_feedingredient'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
@@ -1602,13 +1656,16 @@ def ingredient_add(request):
         query = FeedIngredient(feed_formulation_id=cfeed_formulation_id, item_id=citem_id, item_measurement_id=citem_measurement_id, quantity=cquantity, modified_date=cmodified_date)
         query.save()
         messages.success(request, "Feed Ingredient Added Successfully!")
-        return redirect("/ingredient")
+        # return redirect("/ingredient")
+        return redirect(f"/feed_formulation_view/{id}")
     
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
     formulation_data = FeedFormulation.objects.all()
 
-    context = {"data1":item_data, 'data2': measurement_data, 'data3': formulation_data,}
+    ingredient_data = FeedIngredient.objects.all()
+
+    context = {"data1":item_data, 'data2': measurement_data, 'data3': formulation_data,'current_formulation_id': id, 'ingredient_data':ingredient_data}
 
     return render(request, 'feed/ingredient_add.html', context)
 
@@ -1656,7 +1713,7 @@ def ingredient_edit(request,id):
         
         edit.save()
         messages.warning(request, "Feed Ingredient Updated Successfully!")
-        return redirect("/ingredient")
+        return redirect("/feed_formulation")
 
     d = FeedIngredient.objects.get(id=id)
     item_data = Item.objects.all()
@@ -1672,7 +1729,7 @@ def ingredient_delete(request, id):
     d = FeedIngredient.objects.get(id=id)
     d.delete()
     messages.error(request, "Feed Ingredient Deleted Successfully!")
-    return redirect("/ingredient")
+    return redirect("/feed_formulation")
 
 
 @login_required(login_url='login')
@@ -1680,10 +1737,12 @@ def cattle_has_feed(request):
     if not request.user.has_perm('erp.view_cattlehasfeed'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = CattleHasFeed.objects.all()
+    paginated_data = paginate_data(request, data, 10) 
+
     cattle_data = Cattle.objects.all()
     shift_data = Shift.objects.all()
     formulation_data = FeedFormulation.objects.all()
-    context = {"data1":data, "cattle_data":cattle_data, "shift_data":shift_data, "formulation_data":formulation_data,}
+    context = {"data1":paginated_data, "cattle_data":cattle_data, "shift_data":shift_data, "formulation_data":formulation_data,}
 
     return render(request, 'feed/cattle_has_feed.html', context)
 
@@ -1800,7 +1859,8 @@ def person_type(request):
     if not request.user.has_perm('erp.view_persontype'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = PersonType.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'person/person_type.html', context)
 
@@ -1857,7 +1917,8 @@ def person_title(request):
     if not request.user.has_perm('erp.view_persontitle'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = PersonTitle.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'person/person_title.html', context)
 
@@ -1914,7 +1975,8 @@ def contact_type(request):
     if not request.user.has_perm('erp.view_contacttype'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = ContactType.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'person/contact_type.html', context)
 
@@ -1974,7 +2036,8 @@ def sale_type(request):
     if not request.user.has_perm('erp.view_saletype'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = SaleType.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'sales/sale_type.html', context)
 
@@ -2026,12 +2089,200 @@ def sale_type_delete(request, sale_type_id):
     messages.error(request, "Sale Type Deleted Successfully!")
     return redirect("/sale_type")
 
+
+@login_required(login_url='login')
+def customer(request):
+    if not request.user.has_perm('erp.view_customer'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    data = Customer.objects.all()
+    paginated_data = paginate_data(request, data, 10) 
+
+    context = {"data1":paginated_data,}
+
+    return render(request, 'sales/customer.html', context)
+
+@login_required(login_url='login')
+def customer_add(request):
+    if not request.user.has_perm('erp.add_customer'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    
+    if request.method == "POST":
+        cfirst_name = request.POST.get('first_name')
+        cmiddle_name = request.POST.get('middle_name')
+        cperson_type_id = request.POST.get('person_type')
+
+        try:
+            with transaction.atomic():
+                farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
+                person_type = get_object_or_404(PersonType, pk=cperson_type_id)
+                person = Person.objects.create(
+                    farm_entity=farm_entity,
+                    first_name=cfirst_name,
+                    middle_name=cmiddle_name,
+                    person_type=person_type
+                )
+                Customer.objects.create(person_farm_entity_id=person.farm_entity.farm_entity_id)
+
+                messages.success(request, "Customer Added Successfully!")
+                return redirect("/customer")
+
+        except Exception as e:
+            messages.error(request, f"Error creating customer: {str(e)}")
+            return redirect('/customer')
+        
+    person_type = PersonType.objects.all()
+    context = {
+        'data1': person_type,
+    }
+
+    return render(request, 'sales/customer_add.html', context)
+
+@login_required(login_url='login')
+def customer_edit(request, customer_id):
+    if not request.user.has_perm('erp.change_customer'):
+        return HttpResponse('You are not authorized to view this page', status=403)
+    
+    customer = get_object_or_404(Customer, customer_id=customer_id)
+    person = customer.person_farm_entity
+    
+    if request.method == "POST":
+        cfirst_name = request.POST.get('first_name')
+        cmiddle_name = request.POST.get('middle_name')
+        cperson_type_id = request.POST.get('person_type')
+
+        try:
+            with transaction.atomic():
+                person.first_name = cfirst_name
+                person.middle_name = cmiddle_name
+                person.person_type_id = cperson_type_id
+                person.save()
+
+                messages.warning(request, "Customer Updated Successfully!")
+                return redirect("/customer")
+
+        except Exception as e:
+            messages.error(request, f"Error updating customer: {str(e)}")
+            return redirect('/customer')
+
+    data1 = PersonType.objects.all()
+    data2 = ContactType.objects.all()
+    data3 = Region.objects.all()
+    context = {
+        'data1': data1,
+        'data2': data2,
+        'data3': data3,
+        'customer': customer,
+        'person': person, 
+    }
+
+    return render(request, 'sales/customer_edit.html', context)
+
+def customer_delete(request, customer_id):
+    if not request.user.has_perm('erp.delete_customer'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    
+    customer = get_object_or_404(Customer, customer_id=customer_id)
+    person = customer.person_farm_entity 
+    farm_entity = person.farm_entity 
+
+    try:
+        with transaction.atomic():
+            customer.delete()  
+            person.delete()  
+            farm_entity.delete() 
+
+            messages.error(request, "Customer deleted successfully!")
+            return redirect("/customer")
+    except Exception as e:
+        messages.error(request, f"Error deleting customer: {str(e)}")
+        return redirect("/customer")
+
+@login_required(login_url='login')
+def add_customer_contact(request):
+    if not request.user.has_perm('erp.add_farmentitycontact'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method == 'POST':
+        ccustomer_id = request.POST.get('customer_id')
+        ccontact_type = request.POST.get('contact_type')
+        ccontact = request.POST.get('contact')
+            
+        contact = FarmEntityContact(
+            farm_entity_id=ccustomer_id,
+            contact_type_id=ccontact_type,
+            contact=ccontact
+        )
+        contact.save()
+
+        messages.success(request, "Customer Contact Added Successfully!")
+        return redirect("/customer")
+
+    return render(request, 'sales/customer_edit.html')
+
+@login_required(login_url='login')
+def add_customer_address(request):
+    if not request.user.has_perm('erp.add_farmentityaddress'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method == 'POST':
+        ccustomer_id = request.POST.get('customer_id')
+        cregion = request.POST.get('region')
+        ccountry = request.POST.get('country')
+        czone_subcity = request.POST.get('zone_subcity')
+        cworeda = request.POST.get('woreda')
+        ckebele = request.POST.get('kebele')
+        chouse_no = request.POST.get('house_no')
+        cstreet = request.POST.get('street')
+            
+        address = FarmEntityAddress(
+            farm_entity_id=ccustomer_id,
+            region_id=cregion,
+            country=ccountry,
+            zone_subcity=czone_subcity,
+            woreda=cworeda,
+            kebele=ckebele,
+            house_number=chouse_no,
+            street_name=cstreet,
+        )
+        address.save()
+
+        messages.success(request, "Customer Address Added Successfully!")
+        return redirect("/customer")
+
+    return render(request, 'sales/customer_edit.html')
+
+@login_required(login_url='login')
+def sales_order(request):
+    if not request.user.has_perm('erp.view_salesorder'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    data = SalesOrder.objects.all()
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
+
+    return render(request, 'sales/sales_order.html', context)
+
+@login_required(login_url='login')
+def sales_order_add(request):
+    if not request.user.has_perm('erp.add_salesorder'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method=="POST":
+        cregion=request.POST.get('region')
+        cdate = datetime.now().date()
+
+        query = SalesOrder(region=cregion, modified_date=cdate)
+        query.save()
+        messages.success(request, "Sales Order Added Successfully!")
+        return redirect("/sales_order")
+
+    return render(request, 'sales/sales_order_add.html')
+
+
+
 @login_required(login_url='login')
 def region(request):
     if not request.user.has_perm('erp.view_region'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Region.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'person/region.html', context)
 
@@ -2060,14 +2311,11 @@ def region_edit(request,region_id):
         cregion=request.POST.get('region')
         cdate = datetime.now().date()
         
-        # Update the attributes
         edit.region = cregion
         edit.modified_date = cdate
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Region Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/region")
 
     d = Region.objects.get(region_id=region_id)
@@ -2088,7 +2336,8 @@ def guarantee_type(request):
     if not request.user.has_perm('erp.view_guaranteetype'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = GuaranteeType.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'employee/guarantee_type.html', context)
 
@@ -2145,7 +2394,8 @@ def shift(request):
     if not request.user.has_perm('erp.view_shift'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Shift.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'employee/shift.html', context)
 
@@ -2253,7 +2503,8 @@ def task(request):
     if not request.user.has_perm('erp.view_task'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Task.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'employee/task.html', context)
 
@@ -2310,18 +2561,20 @@ def assign_task(request):
     if not request.user.has_perm('erp.view_taskassignment'):
         return HttpResponse('You are not authorised to view this page', status=403)
     user = request.user
-    if user.groups.filter(name='Admin').exists():
+    if user.groups.filter(name__in=['Admin', 'Supervisor']).exists():
         data = TaskAssignment.objects.all()
     else:
         user_profile = get_object_or_404(UserProfile, user=user)
         assigned_person = user_profile.employee
         data = TaskAssignment.objects.filter(assigned_to=assigned_person)
 
+    paginated_data = paginate_data(request, data, 10) 
+
     task_data = Task.objects.all()
     shift_data = Shift.objects.all()
     employee_data = Employee.objects.all()
 
-    context = {"data1":data,'task_data': task_data,'shift_data': shift_data, 'employee_data': employee_data}
+    context = {"data1":paginated_data,'task_data': task_data,'shift_data': shift_data, 'employee_data': employee_data}
 
     return render(request, 'employee/assign_task.html', context)
 
@@ -2444,7 +2697,8 @@ def job(request):
     if not request.user.has_perm('erp.view_job'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Job.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'employee/job.html', context)
 
@@ -2560,7 +2814,8 @@ def item_type(request):
     if not request.user.has_perm('erp.view_itemtype'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = ItemType.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'procurement/item_type.html', context)
 
@@ -2614,7 +2869,8 @@ def item(request):
     if not request.user.has_perm('erp.view_item'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Item.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'procurement/item.html', context)
 
@@ -2671,7 +2927,8 @@ def supplier_type(request):
     if not request.user.has_perm('erp.view_suppliertype'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = SupplierType.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'procurement/supplier_type.html', context)
 
@@ -2728,9 +2985,10 @@ def supplier(request):
     if not request.user.has_perm('erp.view_supplier'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Supplier.objects.all()
+    paginated_data = paginate_data(request, data, 10) 
     type_data = SupplierType.objects.all()
 
-    context = {"data1":data, 'type_data': type_data,}
+    context = {"data1":paginated_data, 'type_data': type_data,}
 
     return render(request, 'procurement/supplier.html', context)
 
@@ -2863,8 +3121,9 @@ def request_order(request):
     orderdatas = Order.objects.all()
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
+    paginated_data = paginate_data(request, data, 10) 
 
-    context = {"data1":data,'orderdatas': orderdatas,'item_data': item_data, 'measurement_data': measurement_data}
+    context = {"data1":paginated_data,'orderdatas': orderdatas,'item_data': item_data, 'measurement_data': measurement_data}
 
     return render(request, 'procurement/request_order.html', context)
 
@@ -3227,8 +3486,10 @@ def purchase_order(request):
     item_data = Item.objects.all()
     supplier_data = Supplier.objects.all()
     inventory_data = Order.objects.all()
+
+    paginated_data = paginate_data(request, approved_supp, 10) 
     
-    context = {"approved_supp": approved_supp, 'item_data': item_data, 'supplier_data': supplier_data, 'inventory_data': inventory_data}
+    context = {"approved_supp": paginated_data, 'item_data': item_data, 'supplier_data': supplier_data, 'inventory_data': inventory_data}
 
     return render(request, 'procurement/purchase_order.html', context)
 
@@ -3323,7 +3584,8 @@ def item_measurement(request):
     if not request.user.has_perm('erp.view_itemmeasurement'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = ItemMeasurement.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'inventory/item_measurement.html', context)
 
@@ -3381,7 +3643,8 @@ def stock(request):
     if not request.user.has_perm('erp.view_stock'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Stock.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'inventory/stock.html', context)
 
@@ -3471,7 +3734,8 @@ def stock_in(request):
     if not request.user.has_perm('erp.view_directlyaddeditem'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = DirectlyAddedItem.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'inventory/stock_in.html', context)
 
@@ -3662,7 +3926,8 @@ def stock_out(request):
     if not request.user.has_perm('erp.view_stockout'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Stockout.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'inventory/stock_out.html', context)
 
@@ -3833,7 +4098,8 @@ def department(request):
     if not request.user.has_perm('erp.view_department'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Department.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'employee/department.html', context)
 
@@ -3883,7 +4149,8 @@ def employee(request):
     if not request.user.has_perm('erp.view_employee'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = Person.objects.all()
-    context = {"data1":data}
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'employee/employee.html', context)
 
@@ -4183,7 +4450,7 @@ def employee_delete(request, farm_entity_id):
 
 @login_required(login_url='login')
 def add_contact(request):
-    if not request.user.has_perm('erp.add_contact'):
+    if not request.user.has_perm('erp.add_farmentitycontact'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
@@ -4205,7 +4472,7 @@ def add_contact(request):
 
 @login_required(login_url='login')
 def add_address(request):
-    if not request.user.has_perm('erp.add_address'):
+    if not request.user.has_perm('erp.add_farmentityaddress'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
@@ -4236,7 +4503,7 @@ def add_address(request):
 
 @login_required(login_url='login')
 def add_experience(request):
-    if not request.user.has_perm('erp.add_experience'):
+    if not request.user.has_perm('erp.add_employeeexperience'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         cemployee_id = request.POST.get('employee_id')
@@ -4408,8 +4675,18 @@ def add_jobhistory(request):
 def leave(request):
     if not request.user.has_perm('erp.view_employeeleave'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = EmployeeLeave.objects.all()
-    context = {"data1":data}
+    
+    user = request.user
+    if user.groups.filter(name__in=['Admin', 'Supervisor']).exists():
+
+        data = EmployeeLeave.objects.all()
+    else:
+        user_profile = get_object_or_404(UserProfile, user=user)
+        requester_person = user_profile.employee
+        data = EmployeeLeave.objects.filter(person_farm_entity_id=requester_person)
+
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
 
     return render(request, 'employee/leave.html', context)
 
@@ -4510,3 +4787,60 @@ def reject_leave(request, leave_id):
         return JsonResponse({'message': 'Leave request Rejected successfully.'})
     except EmployeeLeave.DoesNotExist:
         return JsonResponse({'error': 'Leave not found.'}, status=404)
+    
+@login_required(login_url='login')
+def milk_production_report(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    cattle_id = request.GET.get('cattle')
+
+    milk_production_data = MilkProduction.objects.all()
+
+    if start_date:
+        milk_production_data = milk_production_data.filter(milk_time__gte=start_date)
+    if end_date:
+        milk_production_data = milk_production_data.filter(milk_time__lte=end_date)
+    if cattle_id:
+        milk_production_data = milk_production_data.filter(cattle_id=cattle_id)
+
+    cattle_list = Cattle.objects.filter(milkproduction__isnull=False).distinct()
+    paginated_data = paginate_data(request, milk_production_data, 10) 
+
+    context = {
+        'milk_production_data': paginated_data,
+        'cattle_list': cattle_list,
+        'filters_applied': bool(start_date or end_date or cattle_id),
+    }
+
+    return render(request, 'reports/milk_production_report.html', context)
+
+
+@login_required(login_url='login')
+def stock_report(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    item_id = request.GET.get('item')
+
+    stock_data = Stock.objects.all()
+
+    if start_date:
+        stock_data = stock_data.filter(modified_date__gte=start_date)
+    if end_date:
+        stock_data = stock_data.filter(modified_date__lte=end_date)
+    if item_id:
+        stock_data = stock_data.filter(item_id=item_id)
+
+    item_list = Item.objects.filter(stock__isnull=False).distinct()
+    paginated_data = paginate_data(request, stock_data, 10) 
+
+    context = {
+        # 'stock_data': stock_data,
+        'item_list': item_list,
+        'filters_applied': bool(start_date or end_date or item_id),
+        'stock_data': paginated_data,
+    }
+
+    return render(request, 'reports/stock_report.html', context)
+
+
+

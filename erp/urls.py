@@ -104,6 +104,21 @@ urlpatterns = [
     path('sale_type_edit/<str:sale_type_id>', views.sale_type_edit, name='sale_type_edit'),
     path('sale_type_delete/<str:sale_type_id>', views.sale_type_delete),
 
+    path('customer', views.customer),
+    path('customer_add', views.customer_add),
+    path('customer_edit/<str:customer_id>', views.customer_edit, name='customer_edit'),
+    path('customer_delete/<str:customer_id>', views.customer_delete),
+    path('add_customer_contact', views.add_customer_contact),
+    path('add_customer_address', views.add_customer_address),
+
+    path('sales_order', views.sales_order),
+    # path('sales_order_view/<str:order_id>', views.sales_order_view, name='sales_order_view'),
+    path('sales_order_add', views.sales_order_add),
+    # path('request_order_edit/<str:order_id>', views.request_order_edit, name='request_order_edit'),
+    # path('request_order_delete/<str:order_id>', views.request_order_delete),
+    # path('approve_request/<int:order_id>/', views.approve_request, name='approve_request'),
+    # path('reject_request/<int:order_id>/', views.reject_request, name='reject_request'),
+
     path('region', views.region),
     path('region_add', views.region_add),
     path('region_edit/<str:region_id>', views.region_edit, name='region_edit'),
@@ -144,12 +159,12 @@ urlpatterns = [
     path('job_delete/<str:job_id>', views.job_delete),
 
     path('feed_formulation', views.feed_formulation),
+    path('feed_formulation_view/<str:id>', views.feed_formulation_view, name='feed_formulation_view'),
     path('feed_formulation_add', views.feed_formulation_add),
     path('feed_formulation_edit/<str:id>', views.feed_formulation_edit, name='feed_formulation_edit'),
     path('feed_formulation_delete/<str:id>', views.feed_formulation_delete),
 
-    path('ingredient', views.ingredient),
-    path('ingredient_add', views.ingredient_add),
+    path('ingredient_add/<int:id>/', views.ingredient_add, name='ingredient_add'),
     path('ingredient_edit/<str:id>', views.ingredient_edit, name='ingredient_edit'),
     path('ingredient_delete/<str:id>', views.ingredient_delete),
 
@@ -236,5 +251,7 @@ urlpatterns = [
     path('add_guarantee', views.add_guarantee),
     path('add_jobhistory', views.add_jobhistory),
 
+    path('milk_production_report/', views.milk_production_report),
+    path('stock_report/', views.stock_report),
 
 ]

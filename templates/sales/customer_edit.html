@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+
+{% block content %} 
+
+  <div class="content-wrapper">
+
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Customer Edit</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="../customer">Home</a></li>
+              <li class="breadcrumb-item active">Customer Edit</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="content">
+      <form action="/customer_edit/{{ customer.customer_id }}" method="post">
+        {% csrf_token %}
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card card-primary">
+              <div class="card-header" style="background-color: #007f5c;color: #fff;">
+                <h3 class="card-title">Basic Information</h3>
+                <div class="card-tools">
+                  <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                    <i class="fas fa-minus"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="inputName">Person Type</label>
+                  <select id="inputStatus" name="person_type" class="form-control custom-select">
+                    {% for person_type in data1 %}
+                      <option value="{{ person_type.person_type_id }}" {% if person_type.person_type_id == customer.person_farm_entity.person_type_id %} selected {% endif %}>
+                        {{ person_type.person_type }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="inputName">First Name</label>
+                  <input type="text" id="inputName" name="first_name" value="{{ customer.person_farm_entity.first_name }}" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label for="inputName">Middle Name</label>
+                  <input type="text" id="inputName" name="middle_name" value="{{ customer.person_farm_entity.middle_name }}" class="form-control" required>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12">
+            <a href="../../customer" class="btn btn-secondary">Back</a>
+            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Customer</button>
+          </div>
+        </div>
+      </form>
+      <br>
+
+        <button type="button" class="btn btn-primary mr-3" id="addcontactBtn">Add Contact</button>
+        <button type="button" class="btn btn-info mr-3" id="addaddressBtn">Add Address</button>
+
+      <br><br>
+
+      <!-- Hidden section for contact form -->
+      <div class="card" id="contactFormSection" style="display: none;">
+        <div class="card-body">
+            <form action="/add_customer_contact" method="post" id="contactForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputStatus">Customer</label>
+                            <input type="text" id="inputName" name="customer_id" value="{{ customer.person_farm_entity.farm_entity_id }}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Contact Type</label>
+                            <select id="inputStatus" name="contact_type" class="form-control custom-select" >
+                              {% for dd in data2 %}
+                              <option value="{{ dd.contact_id }}">{{ dd.contact_type }}</option>
+                              {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Contact</label>
+                            <input type="text" id="inputPhotoDescription" name="contact" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                  <div class="col-12">
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Contact</button>
+                  </div>
+                </div>
+                <br>
+            </form>
+        </div>
+      </div>
+
+      <!-- Hidden section for Address form -->
+      <div class="card" id="addressFormSection" style="display: none;">
+        <div class="card-body">
+            <form action="/add_customer_address" method="post" id="addressForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputStatus">Customer</label>
+                            <input type="text" id="inputName" name="customer_id" value="{{customer.person_farm_entity.farm_entity_id}}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Region</label>
+                            <select id="inputStatus" name="region" class="form-control custom-select">
+                                {% for d in data3 %}
+                                    <option value="{{ d.region_id }}">{{ d.region }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Woreda</label>
+                            <input type="text" id="inputPhotoDescription" name="woreda" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">House No</label>
+                            <input type="text" id="inputPhotoDescription" name="house_no" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Country</label>
+                            <input type="text" id="inputPhotoDescription" name="country" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Zone/Subcity</label>
+                            <input type="text" id="inputPhotoDescription" name="zone_subcity" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Kebele</label>
+                            <input type="text" id="inputPhotoDescription" name="kebele" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="inputPhotoDescription">Street Name</label>
+                            <input type="text" id="inputPhotoDescription" name="street" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                  <div class="col-12">
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Address</button>
+                  </div>
+                </div>
+                <br>
+            </form>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  
+  <script>
+    document.getElementById('addcontactBtn').addEventListener('click', function() {
+      document.getElementById('contactFormSection').style.display = 'block';
+      document.getElementById('addressFormSection').style.display = 'none';
+    });
+  
+    document.getElementById('addaddressBtn').addEventListener('click', function() {
+      document.getElementById('contactFormSection').style.display = 'none';
+      document.getElementById('addressFormSection').style.display = 'block';
+    });
+  </script>
+  {% endblock %}

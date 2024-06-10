@@ -23,7 +23,7 @@
 
 
     <section class="content">
-    <form action="/ingredient_add" method="post">
+      <form action="/ingredient_add/{{ current_formulation_id }}/" method="post">
       {% csrf_token %}
       <div class="row">
         <div class="col-md-12">
@@ -50,12 +50,13 @@
             {% endif %}
             
               <div class="form-group">
-                <label for="inputName">Feed Formulation</label>
+                {% comment %} <label for="inputName">Feed Formulation</label>
                 <select id="inputStatus" name="feed_formulation_id" class="form-control custom-select">
                   {% for d in data3 %}
                   <option value="{{d.id}}">{{ d.name}}</option>
                   {% endfor %}
-                </select>
+                </select> {% endcomment %}
+                <input type="hidden" name="feed_formulation_id" value="{{ current_formulation_id }}">
               </div>
               <div class="form-group">
                 <label for="inputName">Item</label>
@@ -75,7 +76,7 @@
               </div>
               <div class="form-group">
                 <label for="inputName">Quantity</label>
-                <input type="number" id="inputName" name="quantity" class="form-control" required>
+                <input type="text" id="inputName" name="quantity" class="form-control" required>
               </div>
             </div>
           </div>
@@ -84,7 +85,7 @@
 
       <div class="row">
         <div class="col-12">
-          <a href="ingredient" class="btn btn-secondary">Back</a>
+          <a href="../../feed_formulation" class="btn btn-secondary">Back</a>
           <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Feed Ingredient</button>
         </div>
       </div>

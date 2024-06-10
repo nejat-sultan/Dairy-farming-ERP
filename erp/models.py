@@ -92,7 +92,7 @@ class Person(models.Model):
     first_name = models.CharField(max_length=150)
     middle_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150, null=True)
-    gender = models.CharField(max_length=10)
+    gender = models.CharField(max_length=10, null=True)
     date_of_birth = models.DateField(null=True)
     marital_status = models.CharField(max_length=20, null=True)
     person_type = models.ForeignKey(PersonType, on_delete=models.CASCADE)
@@ -469,7 +469,8 @@ class Stockout(models.Model):
     item_type = models.ForeignKey(ItemType, on_delete=models.CASCADE, null=True)
     measurement = models.ForeignKey(ItemMeasurement, on_delete=models.SET_NULL, null=True, related_name='stockout_items')
     approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='approved_stockouts')
-    quantity = models.IntegerField()
+    # quantity = models.IntegerField()
+    quantity = models.CharField(max_length=45, null=True) 
     status = models.CharField(max_length=45, null=True)
     modified_date = models.DateTimeField(null=True)
 
@@ -493,7 +494,7 @@ class FeedIngredient(models.Model):
     feed_formulation = models.ForeignKey(FeedFormulation, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     item_measurement = models.ForeignKey(ItemMeasurement, on_delete=models.CASCADE, null=True)
-    quantity = models.IntegerField(null=True)
+    quantity = models.CharField(max_length=45, null=True) 
     modified_date = models.DateTimeField(null=True)
 
     class Meta:
@@ -513,8 +514,6 @@ class CattleHasFeed(models.Model):
 
 
 
-
-
 class SaleType(models.Model):
     sale_type_id = models.AutoField(primary_key=True)
     sale_type = models.CharField(max_length=100, null=True)
@@ -522,6 +521,44 @@ class SaleType(models.Model):
 
     class Meta:
         db_table = 'sale_type'
+
+class Customer(models.Model):
+    customer_id = models.AutoField(primary_key=True)
+    person_farm_entity = models.ForeignKey('Person', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'customer'
+
+class SalesOrder(models.Model):
+    id = models.AutoField(primary_key=True)
+    order_date = models.CharField(max_length=45, null=True)
+    quantity = models.FloatField()
+    unit_price = models.FloatField(null=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    total_amount = models.FloatField(null=True)
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'sales_order'
+
+class PaymentMethod(models.Model):
+    id = models.AutoField(primary_key=True)
+    payment_method = models.CharField(max_length=100, null=True)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'payment_method'
+
+class Transaction(models.Model):
+    id = models.AutoField(primary_key=True)
+    date = models.DateTimeField(null=True)
+    order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE)
+    payment_status = models.CharField(max_length=45, null=True)
+    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.CASCADE)
+    modified_date = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = 'transaction'
 
 
 

@@ -18,3 +18,8 @@ def is_allowed_user(user, allowed_roles=[]):
         user_groups = user.groups.values_list('name', flat=True)
         return any(group in allowed_roles for group in user_groups)
     return False
+
+
+@register.filter(name='has_permission')
+def has_permission(user, perm):
+    return user.has_perm(perm)
