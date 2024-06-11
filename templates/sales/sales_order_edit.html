@@ -9,12 +9,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Sales Order Add</h1>
+            <h1>Sales Order Edit</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="../sales_order">Home</a></li>
-              <li class="breadcrumb-item active">Sales Order Add</li>
+              <li class="breadcrumb-item active">Sales Order Edit</li>
             </ol>
           </div>
         </div>
@@ -23,7 +23,7 @@
 
 
     <section class="content">
-    <form action="/sales_order_add" method="post">
+    <form action="/sales_order_edit/{{d.id}}" method="post">
       {% csrf_token %}
       <div class="row">
         <div class="col-md-6">
@@ -50,30 +50,25 @@
               
               <div class="form-group">
                 <label for="item_name">Item</label>
-                <select id="item_name" name="item_name" class="form-control custom-select" required>
-                  <option value="">Select item</option>
-                  {% for d in data1 %}
-                  <option value="{{d.item_id}}">{{ d.item.name}}</option>
-                  {% endfor %}
-                </select>
+                <input type="text" id="item_name" class="form-control" value="{{ d.stock.item.name }}" readonly>
               </div>
               <div class="form-group">
-                <label for="item_type">Type</label>
-                <select id="item_type" name="item_type" class="form-control custom-select" required>
-                  <option value="">Select item type</option>
-                </select>
+                  <label for="item_type">Type</label>
+                  <input type="text" id="item_type" class="form-control" value="{{ d.stock.type.item_type }}" readonly>
               </div> 
               <div class="form-group">
                 <label for="inputName">Customer</label>
                 <select id="inputStatus" name="customer_id" class="form-control custom-select" required>
-                  {% for d in data2 %}
-                  <option value="{{ d.customer_id }}">{{ d.person_farm_entity.first_name }}</option>
+                  {% for data2 in data2 %}
+                  <option value="{{ data2.customer_id }}" {% if data2.customer_id == d.customer_id %} selected {% endif %}>
+                    {{ data2.person_farm_entity.first_name }}
+                  </option>
                   {% endfor %}
                 </select>
               </div>
               <div class="form-group">
                 <label for="inputDescription">Quantity</label>
-                <input type="text" id="inputName" name="quantity" class="form-control">
+                <input type="text" id="inputName" name="quantity" value="{{d.quantity}}" class="form-control">
               </div>            
             </div>
           </div>
@@ -93,24 +88,26 @@
             <div class="card-body">
               <div class="form-group">
                 <label for="inputDescription">Order Date</label>
-                <input type="datetime-local" id="inputName" name="order_date" class="form-control">
+                <input type="datetime-local" id="inputName" name="order_date" value="{{d.order_date}}" class="form-control">
               </div>
               <div class="form-group">
                 <label for="inputName">Unit Price</label>
-                <input type="text" id="inputName" name="unit_price" class="form-control">
+                <input type="text" id="inputName" name="unit_price" value="{{d.unit_price}}" class="form-control">
               </div>
               <div class="form-group">
                 <label for="inputName">Payment Method</label>
                 <select id="inputStatus" name="payment_method" class="form-control custom-select">
-                  {% for d in data3 %}
-                  <option value="{{ d.id }}">{{ d.payment_method }}</option>
+                  {% for data3 in data3 %}
+                  <option value="{{ data3.id }}" {% if data3.id == d.payment_method_id %} selected {% endif %}>
+                    {{ data3.payment_method }}
+                  </option>
                   {% endfor %}
                 </select>
               </div>
               <div class="form-group">
                 <label for="inputName">Payment Status</label>
                 <select id="inputStatus" name="payment_status" class="form-control custom-select">
-                    <option selected disabled>Select one</option>
+                  <option selected>{{d.payment_status}}</option>
                     <option>Not Paid</option>
                     <option>Partially Paid</option>
                     <option>Fully Paid</option>
@@ -124,26 +121,13 @@
       <div class="row">
         <div class="col-12">
           <a href="../sales_order" class="btn btn-secondary">Back</a>
-          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;"> Add Sales Order</button>
+          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;"> Update Sales Order</button>
         </div>
       </div>
     </form>
     </section>
 
-    <script>
-      document.getElementById('item_name').addEventListener('change', function() {
-          var itemId = this.value;
-          fetch(`/get_item_types/${itemId}/`)
-              .then(response => response.json())
-              .then(data => {
-                  var itemTypeSelect = document.getElementById('item_type');
-                  itemTypeSelect.innerHTML = '<option value="">Select item type</option>';
-                  data.forEach(itemType => {
-                      itemTypeSelect.innerHTML += `<option value="${itemType.id}">${itemType.name}</option>`;
-                  });
-              });
-      });
-      </script>
+  </div>
   
   {% endblock %}
 

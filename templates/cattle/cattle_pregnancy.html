@@ -4,7 +4,6 @@
 {% block content %}
 
   <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
     <section class="content-header">
       <div class="container-fluid">
         <div class="row mb-2">
@@ -18,19 +17,16 @@
             </ol>
           </div>
         </div>
-      </div><!-- /.container-fluid -->
+      </div>
     </section>
 
-    <!-- Main content -->
     <section class="content">
-
-      <!-- Default box -->
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Manage Cattle Pregnancy</h3>
 
           <div class="card-tools">
-            {% if request.user|is_allowed_user:"Admin, Vet" %} 
+            {% if request.user|has_permission:"erp.add_cattlepregnancy" %}
             <a class="btn" href="cattle_pregnancy_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New

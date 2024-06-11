@@ -19,7 +19,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -39,8 +39,8 @@ from .utils import get_low_quantity_items, get_overdue_vaccines, paginate_data
 
 @login_required(login_url='login')
 def user(request):
-    # if not request.user.has_perm('erp.view_user'):
-    #     return HttpResponse('You are not authorised to view this page', status=403)
+    if not request.user.has_perm('auth.view_user'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     user_profiles = UserProfile.objects.select_related('user', 'employee').all()
     context = {
         'user_profiles': user_profiles,
@@ -49,8 +49,8 @@ def user(request):
 
 @login_required(login_url='login')
 def register(request):
-    # if not request.user.has_perm('erp.add_user'):
-    #     return HttpResponse('You are not authorised to view this page', status=403)
+    if not request.user.has_perm('auth.add_user'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     form = CreateUserForm()
     if request.method == 'POST':
         form = CreateUserForm(request.POST)
@@ -71,8 +71,8 @@ def register(request):
 
 @login_required(login_url='login')
 def edit_user(request, user_id):
-    # if not request.user.has_perm('erp.change_user'):
-    #    return HttpResponse('You are not authorised to view this page', status=403)
+    if not request.user.has_perm('auth.change_user'):
+       return HttpResponse('You are not authorised to view this page', status=403)
     user_profile = get_object_or_404(UserProfile, user_id=user_id)
     user = user_profile.user
     employees = Employee.objects.select_related('person_farm_entity').all()
@@ -108,8 +108,8 @@ def edit_user(request, user_id):
 
 
 def user_delete(request, id):
-    # if not request.user.has_perm('erp.delete_user'):
-    #     return HttpResponse('You are not authorised to view this page', status=403)
+    if not request.user.has_perm('auth.delete_user'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     try:
         user = User.objects.get(pk=id)
         user_profile = user.userprofile
@@ -124,16 +124,16 @@ def user_delete(request, id):
 
 @login_required(login_url='login')
 def group(request):
-    # if not request.user.has_perm('erp.view_group'):
-    #     return HttpResponse('You are not authorised to view this page', status=403)
+    if not request.user.has_perm('auth.view_group'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     groups = Group.objects.all()
     context = {"groups":groups}
     return render(request, 'auth/group.html', context)
 
 @login_required(login_url='login')
 def create_group(request):
-    # if not request.user.has_perm('erp.add_group'):
-    #     return HttpResponse('You are not authorised to view this page', status=403)
+    if not request.user.has_perm('auth.add_group'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         form = GroupCreationForm(request.POST)
         if form.is_valid():
@@ -146,8 +146,8 @@ def create_group(request):
 
 @login_required(login_url='login')
 def edit_group(request, id):
-    # if not request.user.has_perm('erp.change_group'):
-    #     return HttpResponse('You are not authorised to view this page', status=403)
+    if not request.user.has_perm('auth.change_group'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     group = get_object_or_404(Group, id=id)
     all_permissions = Permission.objects.all()  
     assigned_permissions = group.permissions.all() 
@@ -177,8 +177,8 @@ def edit_group(request, id):
     return render(request, 'auth/edit_group.html', context)
     
 def group_delete(request, id):
-    # if not request.user.has_perm('erp.delete_group'):
-    #     return HttpResponse('You are not authorised to view this page', status=403)
+    if not request.user.has_perm('auth.delete_group'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     d = Group.objects.get(id=id)
     d.delete()
     messages.error(request, "Role Deleted Successfully!")
@@ -201,7 +201,6 @@ def assign_users_to_group(request, user_id):
 
 @unauthenticated_user
 def login_page(request):
-   
     if request.method=="POST":
         username=request.POST.get('username')
         password=request.POST.get('password')
@@ -2091,6 +2090,65 @@ def sale_type_delete(request, sale_type_id):
 
 
 @login_required(login_url='login')
+def payment_method(request):
+    if not request.user.has_perm('erp.view_paymentmethod'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    data = PaymentMethod.objects.all()
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
+
+    return render(request, 'sales/payment_method.html', context)
+
+@login_required(login_url='login')
+def payment_method_add(request):
+    if not request.user.has_perm('erp.add_paymentmethod'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method=="POST":
+        cpayment_method=request.POST.get('payment_method')
+        cdate = datetime.now().date()
+
+        query = PaymentMethod(payment_method=cpayment_method, modified_date=cdate)
+        query.save()
+        messages.success(request, "Payment Method Added Successfully!")
+        return redirect("/payment_method")
+
+    return render(request, 'sales/payment_method_add.html')
+
+@login_required(login_url='login')
+def payment_method_edit(request,id):
+    if not request.user.has_perm('erp.change_paymentmethod'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    edit = PaymentMethod.objects.get(id=id)
+    
+    if request.method == "POST":
+        cpayment_method=request.POST.get('payment_method')
+        cdate = datetime.now().date()
+        
+        # Update the attributes
+        edit.payment_method = cpayment_method
+        edit.modified_date = cdate
+        
+        # Save the changes
+        edit.save()
+        messages.warning(request, "Payment Method Updated Successfully!")
+        # Optionally, redirect to a success page or another view
+        return redirect("/payment_method")
+
+    d = PaymentMethod.objects.get(id=id)
+    context = {"d": d}
+
+    return render(request, 'sales/payment_method_edit.html', context)
+
+def payment_method_delete(request, id):
+    if not request.user.has_perm('erp.delete_paymentmethod'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = PaymentMethod.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Payment Method Deleted Successfully!")
+    return redirect("/payment_method")
+
+
+@login_required(login_url='login')
 def customer(request):
     if not request.user.has_perm('erp.view_customer'):
         return HttpResponse('You are not authorised to view this page', status=403)
@@ -2248,6 +2306,15 @@ def add_customer_address(request):
         return redirect("/customer")
 
     return render(request, 'sales/customer_edit.html')
+    
+def get_item_types(request, item_id):
+    try:
+        stock_items = Stock.objects.filter(item_id=item_id).select_related('type')
+        item_types = [{'id': stock_item.type.item_type_id, 'name': stock_item.type.item_type} for stock_item in stock_items if stock_item.type]
+        return JsonResponse(item_types, safe=False)
+    except Exception as e:
+        print(f"Error in get_item_types: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 @login_required(login_url='login')
 def sales_order(request):
@@ -2255,7 +2322,13 @@ def sales_order(request):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = SalesOrder.objects.all()
     paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    data2 = Stock.objects.all()
+    data3 = Customer.objects.all()
+    context = {
+        "data1":paginated_data,
+        'data2': data2,
+        'data3': data3,
+    }
 
     return render(request, 'sales/sales_order.html', context)
 
@@ -2263,18 +2336,200 @@ def sales_order(request):
 def sales_order_add(request):
     if not request.user.has_perm('erp.add_salesorder'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    if request.method=="POST":
-        cregion=request.POST.get('region')
-        cdate = datetime.now().date()
+    if request.method == "POST":
+        citem_name = request.POST.get('item_name')
+        citem_type = request.POST.get('item_type') 
+        ccustomer_id = request.POST.get('customer_id')
+        cquantity = request.POST.get('quantity')
+        corder_date = request.POST.get('order_date')
+        cunit_price = request.POST.get('unit_price')
+        cpayment_method = request.POST.get('payment_method')
+        cpayment_status = request.POST.get('payment_status')
 
-        query = SalesOrder(region=cregion, modified_date=cdate)
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            errors.append("Quantity is required.")
+
+        if corder_date:
+            try:
+                corder_date = datetime.strptime(corder_date, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Order Date must be in YYYY-MM-DDTHH:MM format.')
+        else:
+            errors.append("Order Date is required.")
+
+        if cunit_price:
+            try:
+                cunit_price = float(cunit_price)
+                if cunit_price <= 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append('Price must be a number.')
+        else:
+            errors.append("Price is required.")
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Stock.objects.all(),
+                'data2': Customer.objects.all(),
+                'data3': PaymentMethod.objects.all(),
+                'data4': ItemType.objects.all(),
+            }
+            return render(request, 'sales/sales_order_add.html', context)
+
+        ctotal_amount = cquantity * cunit_price
+
+        stock_instance = Stock.objects.get(item_id=citem_name, type_id=citem_type)
+
+        if float(stock_instance.quantity) < cquantity:
+            errors.append("Order quantity exceeds available stock.")
+            context = {
+                'errors': errors,
+                'data1': Stock.objects.all(),
+                'data2': Customer.objects.all(),
+                'data3': PaymentMethod.objects.all(),
+                'data4': ItemType.objects.all(),
+            }
+            return render(request, 'sales/sales_order_add.html', context)
+        
+        stock_instance.quantity = str(float(stock_instance.quantity) - cquantity)  
+        stock_instance.save()
+
+        query = SalesOrder(
+            stock=stock_instance,
+            customer_id=ccustomer_id,
+            quantity=cquantity,
+            order_date=corder_date,
+            unit_price=cunit_price,
+            payment_method_id=cpayment_method,
+            payment_status=cpayment_status,
+            total_amount=ctotal_amount
+        )
         query.save()
         messages.success(request, "Sales Order Added Successfully!")
         return redirect("/sales_order")
+    
+    data1 = Stock.objects.all()
+    data2 = Customer.objects.all()
+    data3 = PaymentMethod.objects.all()
+    data4 = ItemType.objects.all()
+    context = {
+        'data1': data1,
+        'data2': data2,
+        'data3': data3,
+        'data4': data4,
+    }
 
-    return render(request, 'sales/sales_order_add.html')
+    return render(request, 'sales/sales_order_add.html', context)
 
+@login_required(login_url='login')
+def sales_order_edit(request, id):
+    if not request.user.has_perm('erp.change_salesorder'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    edit = SalesOrder.objects.get(id=id)
 
+    if request.method=="POST":
+        ccustomer_id=request.POST.get('customer_id')
+        cquantity=request.POST.get('quantity')
+        corder_date=request.POST.get('order_date')
+        cunit_price=request.POST.get('unit_price')
+        cpayment_method=request.POST.get('payment_method')
+        cpayment_status=request.POST.get('payment_status')
+
+        errors = []
+        if cquantity:
+            try:
+                cquantity = float(cquantity)
+                if cquantity <= 0:
+                    errors.append("Quantity must be a positive number.")
+            except ValueError:
+                errors.append("Quantity must be a valid number.")
+        else:
+            errors.append("Quantity is required.")
+
+        if corder_date:
+            try:
+                corder_date = datetime.strptime(corder_date, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Order Date must be in YYYY-MM-DDTHH:MM format.')
+        else:
+            errors.append("Order Date is required.")
+
+        if cunit_price:
+            try:
+                cunit_price = float(cunit_price)
+                if cunit_price <= 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append('Price must be a number.')
+        else:
+            errors.append("Price is required.")
+
+        if errors:
+            context = {
+                'errors': errors,
+                'd': SalesOrder.objects.get(id=id),
+                'data1': Stock.objects.all(),
+                'data2': Customer.objects.all(),
+                'data3': PaymentMethod.objects.all(),
+            }
+            return render(request, 'sales/sales_order_edit.html', context)
+        
+        ctotal_amount = cquantity * cunit_price
+
+        stock_instance = edit.stock  
+        if float(stock_instance.quantity) + edit.quantity - float(cquantity) < 0:
+            errors.append("Order quantity exceeds available stock.")
+            context = {
+                'errors': errors,
+                'd': SalesOrder.objects.get(id=id),
+                'data1': Stock.objects.all(),
+                'data2': Customer.objects.all(),
+                'data3': PaymentMethod.objects.all(),
+            }
+            return render(request, 'sales/sales_order_edit.html', context)
+
+        stock_instance.quantity = str(float(stock_instance.quantity) + edit.quantity - float(cquantity))
+        stock_instance.save()
+
+        edit.customer_id = ccustomer_id
+        edit.quantity = cquantity
+        edit.order_date = corder_date
+        edit.unit_price = cunit_price
+        edit.payment_method_id = cpayment_method
+        edit.payment_status = cpayment_status
+        edit.total_amount = ctotal_amount
+        edit.save()
+        messages.success(request, "Sales Order updated Successfully!")
+        return redirect("/sales_order")
+    
+    d = SalesOrder.objects.get(id=id)
+    data1 = Stock.objects.all()
+    data2 = Customer.objects.all()
+    data3 = PaymentMethod.objects.all()
+    context = {
+        "d": d,
+        'data1': data1,
+        'data2': data2,
+        'data3': data3,
+    }
+    return render(request, 'sales/sales_order_edit.html', context)
+
+def sales_order_delete(request, id):
+    if not request.user.has_perm('erp.delete_salesorder'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = SalesOrder.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Sales Order Deleted Successfully!")
+    return redirect("/sales_order")
 
 @login_required(login_url='login')
 def region(request):
@@ -2561,7 +2816,7 @@ def assign_task(request):
     if not request.user.has_perm('erp.view_taskassignment'):
         return HttpResponse('You are not authorised to view this page', status=403)
     user = request.user
-    if user.groups.filter(name__in=['Admin', 'Supervisor']).exists():
+    if request.user.has_perm('erp.add_taskassignment'):
         data = TaskAssignment.objects.all()
     else:
         user_profile = get_object_or_404(UserProfile, user=user)
@@ -4677,8 +4932,7 @@ def leave(request):
         return HttpResponse('You are not authorised to view this page', status=403)
     
     user = request.user
-    if user.groups.filter(name__in=['Admin', 'Supervisor']).exists():
-
+    if not request.user.has_perm('erp.add_employeeleave'):
         data = EmployeeLeave.objects.all()
     else:
         user_profile = get_object_or_404(UserProfile, user=user)

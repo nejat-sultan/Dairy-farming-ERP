@@ -529,18 +529,6 @@ class Customer(models.Model):
     class Meta:
         db_table = 'customer'
 
-class SalesOrder(models.Model):
-    id = models.AutoField(primary_key=True)
-    order_date = models.CharField(max_length=45, null=True)
-    quantity = models.FloatField()
-    unit_price = models.FloatField(null=True)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    total_amount = models.FloatField(null=True)
-    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = 'sales_order'
-
 class PaymentMethod(models.Model):
     id = models.AutoField(primary_key=True)
     payment_method = models.CharField(max_length=100, null=True)
@@ -549,16 +537,22 @@ class PaymentMethod(models.Model):
     class Meta:
         db_table = 'payment_method'
 
-class Transaction(models.Model):
+class SalesOrder(models.Model):
     id = models.AutoField(primary_key=True)
-    date = models.DateTimeField(null=True)
-    order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE)
+    order_date = models.CharField(max_length=45, null=True)
+    quantity = models.FloatField()
+    unit_price = models.FloatField(null=True)
     payment_status = models.CharField(max_length=45, null=True)
-    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.CASCADE)
-    modified_date = models.DateTimeField(null=True)
+    total_amount = models.FloatField(null=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.CASCADE, null=True)
 
     class Meta:
-        db_table = 'transaction'
+        db_table = 'sales_order'
+
+
+
 
 
 

@@ -27,7 +27,7 @@
           <h3 class="card-title">Manage Cattle Vaccination</h3>
 
           <div class="card-tools">
-            {% if request.user|is_allowed_user:"Admin, Vet" %} 
+            {% if request.user|has_permission:"erp.add_cattlehasvaccine" %}
             <a class="btn" href="cattle_has_vaccine_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New

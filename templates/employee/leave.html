@@ -20,16 +20,13 @@
       </div>
     </section>
 
-    <!-- Main content -->
     <section class="content">
-
-      <!-- Default box -->
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Leave Requests</h3>
 
           <div class="card-tools">
-            {% if not request.user|is_allowed_user:"Supervisor" %} 
+            {% if request.user|has_permission:"erp.add_employeeleave" %} 
             <a class="btn" href="leave_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
@@ -98,7 +95,7 @@
                       </td>
 
                       <td class="project-actions">
-                        {% if not request.user|is_allowed_user:"Labor Employees" %} 
+                        {% if request.user|has_permission:"erp.add_approval" %}  
                         <a class="btn btn-sm" href="/leave_view/{{d.leave_id}}" style="background-color: #007f5c;color: #fff;">
                           <i class="fas fa-eye">
                           </i>

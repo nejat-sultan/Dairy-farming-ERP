@@ -4,7 +4,6 @@
 {% block content %}
 
   <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
     <section class="content-header">
       <div class="container-fluid">
         <div class="row mb-2">
@@ -18,13 +17,10 @@
             </ol>
           </div>
         </div>
-      </div><!-- /.container-fluid -->
+      </div>
     </section>
 
-    <!-- Main content -->
     <section class="content">
-
-      <!-- Default box -->
       <div class="card">
         <div class="card-header">
           <h3 class="card-title">Manage Supplier</h3>
@@ -87,7 +83,7 @@
                       </td>
                       
                       <td class="project-actions">
-                        {% if not request.user|is_allowed_user:"Data Entry Clerk" %} 
+                        {% if request.user|has_permission:"erp.change_supplier" %} 
                           <a class="btn btn-info btn-sm" href="/supplier_edit/{{d.farm_entity_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>

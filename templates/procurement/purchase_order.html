@@ -100,7 +100,7 @@
                             </i>
                             Generate PO
                           </a>
-                        {% if not request.user|is_allowed_user:"Store Clerk" %} 
+                        {% if request.user|has_permission:"erp.add_approval" %} 
                           {% if d.inventory_status != 'Approved' and d.inventory_status != 'Rejected' %}
                               <button class="btn btn-success btn-sm" onclick="confirmApprove({{ d.id }})">Approve</button>
                               <button class="btn btn-danger btn-sm" onclick="confirmReject({{ d.id }})">Reject</button>

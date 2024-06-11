@@ -28,7 +28,7 @@
           <h3 class="card-title">Manage Stock In</h3>
 
           <div class="card-tools">
-            {% if not request.user|is_allowed_user:"Supervisor" %} 
+            {% if request.user|has_permission:"erp.add_directlyaddeditem" %} 
             <a class="btn" href="stockin_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
@@ -103,7 +103,7 @@
                       </td>
                       
                       <td class="project-actions">
-                        {% if not request.user|is_allowed_user:"Store Clerk" %} 
+                        {% if request.user|has_permission:"erp.add_approval" %} 
                           {% if d.approval_status != 'Approved' and d.approval_status != 'Rejected' %}
                               <button class="btn btn-success btn-sm" onclick="confirmApprove({{ d.id }})">Approve</button>
                               <button class="btn btn-danger btn-sm" onclick="confirmReject({{ d.id }})">Reject</button>

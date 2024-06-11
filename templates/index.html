@@ -24,6 +24,7 @@
     <section class="content">
       <div class="container-fluid">
 
+        {% if request.user|has_permission:"erp.view_vetdashboard" or request.user|has_permission:"erp.view_admindashboard" %}
         <div class="card">
           <div class="card-body">
             {% if overdue_cattle %}
@@ -59,7 +60,7 @@
             {% endif %}
           </div>
         </div>
-
+        {% endif %}
 
         {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_storeclerkdashboard" or request.user|has_permission:"erp.view_laboremployeedashboard" %}
         {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_storeclerkdashboard" or request.user|has_permission:"erp.view_vetdashboard" or request.user|has_permission:"erp.view_dataentryclerkdashboard" %}

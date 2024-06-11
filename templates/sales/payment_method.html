@@ -8,25 +8,26 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Item</h1>
+            <h1>Payment Method</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="">Home</a></li>
-              <li class="breadcrumb-item active">Item</li>
+              <li class="breadcrumb-item active">Payment Method</li>
             </ol>
           </div>
         </div>
       </div>
     </section>
 
+
     <section class="content">
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Manage Item</h3>
+          <h3 class="card-title">Manage Payment Method</h3>
 
           <div class="card-tools">
-            <a class="btn" href="item_add" style="background-color: #007f5c;color: #fff;">
+            <a class="btn" href="payment_method_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -46,41 +47,40 @@
           <table class="table table-striped projects">
               <thead>
                   <tr>
-                      <th style="width: 20%">
+                      <th style="width: 30%">
                           Id
                       </th> 
-                      <th style="width: 50%">
-                        Item Name
+                      <th style="width: 30%">
+                        Payment Method
                       </th>
-
-                      <th style="width: 30%"> Actions </th>
+                    
+                      <th style="width: 40%"> Actions </th>
                   </tr>
               </thead>
               <tbody>
                 {% for d in data1 %}
                   <tr>
                       <td>
-                        {{d.item_id}}
+                        {{d.id}}
                       </td>
                       <td>
-                        {{d.name}}
+                        {{d.payment_method}}
                       </td>
-                      
+
                       <td class="project-actions">
-                          <a class="btn btn-info btn-sm" href="/item_edit/{{d.item_id}}">
+                          <a class="btn btn-info btn-sm" href="/payment_method_edit/{{d.id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
                           </a>
-                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.item_id }}')">
+                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.id }}')">
                             <i class="fas fa-trash">
                             </i>
                           </a>
 
                           <script>
                             function confirmDelete(cattleId) {
-                                if (confirm("Are you sure you want to delete this Item?")) {
-                                    // If user confirms, redirect to the delete URL
-                                    window.location.href = "/item_delete/" + cattleId;
+                                if (confirm("Are you sure you want to delete this Payment Method?")) {
+                                    window.location.href = "/payment_method_delete/" + cattleId;
                                 }
                             }
                           </script>
@@ -92,31 +92,8 @@
         </div>
       </div>
 
-      <div class="pagination">
-        <span class="step-links">
-            {% if data1.has_previous %}
-                <a href="?page={{ data1.previous_page_number }}">Previous</a>
-            {% endif %}
-
-            <span class="current">
-                Page {{ data1.number }} of {{ data1.paginator.num_pages }}.
-            </span>
-
-            {% if data1.has_next %}
-                <a href="?page={{ data1.next_page_number }}">Next</a>
-            {% endif %}
-        </span>
-      </div>
-
     </section>
   </div>
-
-  <style>
-    .status-highlight {
-      background-color: #f0ad4e; 
-      font-weight: bold;
-  }
-  </style>
 
   {% endblock %}
   

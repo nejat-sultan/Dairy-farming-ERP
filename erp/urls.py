@@ -111,13 +111,17 @@ urlpatterns = [
     path('add_customer_contact', views.add_customer_contact),
     path('add_customer_address', views.add_customer_address),
 
+    path('payment_method', views.payment_method),
+    path('payment_method_add', views.payment_method_add),
+    path('payment_method_edit/<str:id>', views.payment_method_edit, name='payment_method_edit'),
+    path('payment_method_delete/<str:id>', views.payment_method_delete),
+
     path('sales_order', views.sales_order),
     # path('sales_order_view/<str:order_id>', views.sales_order_view, name='sales_order_view'),
     path('sales_order_add', views.sales_order_add),
-    # path('request_order_edit/<str:order_id>', views.request_order_edit, name='request_order_edit'),
-    # path('request_order_delete/<str:order_id>', views.request_order_delete),
-    # path('approve_request/<int:order_id>/', views.approve_request, name='approve_request'),
-    # path('reject_request/<int:order_id>/', views.reject_request, name='reject_request'),
+    path('sales_order_edit/<str:id>', views.sales_order_edit, name='sales_order_edit'),
+    path('sales_order_delete/<str:id>', views.sales_order_delete),
+    path('get_item_types/<int:item_id>/', views.get_item_types, name='get_item_types'),
 
     path('region', views.region),
     path('region_add', views.region_add),

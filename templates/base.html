@@ -230,7 +230,7 @@
       <nav class="mt-2">
         <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
           <li class="nav-item menu-open active">
-            <a href="../index" class="nav-link">
+            <a href="../../index" class="nav-link">
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>
                 Dashboard
@@ -394,7 +394,7 @@
           </li>
 
           <li class="nav-item">
-            {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
+            {% if request.user|has_permission:"erp.view_customer" or request.user|has_permission:"erp.view_salesorder" %}
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-lightbulb"></i>
               <p>
@@ -404,7 +404,7 @@
             </a> 
           
             <ul class="nav nav-treeview pl-3">
-              {% comment %} {% if request.user|has_permission:"erp.view_customer" %} {% endcomment %}
+              {% if request.user|has_permission:"erp.view_customer" %}
               <li class="nav-item">
                 <a href="../../customer" class="nav-link">
                   <i class="nav-icon fas fa-user-alt"></i>
@@ -413,17 +413,17 @@
                   </p>
                 </a>
               </li>
-              {% comment %} {% endif %}
-              {% if request.user|has_permission:"erp.view_sales" %} {% endcomment %}
+              {% endif %}
+              {% if request.user|has_permission:"erp.view_salesorder" %}
               <li class="nav-item">
-                <a href="#" class="nav-link">
+                <a href="sales_order" class="nav-link">
                   <i class="nav-icon fas fa-lightbulb"></i>
                   <p>
                     Manage Sales
                   </p>
                 </a>
               </li>
-              {% comment %} {% endif %} {% endcomment %}
+              {% endif %} 
             </ul>
             {% endif %}
           </li>
@@ -568,7 +568,7 @@
 
             {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" or request.user|has_permission:"erp.view_persontype" or request.user|has_permission:"erp.view_persontitle" or request.user|has_permission:"erp.view_contacttype" or request.user|has_permission:"erp.view_region" or request.user|has_permission:"erp.view_guaranteetype"  or request.user|has_permission:"erp.view_job" or request.user|has_permission:"erp.view_task" or request.user|has_permission:"erp.view_suppliertype" or request.user|has_permission:"erp.view_itemtype" or request.user|has_permission:"erp.view_item" or request.user|has_permission:"erp.view_itemmeasurement" or request.user|has_permission:"erp.view_saletype" %}
             <li class="nav-header">Settings
-            {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
+            {% if request.user|has_permission:"auth.view_user"  %} 
             <li class="nav-item">
               <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-user"></i>
@@ -577,7 +577,6 @@
                   <i class="fas fa-angle-left right"></i>
                 </p>
               </a> 
-       
               <ul class="nav nav-treeview">
                 <li class="nav-item">
                   <a href="../../user" class="nav-link">
@@ -776,7 +775,7 @@
                 </li>
 
                 <li class="nav-item">
-                  {% if request.user|has_permission:"erp.view_saletype"%}
+                  {% if request.user|has_permission:"erp.view_saletype" or request.user|has_permission:"erp.view_paymentmethod"%}
                   <a href="#" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Sales datas
@@ -789,6 +788,14 @@
                         <a href="../../sale_type" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Sale Type</p>
+                        </a>
+                      </li>
+                      {% endif %}
+                      {% if request.user|has_permission:"erp.view_paymentmethod" %}
+                      <li class="nav-item">
+                        <a href="../../payment_method" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Payment Method</p>
                         </a>
                       </li>
                       {% endif %}

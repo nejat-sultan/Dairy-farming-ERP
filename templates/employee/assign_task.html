@@ -28,7 +28,7 @@
           <h3 class="card-title">Task Assignments</h3>
 
           <div class="card-tools">
-            {% if not request.user|is_allowed_user:"Labor Employees" %} 
+            {% if request.user|has_permission:"erp.add_taskassignment" %}
             <a class="btn" href="assign_task_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
@@ -109,12 +109,12 @@
                       </td>
 
                       <td class="project-actions">
-                        {% if request.user|is_allowed_user:"Labor Employees" %} 
+                        {% if request.user|has_permission:"erp.change_taskstatus" %} 
                         <a class="btn btn-info btn-sm" href="#" onclick="openEditStatusModal('{{ d.id }}')" data-toggle="modal" data-target="#editStatusModal">
                           <i class="fas fa-pencil-alt"></i> Update Status
                         </a>
                         {% endif %}
-                        {% if not request.user|is_allowed_user:"Labor Employees" %} 
+                        {% if request.user|has_permission:"erp.change_taskassignment" %} 
                         <a class="btn btn-info btn-sm" href="/assign_task_edit/{{d.id}}">
                             <i class="fas fa-pencil-alt"></i>
                         </a>
