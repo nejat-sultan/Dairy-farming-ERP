@@ -66,34 +66,36 @@
 
             {% comment %} {% if filters_applied %} {% endcomment %}
             <div class="card-body p-0">
-                <table class="table table-striped projects">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Cattle</th>
-                            <th>Amount(Liters)</th>
-                            <th>Milk Time</th>
-                            <th>Fat Content</th>
-                            <th>Protein Content</th>
-                            <th>Somatic Cell Count</th>
-                            <th>Duration(Min)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for entry in milk_production_data %}
-                        <tr>
-                            <td>{{ entry.milk_production_id }}</td>
-                            <td>{{ entry.cattle.cattle_name }}</td>
-                            <td>{{ entry.amount_in_liter }}</td>
-                            <td>{{ entry.milk_time }}</td>
-                            <td>{{ entry.fat_content }}</td>
-                            <td>{{ entry.protein_content }}</td>
-                            <td>{{ entry.somatic_cell_count }}</td>
-                            <td>{{ entry.duration_in_min }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cattle</th>
+                                <th>Amount(Liters)</th>
+                                <th>Milk Time</th>
+                                <th>Fat Content</th>
+                                <th>Protein Content</th>
+                                <th>Somatic Cell Count</th>
+                                <th>Duration(Min)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in milk_production_data %}
+                            <tr>
+                                <td>{{ entry.milk_production_id }}</td>
+                                <td>{{ entry.cattle.cattle_name }}</td>
+                                <td>{{ entry.amount_in_liter }}</td>
+                                <td>{{ entry.milk_time }}</td>
+                                <td>{{ entry.fat_content }}</td>
+                                <td>{{ entry.protein_content }}</td>
+                                <td>{{ entry.somatic_cell_count }}</td>
+                                <td>{{ entry.duration_in_min }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             {% comment %} {% endif %} {% endcomment %}
         </div>

@@ -783,14 +783,6 @@
                     </p>
                   </a>
                     <ul class="nav nav-treeview pl-3">
-                      {% if request.user|has_permission:"erp.view_saletype" %}
-                      <li class="nav-item">
-                        <a href="../../sale_type" class="nav-link">
-                          <i class="far fa-circle nav-icon"></i>
-                          <p>Sale Type</p>
-                        </a>
-                      </li>
-                      {% endif %}
                       {% if request.user|has_permission:"erp.view_paymentmethod" %}
                       <li class="nav-item">
                         <a href="../../payment_method" class="nav-link">

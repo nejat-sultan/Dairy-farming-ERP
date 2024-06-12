@@ -43,11 +43,12 @@
         {% endfor %}
 
         <div class="card-body p-0">
-          <table class="table table-striped projects">
+          <div class="table-responsive">
+            <table class="table table-striped projects">
               <thead>
                   <tr>
                       <th style="width: 10%">
-                          #
+                          id
                       </th>
                       <th style="width: 15%">
                           First Name
@@ -69,33 +70,33 @@
                 {% for d in data1 %}
                   <tr>
                       <td>
-                          #
+                        {{d.person_farm_entity_id}}
                       </td>
                       <td>
-                        {{d.first_name}}
+                        {{d.person_farm_entity.first_name}}
                       </td>
                       <td>
-                        {{d.middle_name}}
+                        {{d.person_farm_entity.middle_name}}
                       </td>
                       <td>
-                        {{d.date_of_birth}}
+                        {{d.person_farm_entity.date_of_birth}}
                       </td>
                       <td>
-                        {{d.gender}}
+                        {{d.person_farm_entity.gender}}
                       </td>
 
                       <td class="project-actions">
-                          <a class="btn btn-sm" href="/employee_view/{{d.farm_entity_id}}" style="background-color: #007f5c;color: #fff;">
+                          <a class="btn btn-sm" href="/employee_view/{{d.person_farm_entity_id}}" style="background-color: #007f5c;color: #fff;">
                               <i class="fas fa-eye">
                               </i>
                           </a>
                          
                           {% if request.user|has_permission:"erp.change_employee" %} 
-                          <a class="btn btn-info btn-sm" href="/employee_edit/{{d.farm_entity_id}}">
+                          <a class="btn btn-info btn-sm" href="/employee_edit/{{d.person_farm_entity_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
                           </a>
-                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.farm_entity_id }}')">
+                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.person_farm_entity_id }}')">
                               <i class="fas fa-trash">
                               </i>
                           </a>
@@ -113,7 +114,8 @@
                   </tr>
                   {% endfor %}
               </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
 

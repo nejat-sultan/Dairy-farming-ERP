@@ -117,11 +117,11 @@ urlpatterns = [
     path('payment_method_delete/<str:id>', views.payment_method_delete),
 
     path('sales_order', views.sales_order),
-    # path('sales_order_view/<str:order_id>', views.sales_order_view, name='sales_order_view'),
     path('sales_order_add', views.sales_order_add),
     path('sales_order_edit/<str:id>', views.sales_order_edit, name='sales_order_edit'),
     path('sales_order_delete/<str:id>', views.sales_order_delete),
     path('get_item_types/<int:item_id>/', views.get_item_types, name='get_item_types'),
+    path('get_stock_quantity/<int:item_id>/<int:type_id>/', views.get_stock_quantity, name='get_stock_quantity'),
 
     path('region', views.region),
     path('region_add', views.region_add),
@@ -148,6 +148,9 @@ urlpatterns = [
     path('assign_task_edit/<str:id>', views.assign_task_edit, name='assign_task_edit'),
     path('assign_task_delete/<str:id>', views.assign_task_delete),
     path('update_status', views.update_status),
+    path('add_rating', views.add_rating),
+    path('approve_task/<int:id>/', views.approve_task, name='approve_task'),
+    path('reject_task/<int:id>/', views.reject_task, name='reject_task'),
 
     path('leave', views.leave),
     path('leave_add', views.leave_add),

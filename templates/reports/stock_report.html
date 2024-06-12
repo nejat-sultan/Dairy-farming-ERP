@@ -66,28 +66,30 @@
 
             {% comment %} {% if filters_applied %} {% endcomment %}
             <div class="card-body p-0">
-                <table class="table table-striped projects">
-                    <thead>
-                        <tr>
-                            <th>Stock ID</th>
-                            <th>Item</th>
-                            <th>Quantity</th>
-                            <th>Item Type</th>
-                            <th>Approval Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for entry in stock_data %}
-                        <tr>
-                            <td>{{ entry.stock_id }}</td>
-                            <td>{{ entry.item.name }}</td>
-                            <td>{{ entry.quantity }}</td>
-                            <td>{{ entry.type.item_type }}</td>
-                            <td>{{ entry.approval_status }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Stock ID</th>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Item Type</th>
+                                <th>Approval Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in stock_data %}
+                            <tr>
+                                <td>{{ entry.stock_id }}</td>
+                                <td>{{ entry.item.name }}</td>
+                                <td>{{ entry.quantity }}</td>
+                                <td>{{ entry.type.item_type }}</td>
+                                <td>{{ entry.approval_status }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
             {% comment %} {% endif %} {% endcomment %}
         </div>

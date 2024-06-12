@@ -229,7 +229,7 @@ def logout_user(request):
 def index(request):
 #milk production report
     end_date = now()
-    start_date = end_date - timedelta(days=7)
+    start_date = end_date - timedelta(days=15)
     # Query MilkProduction data for the last week
     milk_data = MilkProduction.objects.filter(milk_time__range=(start_date, end_date)).order_by('milk_time')
     # Process the data into a DataFrame
@@ -2152,12 +2152,35 @@ def payment_method_delete(request, id):
 def customer(request):
     if not request.user.has_perm('erp.view_customer'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = Customer.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
+    
+    customers = Customer.objects.all()
+    phone_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Safaricom')
+    phone_contacts2 = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Ethiotel')
+    email_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Email')
+    
+    customers_with_contacts = customers.prefetch_related(
+        Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=phone_contacts, to_attr='phone_contacts'),
+        Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=phone_contacts2, to_attr='phone_contacts2'),
+        Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=email_contacts, to_attr='email_contacts')
+    )
 
-    context = {"data1":paginated_data,}
+    all_addresses = FarmEntityAddress.objects.all()
+    address_dict = {}
+    for address in all_addresses:
+        if address.farm_entity_id not in address_dict:
+            address_dict[address.farm_entity_id] = address
+
+    address_data = list(address_dict.values())
+
+    paginated_data = paginate_data(request, customers_with_contacts, 10)
+
+    context = {
+        "data1": paginated_data,
+        'address_data': address_data,
+    }
 
     return render(request, 'sales/customer.html', context)
+
 
 @login_required(login_url='login')
 def customer_add(request):
@@ -2167,12 +2190,14 @@ def customer_add(request):
     if request.method == "POST":
         cfirst_name = request.POST.get('first_name')
         cmiddle_name = request.POST.get('middle_name')
-        cperson_type_id = request.POST.get('person_type')
+        # cperson_type_id = request.POST.get('person_type')
+        cperson_type_id = "Customer"
 
         try:
             with transaction.atomic():
                 farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
-                person_type = get_object_or_404(PersonType, pk=cperson_type_id)
+                # person_type = get_object_or_404(PersonType, pk=cperson_type_id)
+                person_type = get_object_or_404(PersonType, person_type=cperson_type_id)
                 person = Person.objects.create(
                     farm_entity=farm_entity,
                     first_name=cfirst_name,
@@ -2315,6 +2340,14 @@ def get_item_types(request, item_id):
     except Exception as e:
         print(f"Error in get_item_types: {e}")
         return JsonResponse({'error': str(e)}, status=500)
+    
+def get_stock_quantity(request, item_id, type_id):
+    try:
+        stock_item = Stock.objects.get(item_id=item_id, type_id=type_id)
+        quantity = stock_item.quantity
+        return JsonResponse({'quantity': quantity})
+    except Stock.DoesNotExist:
+        return JsonResponse({'error': 'Stock not found'}, status=404)
 
 @login_required(login_url='login')
 def sales_order(request):
@@ -2938,14 +2971,65 @@ def update_status(request):
     if request.method == 'POST':
         task_id = request.POST.get('id')
         status = request.POST.get('status')
-        task = TaskAssignment.objects.get(id=task_id)
-        task.status = status
-        task.save()
-        messages.success(request, 'Status updated successfully.')
-        return redirect('/assign_task')  
+        original_status = request.POST.get('original_status')
+
+        try:
+            task = get_object_or_404(TaskAssignment, pk=task_id)
+
+            if status == 'Completed' and original_status == 'Rejected':
+                task.status = 'Reassigned'
+                task.approval_status = None
+            else:
+                task.status = status
+                print(f'Status set to {status}')  
+
+            task.save()
+            messages.success(request, 'Status updated successfully.')
+            return redirect('/assign_task')
+        except TaskAssignment.DoesNotExist:
+            messages.error(request, 'Invalid request method.')
+            return redirect('/assign_task')
+        
     else:
         messages.error(request, 'Invalid request method.')
         return redirect('/assign_task') 
+    
+def add_rating(request):
+     if request.method == 'POST':
+        task_id = request.POST.get('id')
+        rating = request.POST.get('rating')
+
+        if not task_id:
+            messages.error(request, 'Task ID is missing.')
+            return redirect('/assign_task')
+
+        task = get_object_or_404(TaskAssignment, pk=task_id)
+        task.rating = rating   
+        task.save()
+
+        messages.success(request, 'Rate Added successfully.')
+        return redirect('/assign_task')
+    
+def approve_task(request, id):
+    try:
+        task = TaskAssignment.objects.get(pk=id)
+        task.approval_status = 'Approved'
+        task.save()
+        return JsonResponse({'message': 'Task Approved successfully.'})
+    except EmployeeLeave.DoesNotExist:
+        return JsonResponse({'error': 'Task not found.'}, status=404)
+
+
+def reject_task(request, id):
+    try:
+        task = TaskAssignment.objects.get(pk=id)
+        task.approval_status = 'Rejected'
+        # task.status = None
+        task.save()
+        return JsonResponse({'message': 'Task Rejected successfully.'})
+    except EmployeeLeave.DoesNotExist:
+        return JsonResponse({'error': 'Task not found.'}, status=404)
+  
 
 @login_required(login_url='login')
 def job(request):
@@ -3235,15 +3319,39 @@ def supplier_type_delete(request, supplier_type_id):
     messages.error(request, "Supplier Type Deleted Successfully!")
     return redirect("/supplier_type")
 
+from django.db.models import Q, Prefetch
 @login_required(login_url='login')
 def supplier(request):
     if not request.user.has_perm('erp.view_supplier'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = Supplier.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
+    
+    suppliers = Supplier.objects.all()
+    phone_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Safaricom')
+    phone_contacts2 = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Ethiotel')
+    email_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Email')
+    
+    suppliers_with_contacts = suppliers.prefetch_related(
+        Prefetch('farm_entity__farmentitycontact_set', queryset=phone_contacts, to_attr='phone_contacts'),
+        Prefetch('farm_entity__farmentitycontact_set', queryset=phone_contacts2, to_attr='phone_contacts2'),
+        Prefetch('farm_entity__farmentitycontact_set', queryset=email_contacts, to_attr='email_contacts')
+    )
+    paginated_data = paginate_data(request, suppliers_with_contacts, 10)
+    
     type_data = SupplierType.objects.all()
 
-    context = {"data1":paginated_data, 'type_data': type_data,}
+    all_addresses = FarmEntityAddress.objects.all()
+    # Create a dictionary to store the first address for each farm_entity_id
+    address_dict = {}
+    for address in all_addresses:
+        if address.farm_entity_id not in address_dict:
+            address_dict[address.farm_entity_id] = address
+    # Convert the dictionary values to a list
+    address_data = list(address_dict.values())
+    context = {
+        "data1": paginated_data,
+        'type_data': type_data,
+        'address_data': address_data,
+    }
 
     return render(request, 'procurement/supplier.html', context)
 
@@ -3317,7 +3425,7 @@ def supplier_delete(request, farm_entity_id):
 
 @login_required(login_url='login')
 def add_supplier_contact(request):
-    if not request.user.has_perm('erp.add_suppliercontact'):
+    if not request.user.has_perm('erp.add_farmentitycontact'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         csupplier_id = request.POST.get('supplier_id')
@@ -3339,7 +3447,7 @@ def add_supplier_contact(request):
 
 @login_required(login_url='login')
 def add_supplier_address(request):
-    if not request.user.has_perm('erp.add_supplieraddress'):
+    if not request.user.has_perm('erp.add_farmentityaddress'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
         csupplier_id = request.POST.get('supplier_id')
@@ -3430,8 +3538,8 @@ def request_order_add(request):
         
         order.requested_date = datetime.now().date()
         order.request_approved = 'Pending'
-        order.purchase_approved = 'Pending'
-        order.inventory_approved = 'Pending'
+        # order.purchase_approved = 'Pending'
+        # order.inventory_approved = 'Pending'
         order.save()
 
         query = OrderHasItem.objects.create(order=order, item_id=citem_name, type_id=citem_type, item_measurement_id=citem_measurement_id, quantity=cquantity)
@@ -4403,7 +4511,7 @@ def department_delete(request, department_id):
 def employee(request):
     if not request.user.has_perm('erp.view_employee'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = Person.objects.all()
+    data = Employee.objects.all()
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -4458,6 +4566,7 @@ def employee_add(request):
         ccontract_period = request.POST.get('contract_period')
         cjob = request.POST.get('job')
         cdate = datetime.now().date()
+        cstatus = "Active"
 
         errors = []
         if cdob:
@@ -4540,6 +4649,7 @@ def employee_add(request):
             job_id=cjob,
             department_id=cdepartment,
             modified_date=cdate,
+            status=cstatus,
         )
 
         messages.success(request, "Employee Added Successfully!")

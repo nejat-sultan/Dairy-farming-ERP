@@ -43,23 +43,33 @@
         {% endfor %}
 
         <div class="card-body p-0">
-          <table class="table table-striped projects">
+          <div class="table-responsive">
+            <table class="table table-striped projects">
               <thead>
                   <tr>
-                      <th style="width: 20%">
+                      <th style="width: 5%">
                           Id
                       </th> 
-                      <th style="width: 20%">
+                      <th style="width: 10%">
                         Supplier Name
                       </th>
-                      <th style="width: 20%">
+                      <th style="width: 15%">
                         Supplier Type
                       </th>
-                      <th style="width: 20%">
+                      <th style="width: 15%">
                         Account No
                       </th>
+                      <th style="width: 10%">
+                        Phone No
+                      </th>
+                      <th style="width: 15%">
+                        Email
+                      </th>
+                      <th style="width: 15%">
+                        Address
+                      </th>
 
-                      <th style="width: 20%"> Actions </th>
+                      <th style="width: 15%"> Actions </th>
                   </tr>
               </thead>
               <tbody>
@@ -72,7 +82,7 @@
                         {{d.supplier_name}}
                       </td>
                       <td>
-                        {% for type in type_data %}
+                      {% for type in type_data %}
                         {% if type.supplier_type_id == d.supplier_type_id %}
                           {{ type.supplier_type }}
                         {% endif %}
@@ -80,6 +90,26 @@
                       </td>
                       <td>
                         {{d.account_number}}
+                      </td>
+                      <td>
+                        {% if d.farm_entity.phone_contacts %}
+                            {{ d.farm_entity.phone_contacts.0.contact }}
+                        {% endif %}
+                        {% if d.farm_entity.phone_contacts2 %}
+                            {{ d.farm_entity.phone_contacts2.0.contact }}
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if d.farm_entity.email_contacts %}
+                          {{ d.farm_entity.email_contacts.0.contact }}
+                        {% endif %}
+                      </td>
+                      <td>
+                      {% for address in address_data %}
+                        {% if address.farm_entity_id == d.farm_entity_id %}
+                          {{ address.country }} {{ address.region.region }}
+                        {% endif %}
+                      {% endfor %}
                       </td>
                       
                       <td class="project-actions">
@@ -106,7 +136,8 @@
                   </tr>
                   {% endfor %}
               </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
 

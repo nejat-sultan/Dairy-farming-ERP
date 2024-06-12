@@ -38,14 +38,14 @@
               </div>
             </div>
             <div class="card-body">
-              <div class="form-group">
+              {% comment %} <div class="form-group">
                 <label for="inputName">Person Type</label>
                 <select id="inputStatus" name="person_type" class="form-control custom-select">
                   {% for d in data1 %}
                   <option value="{{d.person_type_id}}">{{ d.person_type}}</option>
                   {% endfor %}
                 </select>
-              </div>
+              </div> {% endcomment %}
               <div class="form-group">
                 <label for="inputName">First Name</label>
                 <input type="text" id="inputName" name="first_name" class="form-control" required>

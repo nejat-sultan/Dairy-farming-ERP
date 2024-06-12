@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
 
-
 {% block content %}
 
 <div class="content-wrapper">
@@ -21,7 +20,6 @@
     </div>
   </section>
 
-
   <section class="content">
 
     <div class="card card-solid">
@@ -29,18 +27,18 @@
         <div class="row">
           <div class="col-12 col-sm-6">
             <h3 class="d-inline-block d-sm-none">{{cattle.cattle_name}}</h3>
-              <div class="col-12">
-                {% comment %} <img src="{% static 'dist/img/cattle2.jpg' %}" class="product-image" alt="Product Image"> {% endcomment %} 
-                {% if photos %}
-                    <img src="{{ photos.0.cattle_photo_url }}" alt="{{ photos.0.cattle_photo_description }}" class="img-fluid">
-                {% endif %}
-              </div>
-              <div class="col-12 product-image-thumbs">
-                  {% for photo in photos|slice:"1:" %}
-                      <div class="product-image-thumb"><img src="{{ photo.cattle_photo_url }}" alt="{{ photo.cattle_photo_description }}" class="img-fluid"></div>
-                  {% endfor %}
-              </div>
-
+            <div class="col-12">
+              {% if photos %}
+                <img src="{{ photos.0.cattle_photo_url }}" alt="{{ photos.0.cattle_photo_description }}" class="img-fluid">
+              {% endif %}
+            </div>
+            <div class="col-12 product-image-thumbs d-flex justify-content-center">
+              {% for photo in photos|slice:"1:" %}
+                <div class="product-image-thumb">
+                  <img src="{{ photo.cattle_photo_url }}" alt="{{ photo.cattle_photo_description }}" class="img-fluid">
+                </div>
+              {% endfor %}
+            </div>
           </div>
           <div class="col-12 col-sm-6">
             <h3 class="my-3">{{cattle.cattle_name}}</h3>
@@ -51,19 +49,17 @@
               <small><strong>Date of Birth:</strong> {{cattle.cattle_date_of_birth}} </small>
             </h4>
             {% for breed in breeds %}
-            <h4 class="mt-0">
-              <small><strong>Breed:</strong> {{breed.cattle_breed_type}} </small>
-            </h4>
+              <h4 class="mt-0">
+                <small><strong>Breed:</strong> {{breed.cattle_breed_type}} </small>
+              </h4>
             {% endfor %}
 
             {% if statuses %}
               <h4 class="mt-0">
-                  <small><strong>Pregnancy Status:</strong> {{ statuses.pregnancy_status.pregnancy_status }} </small>
+                <small><strong>Pregnancy Status:</strong> {{ statuses.pregnancy_status.pregnancy_status }} </small>
               </h4>
             {% endif %}
-            {% comment %} <p>Raw denim you probably haven't heard of them jean shorts Austin. Nesciunt tofu stumptown aliqua butcher retro keffiyeh dreamcatcher synth. Cosby sweater eu banh mi, qui irure terr.</p> {% endcomment %}
             <hr>
-
             <div class="bg-gray py-2 px-3 mt-4">
               <h2 class="mb-0">
                 Estimated Price: {{cattle.estimated_price}}
@@ -80,120 +76,127 @@
               <a style="color: #007f5c;" class="nav-item nav-link" id="feed-tab" data-toggle="tab" href="#feed" role="tab" aria-controls="feed" aria-selected="false">Feed</a>
             </div>
           </nav>
-          <div class="tab-content p-3" id="nav-tabContent">
-            <div class="tab-pane fade show active" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab"> 
+          <div class="tab-content p-3 w-100" id="nav-tabContent">
+            <div class="tab-pane fade show active overflow-auto" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab"> 
               {% if productions %}
               <h4 class="mt-0">Latest Milk Productions</h4>
-              <table class="table">
+              <div class="table-responsive">
+                <table class="table table-bordered">
                   <thead>
-                      <tr>
-                          <th>Amount (ltr)</th>
-                          <th>Milk Time</th>
-                          <th>Fat Content</th>
-                          <th>Protein Content</th>
-                          <th>Somatic Cell Count</th>
-                          <th>Duration (min)</th>
-                      </tr>
+                    <tr>
+                      <th>Amount (ltr)</th>
+                      <th>Milk Time</th>
+                      <th>Fat Content</th>
+                      <th>Protein Content</th>
+                      <th>Somatic Cell Count</th>
+                      <th>Duration (min)</th>
+                    </tr>
                   </thead>
                   <tbody>
-                      {% for production in productions %}
-                          <tr>
-                              <td>{{ production.amount_in_liter }}</td>
-                              <td>{{ production.milk_time }}</td>
-                              <td>{{ production.fat_content }}</td>
-                              <td>{{ production.protein_content }}</td>
-                              <td>{{ production.somatic_cell_count }}</td>
-                              <td>{{ production.duration_in_min }}</td>
-                          </tr>
-                      {% endfor %}
+                    {% for production in productions %}
+                      <tr>
+                        <td>{{ production.amount_in_liter }}</td>
+                        <td>{{ production.milk_time }}</td>
+                        <td>{{ production.fat_content }}</td>
+                        <td>{{ production.protein_content }}</td>
+                        <td>{{ production.somatic_cell_count }}</td>
+                        <td>{{ production.duration_in_min }}</td>
+                      </tr>
+                    {% endfor %}
                   </tbody>
-              </table>
+                </table>
+              </div>
               {% endif %}
             </div>
-            <div class="tab-pane fade" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab"> 
+            <div class="tab-pane fade overflow-auto" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab"> 
               {% if vaccinations %}
                 <h4 class="mt-0">Last 5 Vaccinations</h4>
-                <table class="table">
+                <div class="table-responsive">
+                  <table class="table table-bordered">
                     <thead>
-                        <tr>
-                            <th>Vaccine Name</th>
-                            <th>Vaccination Given Time</th>
-                        </tr>
+                      <tr>
+                        <th>Vaccine Name</th>
+                        <th>Vaccination Given Time</th>
+                      </tr>
                     </thead>
                     <tbody>
-                        {% for vaccination in vaccinations %}
-                            <tr>
-                                <td>{{ vaccination.vaccine.vaccine_name }}</td>
-                                <td>{{ vaccination.cattle_given_time }}</td>
-                            </tr>
-                        {% endfor %}
+                      {% for vaccination in vaccinations %}
+                        <tr>
+                          <td>{{ vaccination.vaccine.vaccine_name }}</td>
+                          <td>{{ vaccination.cattle_given_time }}</td>
+                        </tr>
+                      {% endfor %}
                     </tbody>
-                </table>
-              {% endif %}
-            </div>
-            <div class="tab-pane fade" id="health" role="tabpanel" aria-labelledby="health-tab"> 
-              {% if healths %}
-                  <h4 class="mt-0">Last 5 Health Checkups</h4>
-                  <table class="table">
-                      <thead>
-                          <tr>
-                              <th>Findings</th>
-                              <th>Symptoms</th>
-                              <th>Medicine</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          {% for health in healths %}
-                              <tr>
-                                  <td>{{ health.findings }}</td>
-                                  <td>
-                                    {% if health.healthcheckupsymptoms_set.all %}
-                                        {% for symptom_entry in health.healthcheckupsymptoms_set.all %}
-                                            {{ symptom_entry.symptom }},
-                                        {% endfor %}
-                                    {% else %}
-                                        N/A
-                                    {% endif %}
-                                </td>
-                                  <td>
-                                      {% if health.cattlehealthcheckuphasmedicine_set.all %}
-                                          {% for medicine_entry in health.cattlehealthcheckuphasmedicine_set.all %}
-                                              {{ medicine_entry.medicine.name }},
-                                          {% endfor %}
-                                      {% else %}
-                                          N/A
-                                      {% endif %}
-                                  </td>
-                              </tr>
-                          {% endfor %}
-                      </tbody>
                   </table>
+                </div>
               {% endif %}
             </div>
-            <div class="tab-pane fade" id="feed" role="tabpanel" aria-labelledby="feed-tab"> 
-              {% if vaccinations %}
-                <h4 class="mt-0">Last 5 Feed Informations</h4>
-                <table class="table">
+            <div class="tab-pane fade overflow-auto" id="health" role="tabpanel" aria-labelledby="health-tab"> 
+              {% if healths %}
+                <h4 class="mt-0">Last 5 Health Checkups</h4>
+                <div class="table-responsive">
+                  <table class="table table-bordered">
                     <thead>
-                        <tr>
-                            <th>Feed Formulation</th>
-                            <th>Feed Time</th>
-                            <th>Consumption Status</th>
-                        </tr>
+                      <tr>
+                        <th>Findings</th>
+                        <th>Symptoms</th>
+                        <th>Medicine</th>
+                      </tr>
                     </thead>
                     <tbody>
-                        {% for feed in feeds %}
-                            <tr>
-                                <td>{{ feed.feed_formulation.name }}</td>
-                                <td>{{ feed.feed_time }}</td>
-                                <td>{{ feed.consumption_status }}</td>
-                            </tr>
-                        {% endfor %}
+                      {% for health in healths %}
+                        <tr>
+                          <td>{{ health.findings }}</td>
+                          <td>
+                            {% if health.healthcheckupsymptoms_set.all %}
+                              {% for symptom_entry in health.healthcheckupsymptoms_set.all %}
+                                {{ symptom_entry.symptom }},
+                              {% endfor %}
+                            {% else %}
+                              N/A
+                            {% endif %}
+                          </td>
+                          <td>
+                            {% if health.cattlehealthcheckuphasmedicine_set.all %}
+                              {% for medicine_entry in health.cattlehealthcheckuphasmedicine_set.all %}
+                                {{ medicine_entry.medicine.name }},
+                              {% endfor %}
+                            {% else %}
+                              N/A
+                            {% endif %}
+                          </td>
+                        </tr>
+                      {% endfor %}
                     </tbody>
-                </table>
+                  </table>
+                </div>
               {% endif %}
             </div>
-
+            <div class="tab-pane fade overflow-auto" id="feed" role="tabpanel" aria-labelledby="feed-tab"> 
+              {% if feeds %}
+                <h4 class="mt-0">Last 5 Feed Informations</h4>
+                <div class="table-responsive">
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Feed Formulation</th>
+                        <th>Feed Time</th>
+                        <th>Consumption Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for feed in feeds %}
+                        <tr>
+                          <td>{{ feed.feed_formulation.name }}</td>
+                          <td>{{ feed.feed_time }}</td>
+                          <td>{{ feed.consumption_status }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% endif %}
+            </div>
           </div>
         </div> 
 
@@ -209,5 +212,4 @@
   </section>
 </div>
 
-  {% endblock %}
-  
+{% endblock %}

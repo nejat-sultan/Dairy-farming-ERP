@@ -179,6 +179,8 @@ class TaskAssignment(models.Model):
     assigned_to = models.ForeignKey(Employee, on_delete=models.CASCADE)
     status = models.CharField(max_length=45, null=True)
     due_time = models.DateTimeField(null=True)
+    approval_status = models.CharField(max_length=45, null=True)
+    rating = models.FloatField(null=True)
 
     class Meta:
         db_table = 'task_assignment'
@@ -552,6 +554,38 @@ class SalesOrder(models.Model):
         db_table = 'sales_order'
 
 
+
+class Farm(models.Model):
+    id = models.AutoField(primary_key=True)
+    full_name = models.CharField(max_length=300, null=True, blank=True)
+    nick_name = models.CharField(max_length=45, null=True, blank=True)
+    modified_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'farm'
+
+class FarmAddress(models.Model):
+    id = models.AutoField(primary_key=True)
+    country = models.CharField(max_length=100, null=True,)
+    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    zone_subcity = models.CharField(max_length=100, null=True,)
+    woreda = models.CharField(max_length=100, null=True,)
+    kebele = models.CharField(max_length=45, null=True,)
+    house_number = models.CharField(max_length=45, null=True,)
+    street_name = models.CharField(max_length=250, null=True,)
+    farm = models.ForeignKey(Farm, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'farm_address'
+
+class FarmContacts(models.Model):
+    id = models.AutoField(primary_key=True)
+    contact = models.CharField(max_length=100)
+    contact_type = models.ForeignKey(ContactType, on_delete=models.CASCADE, null=True, blank=True)
+    farm = models.ForeignKey(Farm, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'farm_contacts'
 
 
 

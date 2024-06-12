@@ -43,17 +43,27 @@
         {% endfor %}
 
         <div class="card-body p-0">
-          <table class="table table-striped projects">
+          <div class="table-responsive">
+            <table class="table table-striped projects">
               <thead>
                   <tr>
-                      <th style="width: 20%">
+                      <th style="width: 5%">
                           Id
                       </th> 
-                      <th style="width: 30%">
+                      <th style="width: 15%">
                         First Name
                       </th>
-                      <th style="width: 30%">
+                      <th style="width: 15%">
                         Middle Name
+                      </th>
+                      <th style="width: 15%">
+                        Phone No
+                      </th>
+                      <th style="width: 15%">
+                        Email
+                      </th>
+                      <th style="width: 15%">
+                        Address
                       </th>
                       <th style="width: 20%"> Actions </th>
                   </tr>
@@ -70,6 +80,27 @@
                       <td>
                         {{ d.person_farm_entity.middle_name }}
                       </td>
+                      <td>
+                        {% if d.phone_contacts %}
+                            {{ d.phone_contacts.0.contact }}
+                        {% endif %} 
+                        {% if d.phone_contacts2 %}
+                          {{ d.phone_contacts2.0.contact }}
+                        {% endif %}
+                    </td>
+                  
+                    <td>
+                        {% if d.email_contacts %}
+                            {{ d.email_contacts.0.contact }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for address in address_data %}
+                            {% if address.farm_entity_id == d.person_farm_entity.farm_entity_id %}
+                            {{ address.country }} {{ address.region.region }}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
                       <td class="project-actions">
                           <a class="btn btn-info btn-sm" href="/customer_edit/{{d.customer_id}}">
                               <i class="fas fa-pencil-alt">
@@ -92,7 +123,8 @@
                   </tr>
                   {% endfor %}
               </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
 

@@ -48,28 +48,32 @@
         {% endfor %}
         
         <div class="card-body p-0">
-          <table class="table table-striped projects">
+          <div class="table-responsive">
+            <table class="table table-striped projects">
               <thead>
                   <tr>
-                      <th style="width: 10%">
+                      <th style="width: 5%">
                           Id
                       </th>
-                      <th style="width: 15%">
+                      <th style="width: 10%">
                           Task
                       </th>
                       <th style="width: 10%">
                         Shift
                       </th>
-                      <th style="width: 15%">
+                      <th style="width: 10%">
                         Employee
                       </th>
                       <th style="width: 15%">
                           Due Time
                       </th>
-                      <th style="width: 15%">
+                      <th style="width: 10%">
                           Status
                       </th>
-                      <th style="width: 20%"> Actions </th>
+                      <th style="width: 13%">
+                        Approval Status
+                    </th>
+                      <th style="width: 27%"> Actions </th>
                   </tr> 
               </thead>
               <tbody>
@@ -103,24 +107,50 @@
                         {{d.due_time}}
                       </td>
                       <td>
-                        <span class="badge {% if d.status == 'Completed' %}badge-success{% elif d.status == 'On Progress' %}badge-warning {% endif %}">
+                        <span class="badge {% if d.status == 'Completed' or d.status == 'Reassigned'  %}badge-success{% elif d.status == 'On Progress' %}badge-warning {% endif %}">
                           {{ d.status }}
+                        </span>
+                      </td>
+                      <td>
+                        <span class="badge {% if d.approval_status == 'Approved' %}badge-success{% elif d.approval_status == 'Rejected' %}badge-danger {% endif %}">
+                          {{ d.approval_status }}
                         </span>
                       </td>
 
                       <td class="project-actions">
                         {% if request.user|has_permission:"erp.change_taskstatus" %} 
-                        <a class="btn btn-info btn-sm" href="#" onclick="openEditStatusModal('{{ d.id }}')" data-toggle="modal" data-target="#editStatusModal">
+                        <a class="btn btn-info btn-sm" href="#" onclick="openEditStatusModal('{{ d.id }}', '{{ d.approval_status }}')" data-toggle="modal" data-target="#editStatusModal">
                           <i class="fas fa-pencil-alt"></i> Update Status
                         </a>
                         {% endif %}
                         {% if request.user|has_permission:"erp.change_taskassignment" %} 
-                        <a class="btn btn-info btn-sm" href="/assign_task_edit/{{d.id}}">
-                            <i class="fas fa-pencil-alt"></i>
+                        <a class="btn btn-info btn-sm" href="#" onclick="addRatingModal('{{ d.id }}')" data-toggle="modal" data-target="#addRatingModal">
+                          Rate
                         </a>
-                        <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.id }}')">
-                            <i class="fas fa-trash"></i>
-                        </a>
+                        {% endif %}
+                        {% if request.user|has_permission:"erp.change_taskassignment" %} 
+                          {% if d.status == 'Completed' or d.status == 'Reassigned'%}
+                            {% if d.approval_status == 'Approved' %}
+                              <button class="btn btn-danger btn-sm" onclick="confirmReject({{ d.id }})">
+                                Reject
+                              </button>
+                            {% else %}
+                              <button class="btn btn-success btn-sm" onclick="confirmApprove({{ d.id }})">
+                                  Approve
+                              </button>
+                              <button class="btn btn-danger btn-sm" onclick="confirmReject({{ d.id }})">
+                                  Reject
+                              </button>
+                            {% endif %}
+                          {% endif %}
+                        {% endif %}
+                        {% if request.user|has_permission:"erp.change_taskassignment" %} 
+                          <a class="btn btn-info btn-sm" href="/assign_task_edit/{{d.id}}">
+                              <i class="fas fa-pencil-alt"></i>
+                          </a>
+                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.id }}')">
+                              <i class="fas fa-trash"></i>
+                          </a>
                         {% endif %}
                         <script>
                           function confirmDelete(cattleId) {
@@ -136,7 +166,8 @@
                   {% endfor %}
               </tbody>
 
-          </table>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -157,6 +188,53 @@
       </div>
 
     </section>
+
+    <script>
+      function confirmApprove(Id) {
+        if (confirm("Are you sure you want to approve this task?")) {
+          approveLeave(Id);
+        }
+      }
+    
+      function confirmReject(Id) {
+          if (confirm("Are you sure you want to reject this task?")) {
+            rejectLeave(Id);
+          }
+      }
+    
+      function approveLeave(Id) {
+        $.ajax({
+            type: "POST",
+            url: "/approve_task/" + Id + "/",
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            },
+            success: function (response) {
+                location.reload(); 
+            },
+            error: function (xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText); 
+            }
+        });
+    }
+    
+    function rejectLeave(Id) {
+        $.ajax({
+            type: "POST",
+            url: "/reject_task/" + Id + "/", 
+            data: {
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            },
+            success: function (response) {
+                location.reload(); 
+            },
+            error: function (xhr, errmsg, err) {
+                console.log(xhr.status + ": " + xhr.responseText); 
+            }
+        });
+    }
+    </script>
+
   </div>
 
   <div class="modal fade" id="editStatusModal" tabindex="-1" aria-labelledby="editStatusModalLabel" aria-hidden="true">
@@ -172,6 +250,7 @@
           <form id="editStatusForm" method="POST" action="/update_status" enctype="multipart/form-data">
             {% csrf_token %}
             <input type="hidden" name="id" id="id">
+            <input type="hidden" name="original_status" id="original_status"> 
             
             <div class="form-group">
               <label for="status">Status</label>
@@ -188,9 +267,41 @@
   </div>
 
   <script>
-    function openEditStatusModal(taskId) {
-      document.getElementById('id').value = taskId;
-    }
+    function openEditStatusModal(taskId, originalStatus) {
+        document.getElementById('id').value = taskId;
+        document.getElementById('original_status').value = originalStatus;
+        console.log('Original Status:', originalStatus); 
+      }
   </script>
+
+  <div class="modal fade" id="addRatingModal" tabindex="-1" aria-labelledby="addRatingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRatingModalLabel">Add Rating</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addRatingForm" method="POST" action="/add_rating" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" id="task_id">
+                    <div class="form-group">
+                        <label for="rating">Rating</label>
+                        <input type="number" class="form-control" id="rating" name="rating" min="0" max="10" step="1">
+                    </div>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;"> Rate</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function addRatingModal(Id) {
+        document.getElementById('task_id').value = Id;
+    }
+</script>
 
   {% endblock %}
