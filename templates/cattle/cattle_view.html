@@ -45,6 +45,16 @@
             <h4 class="mt-0">
               <small><strong>Gender:</strong> {{cattle.cattle_gender}} </small>
             </h4>
+            {% if cattle.father_id %}
+            <h4 class="mt-0">
+              <small><strong>Father:</strong> {{cattle.father.cattle_name}} </small>
+            </h4>
+            {% endif %}
+            {% if cattle.mother_id %}
+            <h4 class="mt-0">
+              <small><strong>Mother:</strong> {{cattle.mother.cattle_name}} </small>
+            </h4>
+            {% endif %}
             <h4 class="mt-0">
               <small><strong>Date of Birth:</strong> {{cattle.cattle_date_of_birth}} </small>
             </h4>

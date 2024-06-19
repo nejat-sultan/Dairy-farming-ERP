@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load custom_filters %}
 
 {% block content %}
 
@@ -8,12 +8,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Cattle Breed</h1>
+            <h1>Transaction</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="">Home</a></li>
-              <li class="breadcrumb-item active">Cattle Breed</li>
+              <li class="breadcrumb-item active">Transaction</li>
             </ol>
           </div>
         </div>
@@ -23,10 +23,10 @@
     <section class="content">
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Manage Cattle Breed</h3>
+          <h3 class="card-title">Manage Transactions</h3>
 
           <div class="card-tools">
-            <a class="btn" href="cattle_breed_add" style="background-color: #007f5c;color: #fff;">
+            <a class="btn" href="transaction_add" style="background-color: #007f5c;color: #fff;">
               <i class="fas fa-plus"></i>
               Add New
             </a>
@@ -48,49 +48,66 @@
               <thead>
                   <tr>
                       <th style="width: 10%">
-                          Id
-                      </th> 
-                      <th style="width: 30%">
-                        Breed Type
+                          id
                       </th>
-                      <th style="width: 30%">
-                        Breed Description
+                      <th style="width: 15%">
+                        Transaction Date
                       </th>
-                    
-                      <th style="width: 30%"> Actions </th>
+                      <th style="width: 10%">
+                        Amount
+                      </th>
+                      <th style="width: 15%">
+                        Transaction Type
+                      </th>
+                      <th style="width: 15%">
+                        Status
+                      </th>
+                      <th style="width: 15%">
+                        Reason
+                      </th>
+                      
+                      <th style="width: 20%"> Actions </th>
                   </tr>
               </thead>
               <tbody>
-                {% for d in data1 %}
+                {% for d in data %}
                   <tr>
                       <td>
-                        {{d.cattle_breed_id}}
+                        {{d.id}}
                       </td>
                       <td>
-                        {{d.cattle_breed_type}}
+                        {{d.transaction_date}}
                       </td>
                       <td>
-                        {{d.cattle_breed_description}}
+                        {{d.amount}}
+                      </td>
+                      <td>
+                        {{d.transaction_type}}
+                      </td>
+                      <td>
+                        {{d.transaction_status}}
+                      </td>
+                      <td>
+                        {{d.reason}}
                       </td>
 
                       <td class="project-actions">
-                          <a class="btn btn-info btn-sm" href="/cattle_breed_edit/{{d.cattle_breed_id}}">
-                              <i class="fas fa-pencil-alt">
-                              </i>
-                          </a>
-                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.cattle_breed_id }}')">
-                            <i class="fas fa-trash">
-                            </i>
-                          </a>
+                        <a class="btn btn-info btn-sm" href="/transaction_edit/{{d.id}}" title="Edit">
+                            <i class="fas fa-pencil-alt"></i>
+                        </a>
+                        <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.id }}')" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </a>
 
                           <script>
                             function confirmDelete(cattleId) {
-                                if (confirm("Are you sure you want to delete this Cattle Breed?")) {
+                                if (confirm("Are you sure you want to delete this transaction?")) {
                                     // If user confirms, redirect to the delete URL
-                                    window.location.href = "/cattle_breed_delete/" + cattleId;
+                                    window.location.href = "/transaction_delete/" + cattleId;
                                 }
                             }
                           </script>
+                        
                       </td>
                   </tr>
                   {% endfor %}
@@ -102,19 +119,19 @@
 
       <div class="pagination">
         <span class="step-links">
-            {% if data1.has_previous %}
-                <a href="?page={{ data1.previous_page_number }}">Previous</a>
+            {% if data.has_previous %}
+                <a href="?page={{ data.previous_page_number }}">Previous</a>
             {% endif %}
 
             <span class="current">
-                Page {{ data1.number }} of {{ data1.paginator.num_pages }}.
+                Page {{ data.number }} of {{ data.paginator.num_pages }}.
             </span>
 
-            {% if data1.has_next %}
-                <a href="?page={{ data1.next_page_number }}">Next</a>
+            {% if data.has_next %}
+                <a href="?page={{ data.next_page_number }}">Next</a>
             {% endif %}
         </span>
-      </div>
+    </div>
 
     </section>
   </div>

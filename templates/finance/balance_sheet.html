@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Balance Sheet</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="">Home</a></li>
+                        <li class="breadcrumb-item active">Balance Sheet</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Balance Sheet Overview</h3>
+                        </div>
+                        <div class="card-body">
+                            <table id="example1" class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Current Year</th>
+                                        <th>Past Year</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="3"><strong>Assets</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Cattle</td>
+                                        <td>{{ current_year.assets.cattle | floatformat:2 }}</td>
+                                        <td>{{ past_year.assets.cattle | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Stock</td>
+                                        <td>{{ current_year.assets.stock | floatformat:2 }}</td>
+                                        <td>{{ past_year.assets.stock | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Other Incomes</td>
+                                        <td>{{ current_year.assets.other_income | floatformat:2 }}</td>
+                                        <td>{{ past_year.assets.other_income | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Accounts Receivable</td>
+                                        <td>{{ current_year.assets.accounts_receivable }}</td>
+                                        <td>{{ past_year.assets.accounts_receivable }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Assets</strong></td>
+                                        <td>{{ current_year.total_assets | floatformat:2 }}</td>
+                                        <td>{{ past_year.total_assets | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3"><strong>Liabilities</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Other Expenses</td>
+                                        <td>{{ current_year.liabilities.other_expense | floatformat:2 }}</td>
+                                        <td>{{ past_year.liabilities.other_expense | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Accounts Payable</td>
+                                        <td>{{ current_year.liabilities.accounts_payable }}</td>
+                                        <td>{{ past_year.liabilities.accounts_payable }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Liabilities</strong></td>
+                                        <td>{{ current_year.total_liabilities | floatformat:2 }}</td>
+                                        <td>{{ past_year.total_liabilities | floatformat:2 }}</td>
+                                    </tr>
+                                    {% comment %} <tr>
+                                        <td colspan="3"><strong>Equity</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total Equity</td>
+                                        <td>{{ current_year.equity }}</td>
+                                        <td>{{ past_year.equity }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3"><strong>Income</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total Income</td>
+                                        <td>{{ current_year.income }}</td>
+                                        <td>{{ past_year.income }}</td>
+                                    </tr> 
+                                    <tr>
+                                        <td colspan="3"><strong>Total</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Assets</td>
+                                        <td>{{ current_year.total_assets }}</td>
+                                        <td>{{ past_year.total_assets }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Liabilities + Equity</td>
+                                        <td>{{ current_year.total_liabilities_equity }}</td>
+                                        <td>{{ past_year.total_liabilities_equity }}</td>
+                                    </tr>
+                                    {% endcomment %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row no-print">
+                <div class="col-12">
+                  <a href="#" id="printButton" class="btn btn-default"><i class="fas fa-print"></i> Print</a>
+                </div>
+            </div>
+            
+        </div>
+    </section>
+</div>
+
+<script>
+    window.addEventListener("load", function() {
+        var printButton = document.getElementById("printButton");
+        printButton.addEventListener("click", function(event) {
+        event.preventDefault();
+        window.print();
+    });
+    });
+</script>
+
+{% endblock %}
+

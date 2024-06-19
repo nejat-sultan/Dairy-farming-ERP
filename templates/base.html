@@ -29,15 +29,13 @@
       <li class="nav-item">
         <a class="nav-link" data-widget="pushmenu" href="" role="button"><i class="fas fa-bars"></i></a>
       </li>
+      {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
       <li class="nav-item d-none d-sm-inline-block">
-        <a href="" class="nav-link">Home</a>
+        <a href="../../farm" class="nav-link">Farm</a>
       </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="" class="nav-link">Contact</a>
-      </li>
+      {% endif %} 
     </ul>
 
-    <!-- Right navbar links -->
     <ul class="navbar-nav ml-auto">
       <!-- Navbar Search -->
       <li class="nav-item">
@@ -210,7 +208,7 @@
           <img src="{% static 'dist/img/avatar4.png' %}" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-          <a href="" class="d-block">{{request.user}}</a>
+          <a href="../../profile" class="d-block">{{request.user}}</a>
         </div>
       </div>
 
@@ -416,7 +414,7 @@
               {% endif %}
               {% if request.user|has_permission:"erp.view_salesorder" %}
               <li class="nav-item">
-                <a href="sales_order" class="nav-link">
+                <a href="../../sales_order" class="nav-link">
                   <i class="nav-icon fas fa-lightbulb"></i>
                   <p>
                     Manage Sales
@@ -534,14 +532,33 @@
               <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-dollar-sign"></i>
                 <p>Finance Management</p>
+                  <i class="fas fa-angle-left right"></i>
               </a>
+              <ul class="nav nav-treeview pl-3">
+                <li class="nav-item">
+                  <a href="../../transaction" class="nav-link">
+                    <i class="nav-icon fas fa-table"></i>
+                    <p>
+                      Transactions
+                    </p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="../../balance_sheet" class="nav-link">
+                    <i class="nav-icon fas fa-table"></i>
+                    <p>
+                      Balance Sheet
+                    </p>
+                  </a>
+                </li>
+              </ul>
             </li>
           
             <li class="nav-header">Report & Analytics</li>
             <li class="nav-item">
               <a href="#" class="nav-link">
                 <i class="nav-icon 	fas fa-poll"></i>
-                <p>Report & Analytics
+                <p>Reports
                   <i class="fas fa-angle-left right"></i>
                 </p>
               </a>
@@ -555,6 +572,14 @@
                   </a>
                 </li>
                 <li class="nav-item">
+                  <a href="../../total_milk_production_report/" class="nav-link">
+                    <i class="nav-icon fas fa-table"></i>
+                    <p>
+                      Total Milk report
+                    </p>
+                  </a>
+                </li>
+                <li class="nav-item">
                   <a href="../../stock_report/" class="nav-link">
                     <i class="nav-icon fas fa-table"></i>
                     <p>
@@ -562,11 +587,27 @@
                     </p>
                   </a>
                 </li>
+                <li class="nav-item">
+                  <a href="../../procurement_report/" class="nav-link">
+                    <i class="nav-icon fas fa-table"></i>
+                    <p>
+                      Procurement report
+                    </p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="../../sales_report/" class="nav-link">
+                    <i class="nav-icon fas fa-table"></i>
+                    <p>
+                      Sales report
+                    </p>
+                  </a>
+                </li>
               </ul>
             </li>
             {% endif %}
 
-            {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" or request.user|has_permission:"erp.view_persontype" or request.user|has_permission:"erp.view_persontitle" or request.user|has_permission:"erp.view_contacttype" or request.user|has_permission:"erp.view_region" or request.user|has_permission:"erp.view_guaranteetype"  or request.user|has_permission:"erp.view_job" or request.user|has_permission:"erp.view_task" or request.user|has_permission:"erp.view_suppliertype" or request.user|has_permission:"erp.view_itemtype" or request.user|has_permission:"erp.view_item" or request.user|has_permission:"erp.view_itemmeasurement" or request.user|has_permission:"erp.view_saletype" %}
+            {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" or request.user|has_permission:"erp.view_persontype" or request.user|has_permission:"erp.view_persontitle" or request.user|has_permission:"erp.view_contacttype" or request.user|has_permission:"erp.view_region" or request.user|has_permission:"erp.view_guaranteetype"  or request.user|has_permission:"erp.view_job" or request.user|has_permission:"erp.view_task" or request.user|has_permission:"erp.view_suppliertype" or request.user|has_permission:"erp.view_itemtype" or request.user|has_permission:"erp.view_item" or request.user|has_permission:"erp.view_itemmeasurement" or request.user|has_permission:"erp.view_saletype" or request.user|has_permission:"auth.view_changepassword" %}
             <li class="nav-header">Settings
             {% if request.user|has_permission:"auth.view_user"  %} 
             <li class="nav-item">
@@ -595,6 +636,7 @@
             {% endif %}
 
             <li class="nav-item">
+              {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" or request.user|has_permission:"erp.view_persontype" or request.user|has_permission:"erp.view_persontitle" or request.user|has_permission:"erp.view_contacttype" or request.user|has_permission:"erp.view_region" or request.user|has_permission:"erp.view_guaranteetype"  or request.user|has_permission:"erp.view_job" or request.user|has_permission:"erp.view_task" or request.user|has_permission:"erp.view_suppliertype" or request.user|has_permission:"erp.view_itemtype" or request.user|has_permission:"erp.view_item" or request.user|has_permission:"erp.view_itemmeasurement" or request.user|has_permission:"erp.view_saletype" or request.user|has_permission:"erp.view_paymentmethod" %}
               <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-archive"></i>
                 <p>
@@ -602,6 +644,7 @@
                   <i class="fas fa-angle-left right"></i>
                 </p>
               </a> 
+              {% endif %}
               <ul class="nav nav-treeview">
                 <li class="nav-item">
                   {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" %}
@@ -797,6 +840,13 @@
               </ul>
             </li>
             {% endif %}
+            <li class="nav-item">
+              <a href="../../change_password" class="nav-link">
+                <i class="fas fa-lock nav-icon"></i>
+                <p>Change Password</p>
+              </a>
+            </li>
+
           </li>
         </ul>
       </nav>
@@ -813,7 +863,7 @@
   </div>
 
   <footer class="main-footer">
-    <strong>Copyright &copy; 2014-2024 <a href="#">BiloFarm</a>.</strong> All rights reserved.
+    <strong>Copyright &copy; 2014-2024 <a href="">BiloFarm</a>.</strong> All rights reserved.
   </footer>
 
 

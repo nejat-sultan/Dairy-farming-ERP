@@ -7,12 +7,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Stock Report</h1>
+                    <h1>Sales Report</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="">Home</a></li>
-                        <li class="breadcrumb-item active">Stock Report</li>
+                        <li class="breadcrumb-item active">Sales Report</li>
                     </ol>
                 </div>
             </div>
@@ -22,7 +22,7 @@
     <section class="content">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Stock</h3>
+                <h3 class="card-title">Sales</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                         <i class="fas fa-minus"></i>
@@ -33,29 +33,16 @@
             <div class="card-body">
                 <form method="get" id="stock-form">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="start_date">Start Date:</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="end_date">End Date:</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="item">Item:</label>
-                                <select class="form-control" id="item" name="item">
-                                    <option value="">All</option>
-                                    {% for item in item_list %}
-                                    <option value="{{ item.item_id }}" {% if request.GET.item == item.item_id|stringformat:"s" %}selected{% endif %}>
-                                        {{ item.name }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
                             </div>
                         </div>
                     </div>
@@ -64,51 +51,54 @@
                 </form>
             </div>
 
-            {% comment %} {% if filters_applied %} {% endcomment %}
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>Stock ID</th>
+                                <th>Sales ID</th>
+                                <th>Order Date</th>
                                 <th>Item</th>
                                 <th>Quantity</th>
-                                <th>Item Type</th>
-                                <th>Approval Status</th>
+                                <th>Customer</th>
+                                <th>Unit Price</th>
+                                <th>Payment Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for entry in stock_data %}
+                            {% for entry in sales_data %}
                             <tr>
-                                <td>{{ entry.stock_id }}</td>
-                                <td>{{ entry.item.name }}</td>
+                                <td>{{ entry.id }}</td>
+                                <td>{{ entry.order_date }}</td>
+                                <td>{{ entry.stock.item.name }}</td>
                                 <td>{{ entry.quantity }}</td>
-                                <td>{{ entry.type.item_type }}</td>
-                                <td>{{ entry.approval_status }}</td>
+                                <td>{{ entry.customer.person_farm_entity.first_name}} {{ entry.customer.person_farm_entity.middle_name}}</td>
+                                <td>{{ entry.unit_price }}</td>
+                                <td>{{ entry.payment_status }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-            {% comment %} {% endif %} {% endcomment %}
         </div>
 
         <div class="pagination">
             <span class="step-links">
-                {% if stock_data.has_previous %}
-                    <a href="?page={{ stock_data.previous_page_number }}">Previous</a>
+                {% if sales_data.has_previous %}
+                    <a href="?page={{ sales_data.previous_page_number }}">Previous</a>
                 {% endif %}
 
                 <span class="current">
-                    Page {{ stock_data.number }} of {{ stock_data.paginator.num_pages }}.
+                    Page {{ sales_data.number }} of {{ sales_data.paginator.num_pages }}.
                 </span>
 
-                {% if stock_data.has_next %}
-                    <a href="?page={{ stock_data.next_page_number }}">Next</a>
+                {% if sales_data.has_next %}
+                    <a href="?page={{ sales_data.next_page_number }}">Next</a>
                 {% endif %}
             </span>
         </div>
+
 
     </section>
 </div>

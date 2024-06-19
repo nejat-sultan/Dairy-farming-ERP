@@ -16,6 +16,8 @@ urlpatterns = [
     path('edit_group/<int:id>/', views.edit_group, name='edit_group'),
     path('group_delete/<str:id>', views.group_delete),
     path('assign_users_to_group/<str:user_id>/', views.assign_users_to_group, name='assign_users_to_group'),
+    path('profile', views.profile, name='profile'),
+    path('change_password', views.change_password, name='change_password'),
 
     path('cattle', views.cattle),
     path('cattle_add', views.cattle_add),
@@ -204,6 +206,7 @@ urlpatterns = [
     path('request_order_delete/<str:order_id>', views.request_order_delete),
     path('approve_request/<int:order_id>/', views.approve_request, name='approve_request'),
     path('reject_request/<int:order_id>/', views.reject_request, name='reject_request'),
+    path('add_extra_details/', views.add_extra_details, name='add_extra_details'),
 
     path('rfq', views.rfq),
     path('rfq_add/<int:order_id>/', views.rfq_add, name='rfq_add'),
@@ -258,7 +261,21 @@ urlpatterns = [
     path('add_guarantee', views.add_guarantee),
     path('add_jobhistory', views.add_jobhistory),
 
+    path('transaction', views.transaction),
+    path('transaction_add', views.transaction_add),
+    path('transaction_edit/<int:id>', views.transaction_edit, name='transaction_edit'),
+    path('transaction_delete/<int:id>', views.transaction_delete),
+    path('balance_sheet', views.balance_sheet),
+
     path('milk_production_report/', views.milk_production_report),
+    path('total_milk_production_report/', views.total_milk_production_report),
     path('stock_report/', views.stock_report),
+    path('sales_report/', views.sales_report),
+    path('procurement_report/', views.procurement_report),
+
+    path('farm/', views.farm, name='farm'),
+    path('farm_contact_add', views.farm_contact_add, name='farm_contact_add'),
+    path('farm_contact_edit/<int:id>/', views.farm_contact_edit, name='farm_contact_edit'),
+    path('farm_contact_delete/<int:id>', views.farm_contact_delete),
 
 ]

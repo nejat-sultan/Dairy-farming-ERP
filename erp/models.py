@@ -232,13 +232,17 @@ class CattleBreed(models.Model):
 
 class Cattle(models.Model):
     farm_entity = models.OneToOneField(FarmEntity,on_delete=models.CASCADE,primary_key=True)
-    cattle_ear_id = models.CharField(max_length=30, null=True, blank=True)
-    cattle_date_of_birth = models.DateTimeField(null=True, blank=True)
-    cattle_name = models.CharField(max_length=50, null=True, blank=True)
-    cattle_gender = models.CharField(max_length=15, null=True, blank=True)
+    cattle_ear_id = models.CharField(max_length=30, null=True)
+    cattle_date_of_birth = models.DateTimeField(null=True)
+    cattle_name = models.CharField(max_length=50, null=True)
+    cattle_gender = models.CharField(max_length=15, null=True)
     estimated_price = models.FloatField(null=True, blank=True)
     cattle_breed = models.ForeignKey(CattleBreed,on_delete=models.CASCADE)
     cattle_status = models.ForeignKey(CattleStatus,on_delete=models.CASCADE) 
+    acquired_status = models.CharField(max_length=45, null=True)
+    acquired_date = models.DateTimeField(null=True)
+    mother = models.ForeignKey('self', on_delete=models.SET_NULL, null=True,related_name='mother_cattle')
+    father = models.ForeignKey('self', on_delete=models.SET_NULL, null=True,related_name='father_cattle')
 
     class Meta:
         db_table = 'cattle'
@@ -444,6 +448,7 @@ class Stock(models.Model):
     approval_status = models.CharField(max_length=45, null=True)
     modified_date = models.DateTimeField(null=True)
     item_measurement = models.ForeignKey(ItemMeasurement, null=True, on_delete=models.SET_NULL)
+    current_unit_price = models.FloatField(null=True)
 
     class Meta:
         db_table = 'stock'
@@ -541,7 +546,8 @@ class PaymentMethod(models.Model):
 
 class SalesOrder(models.Model):
     id = models.AutoField(primary_key=True)
-    order_date = models.CharField(max_length=45, null=True)
+    # order_date = models.CharField(max_length=45, null=True)
+    order_date = models.DateTimeField(null=True)
     quantity = models.FloatField()
     unit_price = models.FloatField(null=True)
     payment_status = models.CharField(max_length=45, null=True)
@@ -553,30 +559,32 @@ class SalesOrder(models.Model):
     class Meta:
         db_table = 'sales_order'
 
+class OtherIncomeExpense(models.Model):
+    id = models.AutoField(primary_key=True)
+    transaction_date = models.DateTimeField(null=True)
+    amount = models.FloatField()
+    transaction_type = models.CharField(max_length=45)
+    transaction_status = models.CharField(max_length=45)
+    reason = models.CharField(max_length=200, null=True)
+    modified_date = models.DateTimeField(null=True)
 
+    class Meta:
+        db_table = 'other_income_expense'
 
 class Farm(models.Model):
     id = models.AutoField(primary_key=True)
-    full_name = models.CharField(max_length=300, null=True, blank=True)
-    nick_name = models.CharField(max_length=45, null=True, blank=True)
-    modified_date = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        db_table = 'farm'
-
-class FarmAddress(models.Model):
-    id = models.AutoField(primary_key=True)
+    full_name = models.CharField(max_length=300, null=True, )
+    nick_name = models.CharField(max_length=45, null=True,)
     country = models.CharField(max_length=100, null=True,)
-    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    region = models.ForeignKey(Region, on_delete=models.CASCADE, null=True)
     zone_subcity = models.CharField(max_length=100, null=True,)
     woreda = models.CharField(max_length=100, null=True,)
     kebele = models.CharField(max_length=45, null=True,)
     house_number = models.CharField(max_length=45, null=True,)
-    street_name = models.CharField(max_length=250, null=True,)
-    farm = models.ForeignKey(Farm, on_delete=models.CASCADE)
+    modified_date = models.DateTimeField(null=True,)
 
     class Meta:
-        db_table = 'farm_address'
+        db_table = 'farm'
 
 class FarmContacts(models.Model):
     id = models.AutoField(primary_key=True)

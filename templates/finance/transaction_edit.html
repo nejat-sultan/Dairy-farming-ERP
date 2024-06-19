@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+
+{% block content %} 
+
+  <div class="content-wrapper">
+
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Transaction Edit</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="../transaction">Home</a></li>
+              <li class="breadcrumb-item active">Transaction Edit</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <section class="content">
+    <form action="/transaction_edit/{{transaction.id}}" method="post">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card card-primary">
+            <div class="card-header" style="background-color: #007f5c;color: #fff;">
+              <h3 class="card-title">Basic Information</h3>
+
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              {% if errors %}
+                <div class="alert alert-danger">
+                  <ul>
+                    {% for error in errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+              
+              <div class="form-group">
+                <label for="inputName">Transaction Type</label>
+                <select id="inputStatus" name="transaction_type" class="form-control custom-select" required>
+                  <option selected>{{transaction.transaction_type}}</option>
+                  <option>Income</option>
+                  <option>Expense</option>
+                </select> 
+              </div>
+              <div class="form-group">
+                <label for="inputDescription">Transaction Date</label>
+                <input type="datetime-local" id="inputName" name="transaction_date" value="{{ transaction.transaction_date|date:'Y-m-d' }}T{{ transaction.transaction_date|time:'H:i' }}" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="inputName">Amount</label>
+                <input type="text" id="inputName" name="amount" value="{{ transaction.amount }}" class="form-control" required>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+        <div class="col-md-6">
+          <div class="card card-secondary">
+            <div class="card-header">
+              <h3 class="card-title">Others</h3>
+
+              <div class="card-tools">
+                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                  <i class="fas fa-minus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="inputClientCompany">Transaction Status</label>
+                <select id="inputStatus" name="transaction_status" class="form-control custom-select" required>
+                  <option selected>{{transaction.transaction_status}}</option>
+                  <option>Pending</option>
+                  <option>Paid</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="inputName">Reason</label>
+                <input type="text" id="inputName" name="reason" value="{{ transaction.reason }}" class="form-control">
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12">
+          <a href="../../transaction" class="btn btn-secondary">Back</a>
+          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;"> Update Transaction</button>
+        </div>
+      </div>
+    </form>
+    <br>
+
+  </section>
+</div>
+
+  
+  {% endblock %}
