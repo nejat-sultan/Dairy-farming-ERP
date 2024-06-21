@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Reports</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="">Home</a></li>
+                        <li class="breadcrumb-item active">Report</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-3 col-sm-6 col-12">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info"><i class="fas fa-warehouse"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Production Reports</span>
+                                </div>
+                            </div>
+                            <div class="list-group mt-2">
+                                <a class="list-group-item list-group-item-action" href="../../milk_production_report">Current Milk Production</a>
+                                <a class="list-group-item list-group-item-action" href="../../total_milk_production_report/">Total Production</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="col-md-3 col-sm-6 col-12">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success"><i class="fas fa-store"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Stock Reports</span>
+                                </div>
+                            </div>
+                            <div class="list-group mt-2">
+                                <a class="list-group-item list-group-item-action" href="../../stock_report/">Current Stock</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="col-md-3 col-sm-6 col-12">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning"><i class="fas fa-copy"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Procurement Reports</span>
+                                </div>
+                            </div>
+                            <div class="list-group mt-2">
+                                <a class="list-group-item list-group-item-action" href="../../procurement_report/">Current Orders</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="col-md-3 col-sm-6 col-12">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger"><i class="fas fa-lightbulb"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Sales Reports</span>
+                                </div>
+                            </div>
+                            <div class="list-group mt-2">
+                                <a class="list-group-item list-group-item-action" href="../../sales_report/">Current Sales</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-3 col-sm-6 col-12">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary"><i class="fas fa-horse"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Cattle Reports</span>
+                                </div>
+                            </div>
+                            <div class="list-group mt-2">
+                                <a class="list-group-item list-group-item-action" href="../../feed_formulation_report">Feed Formulations</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <div class="col-md-3 col-sm-6 col-12">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-body">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-secondary"><i class="fas fa-users"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Employee Reports</span>
+                                </div>
+                            </div>
+                            <div class="list-group mt-2">
+                                <a class="list-group-item list-group-item-action" href="../../employee_report">Existing Employees</a>
+                                <a class="list-group-item list-group-item-action" href="../../employee_with_task_report">Daily Task Report</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+{% endblock %}

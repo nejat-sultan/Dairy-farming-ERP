@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Daily Employee Task Report</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="">Home</a></li>
+                        <li class="breadcrumb-item active">Daily Task Report</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Daily Employee Task</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+
+            {% comment %} {% if filters_applied %} {% endcomment %}
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Full Name</th>
+                                <th>Task</th>
+                                <th>Shift</th>
+                                <th>Due Time</th>
+                                <th>Status</th>
+                                <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in task_data %}
+                            <tr>
+                                <td>{{ entry.assigned_to.person_farm_entity.first_name }} {{ entry.assigned_to.person_farm_entity.middle_name }}</td> 
+                                <td>{{ entry.task.task_name }}</td>
+                                <td>{{ entry.shift.shift_name }}</td>
+                                <td>{{ entry.due_time }}</td>
+                                <td>{{ entry.status }}</td>
+                                <td>{{ entry.rating }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% comment %} {% endif %} {% endcomment %}
+        </div>
+
+        <div class="pagination">
+            <span class="step-links">
+                {% if task_data.has_previous %}
+                    <a href="?page={{ task_data.previous_page_number }}">Previous</a>
+                {% endif %}
+    
+                <span class="current">
+                    Page {{ task_data.number }} of {{ task_data.paginator.num_pages }}.
+                </span>
+    
+                {% if task_data.has_next %}
+                    <a href="?page={{ task_data.next_page_number }}">Next</a>
+                {% endif %}
+            </span>
+        </div>
+
+        <br>
+        <div class="row">
+            <div class="col-12">
+              <a href="../../reports" class="btn btn-secondary">Back</a>
+            </div>
+          </div>
+
+    </section>
+</div>
+
+<script>
+    document.getElementById('clear-filters').addEventListener('click', function() {
+        window.location.href = window.location.pathname;
+    });
+</script>
+{% endblock %}

@@ -19,7 +19,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, Farm, FarmContacts, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, OtherIncomeExpense, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, SaleType, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, Farm, FarmContacts, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, OtherIncomeExpense, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -2232,64 +2232,6 @@ def contact_type_delete(request, contact_id):
     messages.error(request, "Contact Type Deleted Successfully!")
     return redirect("/contact_type")
 
-@login_required(login_url='login')
-def sale_type(request):
-    if not request.user.has_perm('erp.view_saletype'):
-        return HttpResponse('You are not authorised to view this page', status=403)
-    data = SaleType.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
-
-    return render(request, 'sales/sale_type.html', context)
-
-@login_required(login_url='login')
-def sale_type_add(request):
-    if not request.user.has_perm('erp.add_saletype'):
-        return HttpResponse('You are not authorised to view this page', status=403)
-    if request.method=="POST":
-        csale_type=request.POST.get('sale_type')
-        cdate = datetime.now().date()
-
-        query = SaleType(sale_type=csale_type, modified_date=cdate)
-        query.save()
-        messages.success(request, "Sale Type Added Successfully!")
-        return redirect("/sale_type")
-
-    return render(request, 'sales/sale_type_add.html')
-
-@login_required(login_url='login')
-def sale_type_edit(request,sale_type_id):
-    if not request.user.has_perm('erp.change_saletype'):
-        return HttpResponse('You are not authorised to view this page', status=403)
-    edit = SaleType.objects.get(sale_type_id=sale_type_id)
-    
-    if request.method == "POST":
-        csale_type=request.POST.get('sale_type')
-        cdate = datetime.now().date()
-        
-        # Update the attributes
-        edit.sale_type = csale_type
-        edit.modified_date = cdate
-        
-        # Save the changes
-        edit.save()
-        messages.warning(request, "Sale Type Updated Successfully!")
-        # Optionally, redirect to a success page or another view
-        return redirect("/sale_type")
-
-    d = SaleType.objects.get(sale_type_id=sale_type_id)
-    context = {"d": d}
-
-    return render(request, 'sales/sale_type_edit.html', context)
-
-def sale_type_delete(request, sale_type_id):
-    if not request.user.has_perm('erp.delete_saletype'):
-        return HttpResponse('You are not authorised to view this page', status=403)
-    d = SaleType.objects.get(sale_type_id=sale_type_id)
-    d.delete()
-    messages.error(request, "Sale Type Deleted Successfully!")
-    return redirect("/sale_type")
-
 
 @login_required(login_url='login')
 def payment_method(request):
@@ -2356,32 +2298,77 @@ def customer(request):
         return HttpResponse('You are not authorised to view this page', status=403)
     
     customers = Customer.objects.all()
-    phone_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Safaricom')
-    phone_contacts2 = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Ethiotel')
-    email_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Email')
+    all_contacts = FarmEntityContact.objects.filter(
+        contact_type__contact_type__in=['Phone_Safaricom', 'Phone_Ethiotel', 'Email']
+    )
     
     customers_with_contacts = customers.prefetch_related(
-        Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=phone_contacts, to_attr='phone_contacts'),
-        Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=phone_contacts2, to_attr='phone_contacts2'),
-        Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=email_contacts, to_attr='email_contacts')
+        Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=all_contacts, to_attr='contacts')
     )
 
     all_addresses = FarmEntityAddress.objects.all()
-    address_dict = {}
-    for address in all_addresses:
-        if address.farm_entity_id not in address_dict:
-            address_dict[address.farm_entity_id] = address
-
-    address_data = list(address_dict.values())
-
-    paginated_data = paginate_data(request, customers_with_contacts, 10)
+    address_dict = {address.farm_entity_id: address for address in all_addresses}
+    
+    customer_contact_info = []
+    for customer in customers_with_contacts:
+        phone_contact = None
+        phone_contact2 = None
+        email_contact = None
+        
+        for contact in customer.person_farm_entity.farm_entity.contacts:
+            if contact.contact_type.contact_type == 'Phone_Safaricom' and not phone_contact:
+                phone_contact = contact.contact
+            if contact.contact_type.contact_type == 'Phone_Ethiotel' and not phone_contact2:
+                phone_contact2 = contact.contact
+            if contact.contact_type.contact_type == 'Email' and not email_contact:
+                email_contact = contact.contact
+        
+        customer_contact_info.append({
+            'customer': customer,
+            'phone_contact': phone_contact,
+            'phone_contact2': phone_contact2,
+            'email_contact': email_contact,
+            'address': address_dict.get(customer.person_farm_entity.farm_entity_id),
+        })
+    
+    paginated_data = paginate_data(request, customer_contact_info, 10)
 
     context = {
         "data1": paginated_data,
-        'address_data': address_data,
     }
 
     return render(request, 'sales/customer.html', context)
+# def customer(request):
+#     if not request.user.has_perm('erp.view_customer'):
+#         return HttpResponse('You are not authorised to view this page', status=403)
+    
+#     customers = Customer.objects.all()
+#     phone_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Safaricom')
+#     phone_contacts2 = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Ethiotel')
+#     email_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Email')
+    
+#     customers_with_contacts = customers.prefetch_related(
+#         Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=phone_contacts, to_attr='phone_contacts'),
+#         Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=phone_contacts2, to_attr='phone_contacts2'),
+#         Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=email_contacts, to_attr='email_contacts')
+#     )
+
+#     all_addresses = FarmEntityAddress.objects.all()
+#     address_dict = {}
+#     for address in all_addresses:
+#         if address.farm_entity_id not in address_dict:
+#             address_dict[address.farm_entity_id] = address
+
+#     address_data = list(address_dict.values())
+
+#     paginated_data = paginate_data(request, customers_with_contacts, 10)
+
+#     context = {
+#         "data1": paginated_data,
+#         'address_data': address_data,
+#     }
+
+#     return render(request, 'sales/customer.html', context)
 
 
 @login_required(login_url='login')
@@ -2541,6 +2528,31 @@ def get_item_types(request, item_id):
         return JsonResponse(item_types, safe=False)
     except Exception as e:
         print(f"Error in get_item_types: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+# def get_item_types(request, item_id):
+#     try:
+#         stock_items = Stock.objects.filter(item_id=item_id).select_related('type')
+#         item_types_set = set()  # Use a set to store unique item types
+
+#         for stock_item in stock_items:
+#             if stock_item.type:
+#                 item_type = (stock_item.type.item_type_id, stock_item.type.item_type)
+#                 item_types_set.add(item_type)
+
+#         item_types = [{'id': item_type[0], 'name': item_type[1]} for item_type in item_types_set]
+
+#         return JsonResponse(item_types, safe=False)
+#     except Exception as e:
+#         print(f"Error in get_item_types: {e}")
+#         return JsonResponse({'error': str(e)}, status=500)
+    
+def get_item_measurements(request, item_id):
+    try:
+        stock_items = Stock.objects.filter(item_id=item_id).select_related('item_measurement')
+        measurement_types = [{'id': stock_item.item_measurement.id, 'name': stock_item.item_measurement.measurement} for stock_item in stock_items if stock_item.item_measurement]
+        return JsonResponse(measurement_types, safe=False)
+    except Exception as e:
+        print(f"Error in get_item_measurements: {e}")
         return JsonResponse({'error': str(e)}, status=500)
     
 def get_stock_quantity(request, item_id, type_id):
@@ -4631,7 +4643,7 @@ def stockout_add(request):
     if request.method=="POST":
         cquantity=request.POST.get('quantity')
         citem_type=request.POST.get('item_type')
-        citem_id=request.POST.get('item_id')
+        citem_id=request.POST.get('item_name')
         citem_measurement_id=request.POST.get('item_measurement_id')
         cstatus = 'Pending'
         cmodified_date = datetime.now().date()
@@ -4650,11 +4662,38 @@ def stockout_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data1': Item.objects.all(),
+                'data1': Stock.objects.all(),
+                # 'data1' : Item.objects.all(),
                 'data2': ItemMeasurement.objects.all(),
                 'data3': ItemType.objects.all(),
             }
             return render(request, 'inventory/stockout_add.html', context)
+
+        stock_item = Stock.objects.filter(
+            item_id=citem_id,
+            type_id=citem_type,
+            item_measurement_id=citem_measurement_id
+        ).first()
+        if not stock_item:
+            return JsonResponse({'error': 'Stock item not found'}, status=404)
+        
+        current_stock_quantity = float(stock_item.quantity)
+
+        if cquantity > current_stock_quantity:
+            errors.append("Requested quantity exceeds current stock")
+            
+            item_data = Stock.objects.all()
+            measurement_data = ItemMeasurement.objects.all()
+            type_data = ItemType.objects.all()
+            
+            context = {
+                'errors': errors,
+                'data1': item_data,
+                'data2': measurement_data,
+                'data3': type_data,
+            }
+            return render(request, 'inventory/stockout_add.html', context)
+
 
         user_profile = UserProfile.objects.get(user=request.user)
         crequested_by_id = user_profile.employee_id
@@ -4663,7 +4702,8 @@ def stockout_add(request):
         messages.success(request, "Stock out request sent Successfully!")
         return redirect("/stock_out")
     
-    item_data = Item.objects.all()
+    item_data = Stock.objects.all()
+    # item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
     type_data = ItemType.objects.all()
     context = {
@@ -4683,7 +4723,7 @@ def stockout_edit(request,id):
     if request.method == "POST":
         cquantity=request.POST.get('quantity')
         ctype=request.POST.get('item_type')
-        citem_id=request.POST.get('item_id')
+        citem_id=request.POST.get('item_name')
         citem_measurement_id=request.POST.get('item_measurement_id')
         cstatus = 'Pending'
         cmodified_date = datetime.now().date()
@@ -4704,9 +4744,44 @@ def stockout_edit(request,id):
                 'errors': errors,
                 "d": Stockout.objects.get(id=id), 
                 "item": edit,
-                'data1': Item.objects.all(),
+                'data1': Stock.objects.all(),
                 'data2': ItemMeasurement.objects.all(),
                 'data3': ItemType.objects.all(),
+            }
+            return render(request, 'inventory/stockout_edit.html', context)
+
+        stock_item = Stock.objects.filter(
+            item_id=citem_id,
+            type_id=ctype,
+            item_measurement_id=citem_measurement_id
+        ).first()
+        if not stock_item:
+            return JsonResponse({'error': 'Stock item not found'}, status=404)
+        
+        current_stock_quantity = float(stock_item.quantity)
+
+        if cquantity > current_stock_quantity:
+            errors.append("Requested quantity exceeds current stock")
+            
+            d = Stockout.objects.get(id=id)
+            data1 = Stock.objects.all()
+            data2 = ItemMeasurement.objects.all()
+            data3 = ItemType.objects.all()
+
+            current_item_id = edit.item_id if edit.item_id else None
+            current_item_type_id = edit.item_type_id if edit.item_type_id else None
+            current_item_measurement_id = edit.measurement_id if edit.measurement_id else None
+            
+            context = {
+                'errors': errors,
+                'd': d,
+                'item': edit,
+                'data1': data1,
+                'data2': data2,
+                'data3': data3,
+                'current_item_id': current_item_id,
+                'current_item_type_id': current_item_type_id,
+                'current_item_measurement_id': current_item_measurement_id,
             }
             return render(request, 'inventory/stockout_edit.html', context)
         
@@ -4721,12 +4796,25 @@ def stockout_edit(request,id):
         messages.warning(request, "Stockout Updated Successfully!")
         return redirect("/stock_out")
 
+    current_item_id = edit.item_id if edit.item_id else None
+    current_item_type_id = edit.item_type_id if edit.item_type_id else None
+    current_item_measurement_id = edit.measurement_id if edit.measurement_id else None
+
     d = Stockout.objects.get(id=id)
-    data1 = Item.objects.all()
+    data1 = Stock.objects.all()
     data2 = ItemMeasurement.objects.all()
     data3 = ItemType.objects.all()
         
-    context = {"d": d, "item": edit, "data1": data1, "data2": data2, "data3": data3,}
+    context = {
+        'd': d,
+        'item': edit,
+        'data1': data1,
+        'data2': data2,
+        'data3': data3,
+        'current_item_id': current_item_id,
+        'current_item_type_id': current_item_type_id,
+        'current_item_measurement_id': current_item_measurement_id,
+    }
 
     return render(request, 'inventory/stockout_edit.html', context)
 
@@ -4762,9 +4850,18 @@ def approve_stockout(request, id):
         inventory.status = 'Approved'
         inventory.save()
         
-        stock_item.quantity = str(current_stock_quantity - requested_quantity)
+        # stock_item.quantity = str(current_stock_quantity - requested_quantity)
+        # stock_item.modified_date = timezone.now()
+        # stock_item.save()
+
+        new_stock_quantity = current_stock_quantity - requested_quantity
+        stock_item.quantity = str(new_stock_quantity)
         stock_item.modified_date = timezone.now()
-        stock_item.save()
+
+        if new_stock_quantity == 0:
+            stock_item.delete()
+        else:
+            stock_item.save()
         
         return JsonResponse({'message': 'Inventory approved and stock updated successfully.'})
     except Exception as e:
@@ -5612,8 +5709,10 @@ def get_total_stock_value(queryset):
     return queryset.annotate(quantity_float=Cast('quantity', FloatField())
     ).aggregate(total_value=Sum(F('quantity_float') * F('current_unit_price')))['total_value'] or 0
 
-def get_accounts_payable_value(queryset):
-    return queryset.annotate(quantity_float=Cast('quantity', FloatField())
+def get_accounts_payable_value(queryset, year):
+    approved_orders_current_year = Order.objects.filter(request_approved_date__year__lte=year)
+    return queryset.filter(order__order__in=approved_orders_current_year).annotate(
+        quantity_float=Cast('quantity', FloatField())
     ).aggregate(total_value=Sum(F('quantity_float') * F('price')))['total_value'] or 0
 
 @login_required(login_url='login')
@@ -5621,32 +5720,39 @@ def balance_sheet(request):
     current_year = now().year
     past_year = current_year - 1
 
+    accounts_receivable_value = SalesOrder.objects.filter(payment_status='Not Paid',order_date__year__lte=current_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+    other_income_value = OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year,transaction_type='Income',transaction_status='Pending').aggregate(total_value=Sum('amount'))['total_value'] or 0
     current_year_assets = {
         'cattle': Cattle.objects.filter(acquired_date__year__lte=current_year).aggregate(total_value=Sum('estimated_price'))['total_value'] or 0,
         'stock': get_total_stock_value(Stock.objects.all()),
-        'accounts_receivable': SalesOrder.objects.filter(payment_status='not paid',order_date__year=current_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0,
-        'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year, transaction_type='Income').aggregate(total_value=Sum('amount'))['total_value'] or 0,
+        'accounts_receivable': accounts_receivable_value + other_income_value,
+        'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year, transaction_type='Income', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
     }
     current_year_total_assets = sum(current_year_assets.values())
 
+    past_accounts_receivable_value = SalesOrder.objects.filter(payment_status='Not Paid',order_date__year__lte=past_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+    past_other_income_value = OtherIncomeExpense.objects.filter(transaction_date__year__lte=past_year, transaction_type='Income', transaction_status='Pending').aggregate(total_value=Sum('amount'))['total_value'] or 0
     past_year_assets = {
         'cattle': Cattle.objects.filter(acquired_date__year__lte=past_year).aggregate(total_value=Sum('estimated_price'))['total_value'] or 0,
         'stock': 0,
-        'accounts_receivable': SalesOrder.objects.filter(payment_status='not paid',order_date__year=past_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0,
-        'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=past_year, transaction_type='Income').aggregate(total_value=Sum('amount'))['total_value'] or 0,
+        'accounts_receivable': past_accounts_receivable_value + past_other_income_value,
+        'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=past_year, transaction_type='Income', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
     }
     past_year_total_assets = sum(past_year_assets.values())
 
-
+    accounts_payable_value = get_accounts_payable_value(OrderHasItemSupplier.objects.filter(inventory_status='Pending'), current_year)
+    other_expense_value = OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year,transaction_type='Expense',transaction_status='Pending').aggregate(total_value=Sum('amount'))['total_value'] or 0
     current_year_liabilities = {
         'other_expense': OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year, transaction_type='Expense', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
-        'accounts_payable': get_accounts_payable_value(OrderHasItemSupplier.objects.filter(inventory_status='Pending')),
+        'accounts_payable': accounts_payable_value + other_expense_value
     }
     current_year_total_liabilities = sum(current_year_liabilities.values())
 
+    past_accounts_payable_value = get_accounts_payable_value(OrderHasItemSupplier.objects.filter(inventory_status='Pending'), past_year)
+    past_other_expense_value = OtherIncomeExpense.objects.filter(transaction_date__year__lte=past_year,transaction_type='Expense',transaction_status='Pending').aggregate(total_value=Sum('amount'))['total_value'] or 0
     past_year_liabilities = {
         'other_expense': OtherIncomeExpense.objects.filter(transaction_date__year__lte=past_year, transaction_type='Expense', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
-        'accounts_payable': 0,
+        'accounts_payable': past_accounts_payable_value + past_other_expense_value
     }
     past_year_total_liabilities = sum(past_year_liabilities.values())
 
@@ -5656,17 +5762,184 @@ def balance_sheet(request):
             'total_assets': current_year_total_assets,
             'liabilities': current_year_liabilities,
             'total_liabilities': current_year_total_liabilities,
+            'cyear':current_year,
         },
         'past_year': {
             'assets': past_year_assets,
             'total_assets': past_year_total_assets,
             'liabilities': past_year_liabilities,
             'total_liabilities': past_year_total_liabilities,
+            'pyear':past_year,
         }
     }
 
     return render(request, 'finance/balance_sheet.html', context)
-    
+
+def get_procurement_value(queryset, start_date, end_date):
+    approved_orders_current_year = Order.objects.filter(request_approved_date__range=[start_date, end_date])
+    return queryset.filter(order__order__in=approved_orders_current_year).annotate(
+        quantity_float=Cast('quantity', FloatField())
+    ).aggregate(total_value=Sum(F('quantity_float') * F('price')))['total_value'] or 0
+
+
+@login_required(login_url='login')
+def profit_loss(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    current_year = datetime.now().year
+
+    current_year_incomes = {}
+    current_year_expenses = {}
+
+    if start_date and end_date:
+        current_year_incomes['sales_income'] = SalesOrder.objects.filter(
+            payment_status='Fully Paid',
+            order_date__range=[start_date, end_date]
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
+        current_year_incomes['other_income'] = OtherIncomeExpense.objects.filter(
+            transaction_date__range=[start_date, end_date],
+            transaction_type='Income',
+            transaction_status='Paid'
+        ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+
+
+        current_year_expenses['procurement_expense'] = get_procurement_value(
+            OrderHasItemSupplier.objects.filter(inventory_status='Approved'),
+            start_date,
+            end_date
+        )
+
+        current_year_expenses['stockin_expense'] = DirectlyAddedItem.objects.filter(
+            added_date__range=[start_date, end_date],
+            approval_status='Approved'
+        ).aggregate(total_value=Sum('total_price'))['total_value'] or 0
+
+        current_year_expenses['other_expense'] = OtherIncomeExpense.objects.filter(
+            transaction_date__range=[start_date, end_date],
+            transaction_type='Expense',
+            transaction_status='Paid'
+        ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+
+    elif start_date:
+        current_year_incomes['sales_income'] = SalesOrder.objects.filter(
+            payment_status='Fully Paid',
+            order_date__range=[start_date, datetime.now().date()]
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
+        current_year_incomes['other_income'] = OtherIncomeExpense.objects.filter(
+            transaction_date__range=[start_date, datetime.now().date()],
+            transaction_type='Income',
+            transaction_status='Paid'
+        ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+
+
+        current_year_expenses['procurement_expense'] = get_procurement_value(
+            OrderHasItemSupplier.objects.filter(inventory_status='Approved'),
+            start_date,
+            datetime.now().date()  
+        )
+
+        current_year_expenses['stockin_expense'] = DirectlyAddedItem.objects.filter(
+            added_date__range=[start_date, datetime.now().date()],
+            approval_status='Approved'
+        ).aggregate(total_value=Sum('total_price'))['total_value'] or 0
+
+        current_year_expenses['other_expense'] = OtherIncomeExpense.objects.filter(
+            transaction_date__range=[start_date, datetime.now().date()],
+            transaction_type='Expense',
+            transaction_status='Paid'
+        ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+
+    elif end_date:
+
+        current_year_incomes['sales_income'] = SalesOrder.objects.filter(
+            payment_status='Fully Paid',
+            order_date__lte=end_date
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
+        current_year_incomes['other_income'] = OtherIncomeExpense.objects.filter(
+            transaction_date__lte=end_date,
+            transaction_type='Income',
+            transaction_status='Paid'
+        ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+
+
+        current_year_expenses['procurement_expense'] = get_procurement_value(
+            OrderHasItemSupplier.objects.filter(inventory_status='Approved'),
+            None,  
+            end_date
+        )
+
+        current_year_expenses['stockin_expense'] = DirectlyAddedItem.objects.filter(
+            added_date__lte=end_date,
+            approval_status='Approved'
+        ).aggregate(total_value=Sum('total_price'))['total_value'] or 0
+
+        current_year_expenses['other_expense'] = OtherIncomeExpense.objects.filter(
+            transaction_date__lte=end_date,
+            transaction_type='Expense',
+            transaction_status='Paid'
+        ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+
+    current_year_total_incomes = sum(current_year_incomes.values())
+    current_year_total_expenses = sum(current_year_expenses.values())
+    profit = current_year_total_incomes - current_year_total_expenses
+
+    context = {
+        'current_year': {
+            'incomes': current_year_incomes,
+            'total_incomes': current_year_total_incomes,
+            'expenses': current_year_expenses,
+            'total_expenses': current_year_total_expenses,
+            'profit': profit,
+        },
+        'filters_applied': bool(start_date or end_date),
+    }
+    return render(request, 'finance/profit_loss.html', context)
+
+
+
+# @login_required(login_url='login')
+# def profit_loss(request):
+#     # start_date = request.GET.get('start_date')
+#     # end_date = request.GET.get('end_date')
+
+
+#     current_year = now().year
+#     past_year = current_year - 1
+
+#     current_year_incomes = {
+#         'sales_income': SalesOrder.objects.filter(payment_status='Fully Paid',order_date__year__lte=current_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0,
+#         'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year, transaction_type='Income', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
+#     }
+#     current_year_total_incomes = sum(current_year_incomes.values())
+
+#     current_year_expenses = {
+#         'procurement_expense': get_accounts_payable_value(OrderHasItemSupplier.objects.filter(inventory_status='Approved'), current_year),
+#         'stockin_expense': DirectlyAddedItem.objects.filter(added_date__year__lte=current_year,approval_status='Approved').aggregate(total_value=Sum('total_price'))['total_value'] or 0,
+#         'other_expense': OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year,transaction_type='Expense',transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
+
+#     }
+#     current_year_total_expenses = sum(current_year_expenses.values())
+
+
+#     context = {
+#         'current_year': {
+#             'incomes': current_year_incomes,
+#             'total_incomes': current_year_total_incomes,
+#             'expenses': current_year_expenses,
+#             'total_expenses': current_year_total_expenses,
+#         },
+#     }
+
+#     return render(request, 'finance/profit_loss.html', context)
+
+@login_required(login_url='login')
+def reports(request):
+    return render(request, 'reports/reports.html')
+
 @login_required(login_url='login')
 def milk_production_report(request):
     start_date = request.GET.get('start_date')
@@ -5769,7 +6042,7 @@ def procurement_report(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    procurement_data = OrderHasItemSupplier.objects.all()
+    procurement_data = OrderHasItemSupplier.objects.filter(status="Approved")
 
     if start_date:
         procurement_data = procurement_data.filter(modified_date__gte=start_date)
@@ -5783,6 +6056,54 @@ def procurement_report(request):
     }
 
     return render(request, 'reports/procurement_report.html', context)
+
+@login_required(login_url='login')
+def feed_formulation_report(request):
+    formulation_data = FeedFormulation.objects.all()
+    paginated_data = paginate_data(request, formulation_data, 10) 
+
+    context = {
+        'formulation_data': paginated_data,
+    }
+
+    return render(request, 'reports/feed_formulation_report.html', context)
+
+@login_required(login_url='login')
+def employee_report(request):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    employee_id = request.GET.get('employee')
+
+    employee_data = Employee.objects.all()
+
+    if start_date:
+        employee_data = employee_data.filter(hire_date__gte=start_date)
+    if end_date:
+        employee_data = employee_data.filter(hire_date__lte=end_date)
+    if employee_id:
+        employee_data = employee_data.filter(person_farm_entity_id=employee_id)
+
+    paginated_data = paginate_data(request, employee_data, 10) 
+
+    context = {
+        'employee_data': paginated_data,
+        'filters_applied': bool(start_date or end_date or employee_id),
+    }
+
+    return render(request, 'reports/employee_report.html', context)
+
+
+@login_required(login_url='login')
+def employee_with_task_report(request):
+    today = timezone.now().date()
+    task_data = TaskAssignment.objects.filter(due_time__date=today)
+    paginated_data = paginate_data(request, task_data, 10) 
+
+    context = {
+        'task_data': paginated_data,
+    }
+
+    return render(request, 'reports/employee_with_task_report.html', context)
 
 
 

@@ -51,19 +51,20 @@
                 </form>
             </div>
 
+            {% if filters_applied %} 
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>Date</th>
                                 <th>Amount(Liters)</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for entry in total_milk_production_data %}
                             <tr>
-                                <td>{{ entry.milk_production_id }}</td>
+                                <td>{{ entry.milk_time }}</td>
                                 <td>{{ entry.amount_in_liter }}</td>
                             </tr>
                             {% endfor %}
@@ -71,6 +72,7 @@
                     </table>
                 </div>
             </div>
+            {% endif %}
             
             <div class="card-footer">
                 <h3>Total Milk Production: {{ total_amount }} Liters</h3>
@@ -93,19 +95,19 @@
             </span>
         </div>
 
+        <br>
+        <div class="row">
+            <div class="col-12">
+              <a href="../../reports" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
+
     </section>
 </div>
-
-<style>
-    .status-highlight {
-        background-color: #f0ad4e;
-        font-weight: bold;
-    }
-</style>
 
 <script>
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
     });
-</script>
+</script> 
 {% endblock %}

@@ -7,12 +7,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Milk Production Report</h1>
+                    <h1>Employee Report</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="">Home</a></li>
-                        <li class="breadcrumb-item active">Milk Production Report</li>
+                        <li class="breadcrumb-item active">Employee Report</li>
                     </ol>
                 </div>
             </div>
@@ -22,7 +22,7 @@
     <section class="content">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Milk Production</h3>
+                <h3 class="card-title">Employee</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                         <i class="fas fa-minus"></i>
@@ -31,7 +31,7 @@
             </div>
 
             <div class="card-body">
-                <form method="get" id="milk-production-form">
+                <form method="get" id="employee-form">
                     <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
@@ -47,12 +47,12 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                <label for="cattle">Cattle:</label>
-                                <select class="form-control" id="cattle" name="cattle">
+                                <label for="cattle">Employee:</label>
+                                <select class="form-control" id="employee" name="employee">
                                     <option value="">All</option>
-                                    {% for cattle in cattle_list %}
-                                    <option value="{{ cattle.farm_entity_id }}" {% if request.GET.cattle == cattle.farm_entity_id|stringformat:"s" %}selected{% endif %}>
-                                        {{ cattle.cattle_name }}
+                                    {% for employee in employee_data %}
+                                    <option value="{{ employee.person_farm_entity_id }}" {% if request.GET.employee == employee.person_farm_entity_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ employee.person_farm_entity.first_name }}
                                     </option>
                                     {% endfor %}
                                 </select>
@@ -64,52 +64,50 @@
                 </form>
             </div>
 
-            {% if filters_applied %}
+            {% if filters_applied %} 
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>Cattle</th>
-                                <th>Amount(Liters)</th>
-                                <th>Milk Time</th>
-                                <th>Fat Content</th>
-                                <th>Protein Content</th>
-                                <th>Somatic Cell Count</th>
-                                <th>Duration(Min)</th>
+                                <th>Full Name</th>
+                                <th>Gender</th>
+                                <th>Hire Date</th>
+                                <th>Salary</th>
+                                <th>Department</th>
+                                <th>Job</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for entry in milk_production_data %}
+                            {% for entry in employee_data %}
                             <tr>
-                                <td>{{ entry.cattle.cattle_name }}</td>
-                                <td>{{ entry.amount_in_liter }}</td>
-                                <td>{{ entry.milk_time }}</td>
-                                <td>{{ entry.fat_content }}</td>
-                                <td>{{ entry.protein_content }}</td>
-                                <td>{{ entry.somatic_cell_count }}</td>
-                                <td>{{ entry.duration_in_min }}</td>
+                                <td>{{ entry.person_farm_entity.first_name }} {{ entry.person_farm_entity.middle_name }}</td> 
+                                <td>{{ entry.person_farm_entity.gender }}</td>
+                                <td>{{ entry.hire_date }}</td>
+                                <td>{{ entry.salary }}</td>
+                                <td>{{ entry.department.department_name }}</td>
+                                <td>{{ entry.job.job_title }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-            {% endif %}
+            {% endif %} 
         </div>
 
         <div class="pagination">
             <span class="step-links">
-                {% if milk_production_data.has_previous %}
-                    <a href="?page={{ milk_production_data.previous_page_number }}">Previous</a>
+                {% if employee_data.has_previous %}
+                    <a href="?page={{ employee_data.previous_page_number }}">Previous</a>
                 {% endif %}
     
                 <span class="current">
-                    Page {{ milk_production_data.number }} of {{ milk_production_data.paginator.num_pages }}.
+                    Page {{ employee_data.number }} of {{ employee_data.paginator.num_pages }}.
                 </span>
     
-                {% if milk_production_data.has_next %}
-                    <a href="?page={{ milk_production_data.next_page_number }}">Next</a>
+                {% if employee_data.has_next %}
+                    <a href="?page={{ employee_data.next_page_number }}">Next</a>
                 {% endif %}
             </span>
         </div>

@@ -64,34 +64,32 @@
                 </form>
             </div>
 
-            {% comment %} {% if filters_applied %} {% endcomment %}
+            {% if filters_applied %} 
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>Stock ID</th>
                                 <th>Item</th>
                                 <th>Quantity</th>
                                 <th>Item Type</th>
-                                <th>Approval Status</th>
+                                <th>Unit Price</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for entry in stock_data %}
                             <tr>
-                                <td>{{ entry.stock_id }}</td>
                                 <td>{{ entry.item.name }}</td>
                                 <td>{{ entry.quantity }}</td>
                                 <td>{{ entry.type.item_type }}</td>
-                                <td>{{ entry.approval_status }}</td>
+                                <td>{{ entry.current_unit_price }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-            {% comment %} {% endif %} {% endcomment %}
+            {% endif %} 
         </div>
 
         <div class="pagination">
@@ -110,15 +108,15 @@
             </span>
         </div>
 
+        <br>
+        <div class="row">
+            <div class="col-12">
+              <a href="../../reports" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
+
     </section>
 </div>
-
-<style>
-    .status-highlight {
-        background-color: #f0ad4e;
-        font-weight: bold;
-    }
-</style>
 
 <script>
     document.getElementById('clear-filters').addEventListener('click', function() {

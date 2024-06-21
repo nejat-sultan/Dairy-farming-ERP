@@ -101,11 +101,6 @@ urlpatterns = [
     path('supplier_type_edit/<str:supplier_type_id>', views.supplier_type_edit, name='supplier_type_edit'),
     path('supplier_type_delete/<str:supplier_type_id>', views.supplier_type_delete),
 
-    path('sale_type', views.sale_type),
-    path('sale_type_add', views.sale_type_add),
-    path('sale_type_edit/<str:sale_type_id>', views.sale_type_edit, name='sale_type_edit'),
-    path('sale_type_delete/<str:sale_type_id>', views.sale_type_delete),
-
     path('customer', views.customer),
     path('customer_add', views.customer_add),
     path('customer_edit/<str:customer_id>', views.customer_edit, name='customer_edit'),
@@ -123,6 +118,7 @@ urlpatterns = [
     path('sales_order_edit/<str:id>', views.sales_order_edit, name='sales_order_edit'),
     path('sales_order_delete/<str:id>', views.sales_order_delete),
     path('get_item_types/<int:item_id>/', views.get_item_types, name='get_item_types'),
+    path('get_item_measurements/<int:item_id>/', views.get_item_measurements, name='get_item_measurements'),
     path('get_stock_quantity/<int:item_id>/<int:type_id>/', views.get_stock_quantity, name='get_stock_quantity'),
 
     path('region', views.region),
@@ -266,12 +262,17 @@ urlpatterns = [
     path('transaction_edit/<int:id>', views.transaction_edit, name='transaction_edit'),
     path('transaction_delete/<int:id>', views.transaction_delete),
     path('balance_sheet', views.balance_sheet),
+    path('profit_loss', views.profit_loss),
 
+    path('reports/', views.reports),
     path('milk_production_report/', views.milk_production_report),
     path('total_milk_production_report/', views.total_milk_production_report),
     path('stock_report/', views.stock_report),
     path('sales_report/', views.sales_report),
     path('procurement_report/', views.procurement_report),
+    path('feed_formulation_report/', views.feed_formulation_report),
+    path('employee_report/', views.employee_report),
+    path('employee_with_task_report/', views.employee_with_task_report),
 
     path('farm/', views.farm, name='farm'),
     path('farm_contact_add', views.farm_contact_add, name='farm_contact_add'),

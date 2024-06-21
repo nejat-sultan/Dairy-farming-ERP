@@ -51,12 +51,12 @@
                 </form>
             </div>
 
+            {% if filters_applied %} 
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>Sales ID</th>
                                 <th>Order Date</th>
                                 <th>Item</th>
                                 <th>Quantity</th>
@@ -68,7 +68,6 @@
                         <tbody>
                             {% for entry in sales_data %}
                             <tr>
-                                <td>{{ entry.id }}</td>
                                 <td>{{ entry.order_date }}</td>
                                 <td>{{ entry.stock.item.name }}</td>
                                 <td>{{ entry.quantity }}</td>
@@ -81,6 +80,7 @@
                     </table>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <div class="pagination">
@@ -99,6 +99,12 @@
             </span>
         </div>
 
+        <br>
+        <div class="row">
+            <div class="col-12">
+              <a href="../../reports" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
 
     </section>
 </div>

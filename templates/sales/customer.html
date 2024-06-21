@@ -71,7 +71,7 @@
               <tbody>
                 {% for d in data1 %}
                   <tr>
-                      <td>
+                      {% comment %} <td>
                         {{d.customer_id}}
                       </td>
                       <td>
@@ -79,8 +79,8 @@
                       </td>
                       <td>
                         {{ d.person_farm_entity.middle_name }}
-                      </td>
-                      <td>
+                      </td> {% endcomment %}
+                      {% comment %} <td>
                         {% if d.phone_contacts %}
                             {{ d.phone_contacts.0.contact }}
                         {% endif %} 
@@ -100,13 +100,31 @@
                             {{ address.country }} {{ address.region.region }}
                             {% endif %}
                         {% endfor %}
+                    </td> {% endcomment %}
+
+                    <td>{{ d.customer.customer_id }}</td>
+                    <td>{{ d.customer.person_farm_entity.first_name }}</td>
+                    <td>{{ d.customer.person_farm_entity.middle_name }}</td>
+                    <td>
+                        {% if d.phone_contact %}{{ d.phone_contact }}{% else %}{% endif %}
+                        {% if d.phone_contact2 %}{{ d.phone_contact2 }}{% else %}{% endif %}
                     </td>
+                    <td>
+                        {% if d.email_contact %}{{ d.email_contact }}{% else %}{% endif %}
+                    </td>
+                    <td>
+                        {% if d.address %}
+                            {{ d.address.country }} {{ d.address.region.region }}
+                        {% else %}
+                        {% endif %}
+                    </td> 
+
                       <td class="project-actions">
-                          <a class="btn btn-info btn-sm" href="/customer_edit/{{d.customer_id}}">
+                          <a class="btn btn-info btn-sm" href="/customer_edit/{{d.customer.customer_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
                           </a>
-                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.customer_id }}')">
+                          <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.customer.customer_id }}')">
                             <i class="fas fa-trash">
                             </i>
                           </a>

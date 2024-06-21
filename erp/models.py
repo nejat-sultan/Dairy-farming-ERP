@@ -67,7 +67,7 @@ class FarmEntityContact(models.Model):
     id = models.AutoField(primary_key=True)
     farm_entity = models.ForeignKey(FarmEntity, on_delete=models.CASCADE)
     contact = models.CharField(max_length=100)
-    contact_type = models.ForeignKey(ContactType, on_delete=models.CASCADE)
+    contact_type = models.OneToOneField(ContactType, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'farm_entity_contact'
@@ -76,7 +76,7 @@ class FarmEntityAddress(models.Model):
     id = models.AutoField(primary_key=True)
     farm_entity = models.ForeignKey(FarmEntity, on_delete=models.CASCADE)
     country = models.CharField(max_length=100, null=True)
-    region = models.ForeignKey(Region, on_delete=models.CASCADE)
+    region = models.OneToOneField(Region, on_delete=models.CASCADE)
     zone_subcity = models.CharField(max_length=100, null=True)
     woreda = models.CharField(max_length=100, null=True)
     kebele = models.CharField(max_length=45, null=True)
@@ -88,14 +88,14 @@ class FarmEntityAddress(models.Model):
 
 class Person(models.Model):
     farm_entity = models.OneToOneField(FarmEntity, on_delete=models.CASCADE, primary_key=True)
-    person_title = models.ForeignKey(PersonTitle, on_delete=models.SET_NULL, null=True)
+    person_title = models.OneToOneField(PersonTitle, on_delete=models.SET_NULL, null=True)
     first_name = models.CharField(max_length=150)
     middle_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150, null=True)
     gender = models.CharField(max_length=10, null=True)
     date_of_birth = models.DateField(null=True)
     marital_status = models.CharField(max_length=20, null=True)
-    person_type = models.ForeignKey(PersonType, on_delete=models.CASCADE)
+    person_type = models.OneToOneField(PersonType, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'person'
@@ -118,7 +118,7 @@ class Employee(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True)
+    employee = models.OneToOneField(Employee, on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'user_profile'
@@ -147,7 +147,7 @@ class Guarantee(models.Model):
     farm_entity = models.OneToOneField(FarmEntity, on_delete=models.CASCADE, primary_key=True)
     name = models.CharField(max_length=200)
     salary_evaluation = models.FloatField(null=True)
-    guarantee_type = models.ForeignKey(GuaranteeType, on_delete=models.CASCADE)
+    guarantee_type = models.OneToOneField(GuaranteeType, on_delete=models.CASCADE)
     person_farm_entity = models.ForeignKey(Employee, on_delete=models.CASCADE)
 
     class Meta:
@@ -243,6 +243,7 @@ class Cattle(models.Model):
     acquired_date = models.DateTimeField(null=True)
     mother = models.ForeignKey('self', on_delete=models.SET_NULL, null=True,related_name='mother_cattle')
     father = models.ForeignKey('self', on_delete=models.SET_NULL, null=True,related_name='father_cattle')
+    vaccines = models.ManyToManyField('Vaccine', through='CattleHasVaccine', related_name='cattle')
 
     class Meta:
         db_table = 'cattle'
@@ -288,7 +289,7 @@ class CattlePregnancy(models.Model):
     cattle_pregnancy_date = models.DateField()
     is_active = models.CharField(max_length=10, null=True)
     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
-    pregnancy_status = models.ForeignKey(PregnancyStatus, on_delete=models.CASCADE)
+    pregnancy_status = models.OneToOneField(PregnancyStatus, on_delete=models.CASCADE)
     check_by = models.ForeignKey(Person, on_delete=models.CASCADE, null=True)
     data_encoded_by = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True)
 
@@ -323,6 +324,7 @@ class CattleHealthCheckup(models.Model):
     findings = models.CharField(max_length=255, null=True)
     checked_by = models.ForeignKey(Person, on_delete=models.CASCADE, null=True)
     data_encoded_by = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True)
+    medicines = models.ManyToManyField(Medicine, through='CattleHealthCheckupHasMedicine', related_name='health_checkups')
 
     class Meta:
         db_table = 'cattle_health_checkup'
@@ -384,8 +386,8 @@ class Supplier(models.Model):
 class ItemMeasurement(models.Model):
     id = models.AutoField(primary_key=True)
     measurement = models.CharField(max_length=100)
-    description = models.CharField(max_length=200, null=True, blank=True)
-    modified_date = models.DateTimeField(null=True, blank=True)
+    description = models.CharField(max_length=200, null=True)
+    modified_date = models.DateTimeField(null=True) 
 
     class Meta:
         db_table = 'item_measurement'
@@ -397,13 +399,7 @@ class Order(models.Model):
     request_approved = models.CharField(max_length=10, null=True)
     request_approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='request_approved_orders')
     request_approved_date = models.DateTimeField(null=True)
-    purchase_approved = models.CharField(max_length=10, null=True)
-    purchase_approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='purchase_approved_orders')
-    purchase_approved_date = models.DateTimeField(null=True)
-    inventory_approved = models.CharField(max_length=10, null=True)
-    inventory_approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='inventory_approved_orders')
-    inventory_approved_date = models.DateTimeField(null=True)
-    status = models.CharField(max_length=45, null=True)
+    items = models.ManyToManyField(Item, through='OrderHasItem', related_name='orders')
 
     class Meta:
         db_table = 'order'
@@ -412,9 +408,9 @@ class OrderHasItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     # type = models.CharField(max_length=45, null=True)
-    type = models.ForeignKey(ItemType, on_delete=models.CASCADE, null=True)
+    type = models.OneToOneField(ItemType, on_delete=models.CASCADE, null=True)
     quantity = models.CharField(max_length=45, null=True)
-    item_measurement = models.ForeignKey(ItemMeasurement, null=True, on_delete=models.SET_NULL)
+    item_measurement = models.OneToOneField(ItemMeasurement, null=True, on_delete=models.SET_NULL)
     extra_charges = models.FloatField(null=True)
     extracharge_reasons = models.CharField(max_length=150, null=True)
     taxes_in_percent = models.FloatField(null=True)
@@ -447,7 +443,7 @@ class Stock(models.Model):
     type = models.ForeignKey(ItemType, on_delete=models.CASCADE, null=True)
     approval_status = models.CharField(max_length=45, null=True)
     modified_date = models.DateTimeField(null=True)
-    item_measurement = models.ForeignKey(ItemMeasurement, null=True, on_delete=models.SET_NULL)
+    item_measurement = models.OneToOneField(ItemMeasurement, null=True, on_delete=models.SET_NULL)
     current_unit_price = models.FloatField(null=True)
 
     class Meta:
@@ -457,13 +453,14 @@ class DirectlyAddedItem(models.Model):
     id = models.AutoField(primary_key=True)
     item = models.ForeignKey(Item, on_delete=models.CASCADE)
     quantity = models.CharField(max_length=45, null=True)
-    measurement = models.ForeignKey(ItemMeasurement, on_delete=models.SET_NULL, null=True)
+    measurement = models.OneToOneField(ItemMeasurement, on_delete=models.SET_NULL, null=True)
     # item_type = models.CharField(max_length=200, null=True)
-    item_type = models.ForeignKey(ItemType, on_delete=models.CASCADE, null=True)
+    item_type = models.OneToOneField(ItemType, on_delete=models.CASCADE, null=True)
     description = models.CharField(max_length=45, null=True)
     unit_price = models.FloatField()
     total_price = models.FloatField(null=True)
     approval_status = models.CharField(max_length=45, null=True)
+    added_date = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'directly_added_items'
@@ -473,10 +470,9 @@ class Stockout(models.Model):
     requested_by = models.ForeignKey(Employee, on_delete=models.CASCADE,null=True, related_name='stockout_requests')
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='stockout_items')
     # item_type = models.CharField(max_length=200, null=True)
-    item_type = models.ForeignKey(ItemType, on_delete=models.CASCADE, null=True)
+    item_type = models.OneToOneField(ItemType, on_delete=models.CASCADE, null=True)
     measurement = models.ForeignKey(ItemMeasurement, on_delete=models.SET_NULL, null=True, related_name='stockout_items')
     approved_by = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, related_name='approved_stockouts')
-    # quantity = models.IntegerField()
     quantity = models.CharField(max_length=45, null=True) 
     status = models.CharField(max_length=45, null=True)
     modified_date = models.DateTimeField(null=True)
@@ -499,8 +495,8 @@ class FeedFormulation(models.Model):
 class FeedIngredient(models.Model):
     id = models.AutoField(primary_key=True)
     feed_formulation = models.ForeignKey(FeedFormulation, on_delete=models.CASCADE)
-    item = models.ForeignKey(Item, on_delete=models.CASCADE)
-    item_measurement = models.ForeignKey(ItemMeasurement, on_delete=models.CASCADE, null=True)
+    item = models.OneToOneField(Item, on_delete=models.CASCADE)
+    item_measurement = models.OneToOneField(ItemMeasurement, on_delete=models.CASCADE, null=True)
     quantity = models.CharField(max_length=45, null=True) 
     modified_date = models.DateTimeField(null=True)
 
@@ -521,13 +517,6 @@ class CattleHasFeed(models.Model):
 
 
 
-class SaleType(models.Model):
-    sale_type_id = models.AutoField(primary_key=True)
-    sale_type = models.CharField(max_length=100, null=True)
-    modified_date = models.DateField(null=True)
-
-    class Meta:
-        db_table = 'sale_type'
 
 class Customer(models.Model):
     customer_id = models.AutoField(primary_key=True)
@@ -554,7 +543,7 @@ class SalesOrder(models.Model):
     total_amount = models.FloatField(null=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
-    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.CASCADE, null=True)
+    payment_method = models.OneToOneField(PaymentMethod, on_delete=models.CASCADE, null=True)
 
     class Meta:
         db_table = 'sales_order'
@@ -576,7 +565,7 @@ class Farm(models.Model):
     full_name = models.CharField(max_length=300, null=True, )
     nick_name = models.CharField(max_length=45, null=True,)
     country = models.CharField(max_length=100, null=True,)
-    region = models.ForeignKey(Region, on_delete=models.CASCADE, null=True)
+    region = models.OneToOneField(Region, on_delete=models.CASCADE, null=True)
     zone_subcity = models.CharField(max_length=100, null=True,)
     woreda = models.CharField(max_length=100, null=True,)
     kebele = models.CharField(max_length=45, null=True,)
@@ -589,7 +578,7 @@ class Farm(models.Model):
 class FarmContacts(models.Model):
     id = models.AutoField(primary_key=True)
     contact = models.CharField(max_length=100)
-    contact_type = models.ForeignKey(ContactType, on_delete=models.CASCADE, null=True, blank=True)
+    contact_type = models.ForeignKey(ContactType, on_delete=models.CASCADE, null=True)
     farm = models.ForeignKey(Farm, on_delete=models.CASCADE)
 
     class Meta:

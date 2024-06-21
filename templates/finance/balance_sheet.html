@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load custom_filters %}
+{% load custom_filters static %}
 
 {% block content %}
 <div class="content-wrapper">
@@ -24,13 +24,19 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Balance Sheet Overview</h3>
-                        </div>
+                        {% comment %} <div class="card-header" style="background-color: #007f5c;color: #fff;">
+                            <h1 class="card-title">Balance Sheet</h1>
+                        </div> {% endcomment %}
+
                         <div class="card-body">
                             <table id="example1" class="table table-bordered table-striped">
                                 <thead>
-                                    <tr>
+                                    <tr style="background-color: #007f5c; color: #fff;">
+                                        <th>Balance Sheet</th>
+                                        <th>{{ current_year.cyear }}</th>
+                                        <th>{{ past_year.pyear }}</th>
+                                    </tr>
+                                    <tr style="background-color: #007f5c; color: #fff;">
                                         <th></th>
                                         <th>Current Year</th>
                                         <th>Past Year</th>
@@ -62,8 +68,8 @@
                                     </tr>
                                     <tr>
                                         <td><strong>Total Assets</strong></td>
-                                        <td>{{ current_year.total_assets | floatformat:2 }}</td>
-                                        <td>{{ past_year.total_assets | floatformat:2 }}</td>
+                                        <td><strong>{{ current_year.total_assets | floatformat:2 }}</strong></td>
+                                        <td><strong>{{ past_year.total_assets | floatformat:2 }}</strong></td>
                                     </tr>
                                     <tr>
                                         <td colspan="3"><strong>Liabilities</strong></td>
@@ -80,8 +86,8 @@
                                     </tr>
                                     <tr>
                                         <td><strong>Total Liabilities</strong></td>
-                                        <td>{{ current_year.total_liabilities | floatformat:2 }}</td>
-                                        <td>{{ past_year.total_liabilities | floatformat:2 }}</td>
+                                        <td><strong>{{ current_year.total_liabilities | floatformat:2 }}</strong></td>
+                                        <td><strong>{{ past_year.total_liabilities | floatformat:2 }}</strong></td>
                                     </tr>
                                     {% comment %} <tr>
                                         <td colspan="3"><strong>Equity</strong></td>
@@ -111,11 +117,10 @@
                                         <td>Liabilities + Equity</td>
                                         <td>{{ current_year.total_liabilities_equity }}</td>
                                         <td>{{ past_year.total_liabilities_equity }}</td>
-                                    </tr>
-                                    {% endcomment %}
+                                    </tr> {% endcomment %}
                                 </tbody>
                             </table>
-                        </div>
+                        </div> 
                     </div>
                 </div>
             </div>
@@ -123,6 +128,8 @@
             <div class="row no-print">
                 <div class="col-12">
                   <a href="#" id="printButton" class="btn btn-default"><i class="fas fa-print"></i> Print</a>
+                  {% comment %} <button id="exportPdfButton" class="btn btn-default"><i class="fas fa-file-pdf"></i> Export to PDF</button>
+                  <button id="exportExcelButton" class="btn btn-default"><i class="fas fa-file-excel"></i> Export to Excel</button> {% endcomment %}
                 </div>
             </div>
             
@@ -138,7 +145,27 @@
         window.print();
     });
     });
-</script>
+
+    $(document).ready(function() {
+        $('#example1').DataTable({
+            dom: 'Bfrtip',
+            buttons: [
+                'pdfHtml5',
+                'excelHtml5'
+            ]
+        });
+
+        $('#exportPdfButton').on('click', function() {
+            $('#example1').DataTable().buttons().trigger('pdfHtml5');
+        });
+
+        $('#exportExcelButton').on('click', function() {
+            $('#example1').DataTable().buttons().trigger('excelHtml5');
+        });
+    });
+</script> 
 
 {% endblock %}
+
+
 

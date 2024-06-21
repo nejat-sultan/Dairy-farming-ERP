@@ -52,6 +52,7 @@
                 </form>
             </div>
 
+            {% if filters_applied %} 
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-striped projects">
@@ -62,7 +63,6 @@
                                 <th>Supplier</th>
                                 <th>Quantity</th>
                                 <th>Price</th>
-                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -73,13 +73,13 @@
                                 <td>{{ entry.supplier.supplier_name }}</td>
                                 <td>{{ entry.quantity }}</td>
                                 <td>{{ entry.price }}</td>
-                                <td>{{ entry.status }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <div class="pagination">
@@ -98,6 +98,12 @@
             </span>
         </div>
 
+        <br>
+        <div class="row">
+            <div class="col-12">
+              <a href="../../reports" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
 
     </section>
 </div>

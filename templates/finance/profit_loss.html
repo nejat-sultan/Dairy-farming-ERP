@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load custom_filters static %}
+
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Profit & Loss Statement</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="">Home</a></li>
+                        <li class="breadcrumb-item active">PL Statement</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Profit & Loss Statement Overview</h3>
+                        </div>
+
+                        <div class="card-body">
+                            <form method="get" id="pl-form">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="start_date">Start Date:</label>
+                                            <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="end_date">End Date:</label>
+                                            <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                                <button type="submit" class="btn" style="background-color: #007f5c;color: #fff;">Apply Filters</button>
+                                <button type="button" class="btn btn-secondary" id="clear-filters">Clear Filters</button>
+                            </form>
+                        </div> 
+
+                        {% if filters_applied %} 
+                        <div class="card-body">
+                            <table id="example1" class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th>Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="3"><strong>Income</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td>Sales Income</td>
+                                        <td>{{ current_year.incomes.sales_income | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Other Income</td>
+                                        <td>{{ current_year.incomes.other_income | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Income</strong></td>
+                                        <td><strong>{{ current_year.total_incomes | floatformat:2 }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="3" class="section-header">Expenses</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Procurement Expense</td>
+                                        <td>{{ current_year.expenses.procurement_expense | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Direct Stock Expense</td>
+                                        <td>{{ current_year.expenses.stockin_expense | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Other Expense</td>
+                                        <td>{{ current_year.expenses.other_expense | floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Expenses</strong></td>
+                                        <td><strong>{{ current_year.total_expenses | floatformat:2 }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Profit before Tax</strong></td>
+                                        <td><strong> {{ current_year.profit | floatformat:2 }} </strong></td>
+                                    </tr>
+                                    
+                                </tbody>
+                            </table> 
+                        </div> 
+                        {% endif %} 
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row no-print">
+                <div class="col-12">
+                  <a href="#" id="printButton" class="btn btn-default"><i class="fas fa-print"></i> Print</a>
+                </div>
+            </div>
+            
+        </div>
+    </section>
+</div>
+
+<script>
+    window.addEventListener("load", function() {
+        var printButton = document.getElementById("printButton");
+        printButton.addEventListener("click", function(event) {
+        event.preventDefault();
+        window.print();
+    });
+    });
+
+    document.getElementById('clear-filters').addEventListener('click', function() {
+        window.location.href = window.location.pathname;
+    });
+    
+</script> 
+
+{% endblock %}
+
+
+
