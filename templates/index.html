@@ -43,10 +43,6 @@
                         {% endfor %}
                     </ul>
                 </div>
-            {% else %}
-                <div class="alert alert-success">
-                    No cattle have overdue health checkups.
-                </div>
             {% endif %} 
 
             {% if low_quantity_items %}
@@ -57,10 +53,6 @@
                     <li>{{ item.item.name }} - Quantity: {{ item.quantity }}</li>
                     {% endfor %}
                 </ul>
-            </div>
-            {% else %}
-            <div class="alert alert-success">
-                All items have sufficient quantity.
             </div>
             {% endif %}
 

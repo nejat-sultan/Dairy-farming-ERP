@@ -37,7 +37,7 @@
                 </div>
               </div>
               <div class="card-body">
-                <div class="form-group">
+                {% comment %} <div class="form-group">
                   <label for="inputName">Person Type</label>
                   <select id="inputStatus" name="person_type" class="form-control custom-select">
                     {% for person_type in data1 %}
@@ -46,7 +46,7 @@
                       </option>
                     {% endfor %}
                   </select>
-                </div>
+                </div> {% endcomment %}
                 <div class="form-group">
                   <label for="inputName">First Name</label>
                   <input type="text" id="inputName" name="first_name" value="{{ customer.person_farm_entity.first_name }}" class="form-control" required>

@@ -53,7 +53,7 @@
                 <select id="item_name" name="item_name" class="form-control custom-select" required>
                   <option value="">Select item</option>
                   {% for d in data1 %}
-                  <option value="{{d.item_id}}">{{ d.item.name}}</option>
+                  <option value="{{d.item_id}}">{{ d.item__name}}</option>
                   {% endfor %}
                 </select>
               </div>
@@ -63,21 +63,12 @@
                   <option value="">Select item type</option>
                 </select>
               </div> 
-              {% comment %} <div class="form-group">
-                <label for="inputName">Measurement</label>
-                <select id="inputStatus" name="item_measurement_id" class="form-control custom-select">
-                  {% for d in data2 %}
-                  <option value="{{ d.id }}">{{ d.measurement }}</option>
-                  {% endfor %}
-                </select>
-              </div> {% endcomment %}
               <div class="form-group">
                 <label for="item_measurement_id">Measurement</label>
                 <select id="item_measurement_id" name="item_measurement_id" class="form-control custom-select">
                     <option value="">Select measurement</option>
-                    <!-- Options will be dynamically populated by JavaScript -->
                 </select>
-            </div>
+              </div>
               <div class="form-group">
                 <label for="inputDescription">Quantity</label>
                 <input type="text" id="inputName" name="quantity" class="form-control" required>
@@ -97,21 +88,6 @@
     </section>
 
   </div>
-
-  {% comment %} <script>
-    document.getElementById('item_name').addEventListener('change', function() {
-        var itemId = this.value;
-        fetch(`/get_item_types/${itemId}/`)
-            .then(response => response.json())
-            .then(data => {
-                var itemTypeSelect = document.getElementById('item_type');
-                itemTypeSelect.innerHTML = '<option value="">Select item type</option>';
-                data.forEach(itemType => {
-                    itemTypeSelect.innerHTML += `<option value="${itemType.id}">${itemType.name}</option>`;
-                });
-            });
-    });
-  </script>  {% endcomment %}
 
   <script>
     document.getElementById('item_name').addEventListener('change', function() {
@@ -137,9 +113,6 @@
             });
     });
 </script>
-
-
-  
   
   {% endblock %}
 

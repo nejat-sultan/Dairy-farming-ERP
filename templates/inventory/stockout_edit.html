@@ -1,152 +1,134 @@
 {% extends 'base.html' %}
 
-
 {% block content %}
 
-  <div class="content-wrapper">
+<div class="content-wrapper">
     <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>Stock Out Edit</h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="../stock_out">Home</a></li>
-              <li class="breadcrumb-item active">Stock Out Edit</li>
-            </ol>
-          </div>
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Stock Out Edit</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="../stock_out">Home</a></li>
+                        <li class="breadcrumb-item active">Stock Out Edit</li>
+                    </ol>
+                </div>
+            </div>
         </div>
-      </div>
     </section>
 
     <section class="content">
-      <form action="/stockout_edit/{{d.id}}" method="post">
-        {% csrf_token %}
-        <div class="row">
-          <div class="col-md-12">
-            <div class="card card-primary">
-              <div class="card-header" style="background-color: #007f5c;color: #fff;">
-                <h3 class="card-title">Basic Information</h3>
-  
-                <div class="card-tools">
-                  <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
-                    <i class="fas fa-minus"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="card-body">
-                {% if errors %}
-                <div class="alert alert-danger">
-                  <ul>
-                    {% for error in errors %}
-                      <li>{{ error }}</li>
-                    {% endfor %}
-                  </ul>
-                </div>
-                {% endif %}
-                
-                {% comment %} <div class="form-group">
-                  <label for="inputName">Item</label>
-                  <select id="inputStatus" name="item_id" class="form-control custom-select">
-                    {% for d in data1 %}
-                    <option value="{{d.item_id}}" {% if d.item_id == item.item_id %} selected {% endif %}>
-                      {{ d.name }}
-                    </option>
-                    {% endfor %} 
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="inputName">Type</label>
-                  <select id="inputStatus" name="item_type" class="form-control custom-select">
-                    {% for d in data3 %}
-                    <option value="{{d.item_type_id}}" {% if d.item_type_id == item.item_type_id %} selected {% endif %}>
-                      {{ d.item_type }}
-                    </option>
-                    {% endfor %} 
-                  </select>
-                </div> {% endcomment %}
-                <div class="form-group">
-                  <label for="item_name">Item</label>
-                  <select id="item_name" name="item_name" class="form-control custom-select" data-selected="{{ current_item_id }}" required>
-                      <option value="">Select item</option>
-                      {% for d in data1 %}
-                          <option value="{{ d.item_id }}" {% if d.item_id == current_item_id %}selected{% endif %}>{{ d.item.name }}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-              <div class="form-group">
-                  <label for="item_type">Type</label>
-                  <select id="item_type" name="item_type" class="form-control custom-select" data-selected="{{ current_item_type_id }}" required>
-                      <option value="">Select item type</option>
-                      {% for d in data1 %}
-                          <option value="{{ d.type_id }}" {% if d.type_id == current_item_type_id %}selected{% endif %}>{{ d.type.item_type }}</option>
-                      {% endfor %}
-                  </select>
-              </div>
-              <div class="form-group">
-                <label for="item_measurement_id">Measurement</label>
-                <select id="item_measurement_id" name="item_measurement_id" class="form-control custom-select" data-selected="{{ current_item_measurement_id }}" required>
-                    <option value="">Select item type</option>
-                    {% for d in data1 %}
-                        <option value="{{ d.item_measurement_id }}" {% if d.item_measurement_id == current_item_measurement_id %}selected{% endif %}>{{ d.item_measurement.measurement }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-                {% comment %} <div class="form-group">
-                  <label for="inputName">Measurement</label>
-                  <select id="inputStatus" name="item_measurement_id" class="form-control custom-select">
-                    {% for d in data2 %}
-                    <option value="{{d.id}}" {% if d.id == item.measurement_id %} selected {% endif %}>
-                      {{ d.measurement }}
-                    </option>
-                    {% endfor %} 
-                  </select>
-                </div> {% endcomment %}
-                <div class="form-group">
-                  <label for="inputDescription">Quantity</label>
-                  <input type="text" id="inputName" name="quantity" value="{{d.quantity}}" class="form-control" required>
-                </div> 
+        <form action="/stockout_edit/{{ d.id }}" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="background-color: #007f5c;color: #fff;">
+                            <h3 class="card-title">Basic Information</h3>
 
-              </div>
-            </div>
-          </div>
-          
-        </div>
-        <div class="row">
-          <div class="col-12">
-            <a href="../stock_out" class="btn btn-secondary">Back</a>
-            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Stock Out</button>
-          </div>
-        </div>
-      </form>
-      </section>
-  
-  </div>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if errors %}
+                            <div class="alert alert-danger">
+                                <ul>
+                                    {% for error in errors %}
+                                    <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
 
-  <script>
-    document.getElementById('item_name').addEventListener('change', function() {
-        var itemId = this.value;
-        fetch(`/get_item_types/${itemId}/`)
-            .then(response => response.json())
-            .then(data => {
-                var itemTypeSelect = document.getElementById('item_type');
-                itemTypeSelect.innerHTML = '<option value="">Select item type</option>';
-                data.forEach(itemType => {
-                    itemTypeSelect.innerHTML += `<option value="${itemType.id}">${itemType.name}</option>`;
-                });
-            });
-            
-        fetch(`/get_item_measurements/${itemId}/`)
-            .then(response => response.json())
-            .then(measurements => {
-                var measurementSelect = document.getElementById('item_measurement_id');
-                measurementSelect.innerHTML = '<option value="">Select measurement</option>';
-                measurements.forEach(measurement => {
-                    measurementSelect.innerHTML += `<option value="${measurement.id}">${measurement.name}</option>`;
-                });
-            });
+                            <div class="form-group">
+                                <label for="item_name">Item</label>
+                                <select id="item_name" name="item_name" class="form-control custom-select" data-selected="{{ current_item_id }}" required>
+                                    <option value="">Select item</option>
+                                    {% for d in data1 %}
+                                    <option value="{{ d.item_id }}" {% if d.item_id == current_item_id %}selected{% endif %}>{{ d.item__name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="item_type">Type</label>
+                                <select id="item_type" name="item_type" class="form-control custom-select" data-selected="{{ current_item_type_id }}" required>
+                                    <option value="">Select item type</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="item_measurement_id">Measurement</label>
+                                <select id="item_measurement_id" name="item_measurement_id" class="form-control custom-select" data-selected="{{ current_item_measurement_id }}" required>
+                                    <option value="">Select measurement</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="quantity">Quantity</label>
+                                <input type="text" id="quantity" name="quantity" value="{{ d.quantity }}" class="form-control" required>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <a href="../stock_out" class="btn btn-secondary">Back</a>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Stock Out</button>
+                </div>
+            </div>
+        </form>
+    </section>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var itemNameSelect = document.getElementById('item_name');
+        var itemTypeSelect = document.getElementById('item_type');
+        var measurementSelect = document.getElementById('item_measurement_id');
+
+        var selectedItemId = itemNameSelect.getAttribute('data-selected');
+        var selectedItemTypeId = itemTypeSelect.getAttribute('data-selected');
+        var selectedItemMeasurementId = measurementSelect.getAttribute('data-selected');
+
+        if (selectedItemId) {
+            updateDropdowns(selectedItemId, selectedItemTypeId, selectedItemMeasurementId);
+        }
+
+        itemNameSelect.addEventListener('change', function() {
+            var itemId = this.value;
+            updateDropdowns(itemId);
+        });
+
+        function updateDropdowns(itemId, selectedTypeId = null, selectedMeasurementId = null) {
+            itemTypeSelect.innerHTML = '<option value="">Select item type</option>';
+            measurementSelect.innerHTML = '<option value="">Select measurement</option>';
+
+            if (itemId) {
+                fetch(`/get_item_types/${itemId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(itemType => {
+                            var selected = itemType.id == selectedTypeId ? 'selected' : '';
+                            itemTypeSelect.innerHTML += `<option value="${itemType.id}" ${selected}>${itemType.name}</option>`;
+                        });
+                    });
+
+                fetch(`/get_item_measurements/${itemId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(measurement => {
+                            var selected = measurement.id == selectedMeasurementId ? 'selected' : '';
+                            measurementSelect.innerHTML += `<option value="${measurement.id}" ${selected}>${measurement.name}</option>`;
+                        });
+                    });
+            }
+        }
     });
 </script>
-  
-  {% endblock %}
+
+{% endblock %}

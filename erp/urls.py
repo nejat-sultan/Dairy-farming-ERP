@@ -119,7 +119,8 @@ urlpatterns = [
     path('sales_order_delete/<str:id>', views.sales_order_delete),
     path('get_item_types/<int:item_id>/', views.get_item_types, name='get_item_types'),
     path('get_item_measurements/<int:item_id>/', views.get_item_measurements, name='get_item_measurements'),
-    path('get_stock_quantity/<int:item_id>/<int:type_id>/', views.get_stock_quantity, name='get_stock_quantity'),
+    # path('get_stock_quantity/<int:item_id>/<int:type_id>/', views.get_stock_quantity, name='get_stock_quantity'),
+    path('get_stock_quantity/<int:item_id>/<int:type_id>/<int:item_measurement_id>/', views.get_stock_quantity, name='get_stock_quantity'),
 
     path('region', views.region),
     path('region_add', views.region_add),

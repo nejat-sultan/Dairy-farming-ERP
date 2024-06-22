@@ -57,6 +57,10 @@
                   <input type="text" id="item_type" class="form-control" value="{{ d.stock.type.item_type }}" readonly>
               </div> 
               <div class="form-group">
+                <label for="item_measurement_id">Type</label>
+                <input type="text" id="item_measurement_id" class="form-control" value="{{ d.stock.item_measurement.measurement }}" readonly>
+            </div>
+              <div class="form-group">
                 <label for="inputName">Customer</label>
                 <select id="inputStatus" name="customer_id" class="form-control custom-select" required>
                   {% for data2 in data2 %}
@@ -88,7 +92,7 @@
             <div class="card-body">
               <div class="form-group">
                 <label for="inputDescription">Order Date</label>
-                <input type="datetime-local" id="inputName" name="order_date" value="{{d.order_date}}" class="form-control">
+                <input type="datetime-local" id="inputName" name="order_date" value="{{ d.order_date|date:'Y-m-d' }}T{{ d.order_date|time:'H:i' }}" class="form-control" required>
               </div>
               <div class="form-group">
                 <label for="inputName">Unit Price</label>

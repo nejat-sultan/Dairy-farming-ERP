@@ -84,18 +84,10 @@
                         {{d.id}}
                       </td>
                       <td>
-                        {% for item in data2 %}
-                          {% if item.item_id == d.stock_id %}
-                            {{ item.item.name }}
-                          {% endif %}
-                        {% endfor %}
+                        {{d.stock.item.name}}
                       </td>
                       <td>
-                        {% for cust in data3 %}
-                          {% if cust.customer_id == d.customer_id %}
-                            {{ cust.person_farm_entity.first_name }}
-                          {% endif %}
-                        {% endfor %}
+                        {{d.customer.person_farm_entity.first_name}}
                       </td>
                       <td>
                         {{d.quantity}}
@@ -114,10 +106,6 @@
                       </td>
 
                       <td class="project-actions">
-                        {% comment %} <a class="btn btn-sm" href="/request_order_view/{{d.order_id}}" style="background-color: #007f5c;color: #fff;">
-                          <i class="fas fa-eye">
-                          </i>
-                        </a> {% endcomment %}
                         <a class="btn btn-info btn-sm" href="/sales_order_edit/{{d.id}}">
                             <i class="fas fa-pencil-alt"></i>
                         </a>

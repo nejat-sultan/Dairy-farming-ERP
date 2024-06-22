@@ -51,10 +51,10 @@
               <div class="form-group">
                 <label for="item_name">Item</label>
                 <select id="item_name" name="item_name" class="form-control custom-select" required>
-                  <option value="">Select item</option>
-                  {% for d in data1 %}
-                  <option value="{{d.item_id}}">{{ d.item.name}}</option>
-                  {% endfor %}
+                    <option value="">Select item</option>
+                    {% for d in data1 %}
+                    <option value="{{ d.item_id }}">{{ d.item__name }}</option>
+                    {% endfor %}
                 </select>
               </div>
               <div class="form-group">
@@ -63,9 +63,17 @@
                   <option value="">Select item type</option>
                 </select>
               </div> 
+              <div class="form-group">
+                <label for="item_measurement_id">Measurement</label>
+                <select id="item_measurement_id" name="item_measurement_id" class="form-control custom-select">
+                    <option value="">Select measurement</option>
+                </select>
+              </div>
+
               {% comment %} <div class="form-group">
                 <div id="stock_quantity">Available Stock: </div>
-              </div> {% endcomment %}
+              </div>  {% endcomment %}
+
               <div class="form-group">
                 <label for="inputName">Customer</label>
                 <select id="inputStatus" name="customer_id" class="form-control custom-select" required>
@@ -133,33 +141,60 @@
     </form>
     </section>
 
-    <script>
-      document.getElementById('item_name').addEventListener('change', function() {
-          var itemId = this.value;
-          fetch(`/get_item_types/${itemId}/`)
-              .then(response => response.json())
-              .then(data => {
-                  var itemTypeSelect = document.getElementById('item_type');
-                  itemTypeSelect.innerHTML = '<option value="">Select item type</option>';
-                  data.forEach(itemType => {
-                      itemTypeSelect.innerHTML += `<option value="${itemType.id}">${itemType.name}</option>`;
-                  });
-              });
-      });
-
-      document.getElementById('item_type').addEventListener('change', function() {
-        var itemId = document.getElementById('item_name').value;
-        var typeId = this.value;
-        if (itemId && typeId) {
-            fetch(`/get_stock_quantity/${itemId}/${typeId}/`)
+      <script>
+        document.getElementById('item_name').addEventListener('change', function() {
+            var itemId = this.value;
+            fetch(`/get_item_types/${itemId}/`)
                 .then(response => response.json())
                 .then(data => {
-                    var stockQuantityDiv = document.getElementById('stock_quantity');
-                    stockQuantityDiv.innerHTML = `Available Stock: ${data.quantity}`;
+                    var itemTypeSelect = document.getElementById('item_type');
+                    itemTypeSelect.innerHTML = '<option value="">Select item type</option>';
+                    data.forEach(itemType => {
+                        itemTypeSelect.innerHTML += `<option value="${itemType.id}">${itemType.name}</option>`;
+                    });
                 });
-        }
-    });
-      </script>
+            fetch(`/get_item_measurements/${itemId}/`)
+                .then(response => response.json())
+                .then(measurements => {
+                    var measurementSelect = document.getElementById('item_measurement_id');
+                    measurementSelect.innerHTML = '<option value="">Select measurement</option>';
+                    measurements.forEach(measurement => {
+                        measurementSelect.innerHTML += `<option value="${measurement.id}">${measurement.name}</option>`;
+                    });
+                });
+        });
+
+        {% comment %} document.getElementById('item_type').addEventListener('change', function() {
+            var itemId = document.getElementById('item_name').value;
+            var typeId = this.value;
+            if (itemId && typeId) {
+                fetch(`/get_stock_quantity/${itemId}/${typeId}/`)
+                    .then(response => response.json())
+                    .then(data => {
+                        var stockQuantityDiv = document.getElementById('stock_quantity');
+                        stockQuantityDiv.innerHTML = `Available Stock: ${data.quantity}`;
+                    });
+            }
+        }); {% endcomment %}
+        document.getElementById('item_measurement_id').addEventListener('change', function() {
+          var itemId = document.getElementById('item_name').value;
+          var typeId = document.getElementById('item_type').value;
+          var measurementId = this.value;
+          if (itemId && typeId && measurementId) {
+              fetch(`/get_stock_quantity/${itemId}/${typeId}/${measurementId}/`)
+                  .then(response => response.json())
+                  .then(data => {
+                      var stockQuantityDiv = document.getElementById('stock_quantity');
+                      if (data.error) {
+                          stockQuantityDiv.innerHTML = `Error: ${data.error}`;
+                      } else {
+                          stockQuantityDiv.innerHTML = `Available Stock: ${data.quantity}`;
+                      }
+                  });
+          }
+      });
+      
+    </script>
   
   {% endblock %}
 

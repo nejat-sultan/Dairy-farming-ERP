@@ -162,7 +162,6 @@ def edit_group(request, id):
             group.name = name
             group.save()
         
-        # Clear existing permissions and add selected ones
         group.permissions.clear()
         for permission_id in selected_permissions:
             permission = Permission.objects.get(id=permission_id)
@@ -786,7 +785,6 @@ def add_photo(request):
 
             fs = FileSystemStorage(location=settings.MEDIA_ROOT + '/photos')
             filename = fs.save(photo_file.name, photo_file)
-            # Construct the photo URL including the 'photos' directory
             photo_url = settings.MEDIA_URL + 'photos/' + filename
             
 
@@ -1127,7 +1125,6 @@ def vaccine_add(request):
 def vaccine_edit(request,vaccine_id):
     if not request.user.has_perm('erp.change_vaccine'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    # Fetch the vaccine object by its id
     edit = Vaccine.objects.get(vaccine_id=vaccine_id)
     
     if request.method == "POST":
@@ -1450,13 +1447,11 @@ def checkup_medicine_edit(request, id):
         medicine_id = request.POST.get('medicine_id')
         modified_date = datetime.now()
         
-        # Update the attributes
         edit.cattle_health_checkup_id = checkup_id
         edit.giving_instruction = instruction
         edit.medicine_id = medicine_id
         edit.modified_date = modified_date
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Medicine Updated Successfully!")
         return redirect('/cattle_health_checkup')
@@ -1645,7 +1640,7 @@ def milk_production_add(request):
 def milk_production_edit(request,milk_production_id):
     if not request.user.has_perm('erp.change_milkproduction'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    # Fetch the vaccine object by its id
+
     edit = MilkProduction.objects.get(milk_production_id=milk_production_id)
     
     if request.method == "POST":
@@ -1717,7 +1712,6 @@ def milk_production_edit(request,milk_production_id):
             }
             return render(request, 'cattle/milk_production_edit.html', context)
         
-        # Update the attributes
         edit.amount_in_liter = camount_in_liter
         edit.milk_time = cmilk_time
         edit.fat_content = cfat_content
@@ -1726,13 +1720,10 @@ def milk_production_edit(request,milk_production_id):
         edit.duration_in_min = cduration_in_min
         edit.cattle_id = ccattle_id
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Milk Production Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/milk_production")
 
-    # Fetch the vaccine object again for rendering the form
     d = MilkProduction.objects.get(milk_production_id=milk_production_id)
     cattles = Cattle.objects.all()
     context = {"d": d, "cattle": edit, "cattles": cattles}
@@ -1857,7 +1848,6 @@ def ingredient_add(request, id):
         query = FeedIngredient(feed_formulation_id=cfeed_formulation_id, item_id=citem_id, item_measurement_id=citem_measurement_id, quantity=cquantity, modified_date=cmodified_date)
         query.save()
         messages.success(request, "Feed Ingredient Added Successfully!")
-        # return redirect("/ingredient")
         return redirect(f"/feed_formulation_view/{id}")
     
     item_data = Item.objects.all()
@@ -2090,14 +2080,11 @@ def person_type_edit(request,person_type_id):
         cperson_type=request.POST.get('person_type')
         cdate = datetime.now().date()
         
-        # Update the attributes
         edit.person_type = cperson_type
         edit.modified_date = cdate
 
-        # Save the changes
         edit.save()
         messages.warning(request, "Person Type Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/person_type")
 
     d = PersonType.objects.get(person_type_id=person_type_id)
@@ -2148,14 +2135,11 @@ def person_title_edit(request,person_title_id):
         cperson_title=request.POST.get('person_title')
         cdate = datetime.now().date()
         
-        # Update the attributes
         edit.person_title = cperson_title
         edit.modified_date = cdate
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Person Title Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/person_title")
 
     d = PersonTitle.objects.get(person_title_id=person_title_id)
@@ -2208,15 +2192,12 @@ def contact_type_edit(request,contact_id):
         ccontact_type_desc=request.POST.get('description')
         cdate = datetime.now().date()
         
-        # Update the attributes
         edit.contact_type = ccontact_type
         edit.contact_type_desc = ccontact_type_desc
         edit.modified_date = cdate
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Contact Type Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/contact_type")
 
     d = ContactType.objects.get(contact_id=contact_id)
@@ -2268,14 +2249,11 @@ def payment_method_edit(request,id):
         cpayment_method=request.POST.get('payment_method')
         cdate = datetime.now().date()
         
-        # Update the attributes
         edit.payment_method = cpayment_method
         edit.modified_date = cdate
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Payment Method Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/payment_method")
 
     d = PaymentMethod.objects.get(id=id)
@@ -2338,37 +2316,6 @@ def customer(request):
     }
 
     return render(request, 'sales/customer.html', context)
-# def customer(request):
-#     if not request.user.has_perm('erp.view_customer'):
-#         return HttpResponse('You are not authorised to view this page', status=403)
-    
-#     customers = Customer.objects.all()
-#     phone_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Safaricom')
-#     phone_contacts2 = FarmEntityContact.objects.filter(contact_type__contact_type='Phone_Ethiotel')
-#     email_contacts = FarmEntityContact.objects.filter(contact_type__contact_type='Email')
-    
-#     customers_with_contacts = customers.prefetch_related(
-#         Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=phone_contacts, to_attr='phone_contacts'),
-#         Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=phone_contacts2, to_attr='phone_contacts2'),
-#         Prefetch('person_farm_entity__farm_entity__farmentitycontact_set', queryset=email_contacts, to_attr='email_contacts')
-#     )
-
-#     all_addresses = FarmEntityAddress.objects.all()
-#     address_dict = {}
-#     for address in all_addresses:
-#         if address.farm_entity_id not in address_dict:
-#             address_dict[address.farm_entity_id] = address
-
-#     address_data = list(address_dict.values())
-
-#     paginated_data = paginate_data(request, customers_with_contacts, 10)
-
-#     context = {
-#         "data1": paginated_data,
-#         'address_data': address_data,
-#     }
-
-#     return render(request, 'sales/customer.html', context)
 
 
 @login_required(login_url='login')
@@ -2379,32 +2326,31 @@ def customer_add(request):
     if request.method == "POST":
         cfirst_name = request.POST.get('first_name')
         cmiddle_name = request.POST.get('middle_name')
-        # cperson_type_id = request.POST.get('person_type')
-        cperson_type_id = "Customer"
+        cperson_type_id = "Customer"  
 
         try:
-            with transaction.atomic():
-                farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
-                # person_type = get_object_or_404(PersonType, pk=cperson_type_id)
-                person_type = get_object_or_404(PersonType, person_type=cperson_type_id)
-                person = Person.objects.create(
-                    farm_entity=farm_entity,
-                    first_name=cfirst_name,
-                    middle_name=cmiddle_name,
-                    person_type=person_type
-                )
-                Customer.objects.create(person_farm_entity_id=person.farm_entity.farm_entity_id)
-
-                messages.success(request, "Customer Added Successfully!")
-                return redirect("/customer")
+            farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
+            person_type = get_object_or_404(PersonType, person_type=cperson_type_id)
+            
+            person = Person.objects.create(
+                farm_entity=farm_entity,
+                first_name=cfirst_name,
+                middle_name=cmiddle_name,
+                person_type=person_type
+            )
+            
+            Customer.objects.create(person_farm_entity_id=person.farm_entity.farm_entity_id)
+            
+            messages.success(request, "Customer Added Successfully!")
+            return redirect("/customer")
 
         except Exception as e:
             messages.error(request, f"Error creating customer: {str(e)}")
             return redirect('/customer')
-        
-    person_type = PersonType.objects.all()
+    
+    person_types = PersonType.objects.all()
     context = {
-        'data1': person_type,
+        'data1': person_types,
     }
 
     return render(request, 'sales/customer_add.html', context)
@@ -2420,17 +2366,18 @@ def customer_edit(request, customer_id):
     if request.method == "POST":
         cfirst_name = request.POST.get('first_name')
         cmiddle_name = request.POST.get('middle_name')
-        cperson_type_id = request.POST.get('person_type')
+        cperson_type_id = "Customer" 
 
         try:
-            with transaction.atomic():
-                person.first_name = cfirst_name
-                person.middle_name = cmiddle_name
-                person.person_type_id = cperson_type_id
-                person.save()
+            person_type = get_object_or_404(PersonType, person_type=cperson_type_id)
 
-                messages.warning(request, "Customer Updated Successfully!")
-                return redirect("/customer")
+            person.first_name = cfirst_name
+            person.middle_name = cmiddle_name
+            person.person_type_id = person_type
+            person.save()
+
+            messages.warning(request, "Customer Updated Successfully!")
+            return redirect("/customer")
 
         except Exception as e:
             messages.error(request, f"Error updating customer: {str(e)}")
@@ -2524,44 +2471,53 @@ def add_customer_address(request):
 def get_item_types(request, item_id):
     try:
         stock_items = Stock.objects.filter(item_id=item_id).select_related('type')
-        item_types = [{'id': stock_item.type.item_type_id, 'name': stock_item.type.item_type} for stock_item in stock_items if stock_item.type]
+        item_types_set = set()  # Use a set to store unique item types
+
+        for stock_item in stock_items:
+            if stock_item.type:
+                item_type = (stock_item.type.item_type_id, stock_item.type.item_type)
+                item_types_set.add(item_type)
+
+        item_types = [{'id': item_type[0], 'name': item_type[1]} for item_type in item_types_set]
+
         return JsonResponse(item_types, safe=False)
     except Exception as e:
         print(f"Error in get_item_types: {e}")
         return JsonResponse({'error': str(e)}, status=500)
-# def get_item_types(request, item_id):
-#     try:
-#         stock_items = Stock.objects.filter(item_id=item_id).select_related('type')
-#         item_types_set = set()  # Use a set to store unique item types
-
-#         for stock_item in stock_items:
-#             if stock_item.type:
-#                 item_type = (stock_item.type.item_type_id, stock_item.type.item_type)
-#                 item_types_set.add(item_type)
-
-#         item_types = [{'id': item_type[0], 'name': item_type[1]} for item_type in item_types_set]
-
-#         return JsonResponse(item_types, safe=False)
-#     except Exception as e:
-#         print(f"Error in get_item_types: {e}")
-#         return JsonResponse({'error': str(e)}, status=500)
     
 def get_item_measurements(request, item_id):
     try:
         stock_items = Stock.objects.filter(item_id=item_id).select_related('item_measurement')
-        measurement_types = [{'id': stock_item.item_measurement.id, 'name': stock_item.item_measurement.measurement} for stock_item in stock_items if stock_item.item_measurement]
+        item_measurements_set = set()  # Use a set to store unique item measurements
+
+        for stock_item in stock_items:
+            if stock_item.item_measurement:
+                item_measurement = (stock_item.item_measurement.id, stock_item.item_measurement.measurement)
+                item_measurements_set.add(item_measurement)
+
+        measurement_types = [{'id': item_measurement[0], 'name': item_measurement[1]} for item_measurement in item_measurements_set]
+
         return JsonResponse(measurement_types, safe=False)
     except Exception as e:
         print(f"Error in get_item_measurements: {e}")
         return JsonResponse({'error': str(e)}, status=500)
+
     
-def get_stock_quantity(request, item_id, type_id):
+# def get_stock_quantity(request, item_id, type_id):
+#     try:
+#         stock_item = Stock.objects.get(item_id=item_id, type_id=type_id)
+#         quantity = stock_item.quantity
+#         return JsonResponse({'quantity': quantity})
+#     except Stock.DoesNotExist:
+#         return JsonResponse({'error': 'Stock not found'}, status=404)
+def get_stock_quantity(request, item_id, type_id, item_measurement_id):
     try:
-        stock_item = Stock.objects.get(item_id=item_id, type_id=type_id)
+        stock_item = Stock.objects.get(item_id=item_id, type_id=type_id, item_measurement_id=item_measurement_id)
         quantity = stock_item.quantity
         return JsonResponse({'quantity': quantity})
     except Stock.DoesNotExist:
         return JsonResponse({'error': 'Stock not found'}, status=404)
+
 
 @login_required(login_url='login')
 def sales_order(request):
@@ -2569,12 +2525,8 @@ def sales_order(request):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = SalesOrder.objects.all()
     paginated_data = paginate_data(request, data, 10) 
-    data2 = Stock.objects.all()
-    data3 = Customer.objects.all()
     context = {
         "data1":paginated_data,
-        'data2': data2,
-        'data3': data3,
     }
 
     return render(request, 'sales/sales_order.html', context)
@@ -2583,9 +2535,11 @@ def sales_order(request):
 def sales_order_add(request):
     if not request.user.has_perm('erp.add_salesorder'):
         return HttpResponse('You are not authorised to view this page', status=403)
+  
     if request.method == "POST":
         citem_name = request.POST.get('item_name')
         citem_type = request.POST.get('item_type') 
+        citem_measurement_id=request.POST.get('item_measurement_id')
         ccustomer_id = request.POST.get('customer_id')
         cquantity = request.POST.get('quantity')
         corder_date = request.POST.get('order_date')
@@ -2625,7 +2579,7 @@ def sales_order_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data1': Stock.objects.all(),
+                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
                 'data2': Customer.objects.all(),
                 'data3': PaymentMethod.objects.all(),
                 'data4': ItemType.objects.all(),
@@ -2634,13 +2588,13 @@ def sales_order_add(request):
 
         ctotal_amount = cquantity * cunit_price
 
-        stock_instance = Stock.objects.get(item_id=citem_name, type_id=citem_type)
+        stock_instance = Stock.objects.get(item_id=citem_name, type_id=citem_type, item_measurement_id=citem_measurement_id)
 
         if float(stock_instance.quantity) < cquantity:
             errors.append("Order quantity exceeds available stock.")
             context = {
                 'errors': errors,
-                'data1': Stock.objects.all(),
+                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
                 'data2': Customer.objects.all(),
                 'data3': PaymentMethod.objects.all(),
                 'data4': ItemType.objects.all(),
@@ -2661,10 +2615,16 @@ def sales_order_add(request):
             total_amount=ctotal_amount
         )
         query.save()
+
+        if float(stock_instance.quantity) == 0.0:
+            stock_instance.delete()
+        else:
+            stock_instance.save()
+
         messages.success(request, "Sales Order Added Successfully!")
         return redirect("/sales_order")
     
-    data1 = Stock.objects.all()
+    data1 = Stock.objects.values('item_id', 'item__name').distinct()
     data2 = Customer.objects.all()
     data3 = PaymentMethod.objects.all()
     data4 = ItemType.objects.all()
@@ -2755,6 +2715,12 @@ def sales_order_edit(request, id):
         edit.payment_status = cpayment_status
         edit.total_amount = ctotal_amount
         edit.save()
+
+        if float(stock_instance.quantity) == 0.0:
+            stock_instance.delete()
+        else:
+            stock_instance.save()
+
         messages.success(request, "Sales Order updated Successfully!")
         return redirect("/sales_order")
     
@@ -2868,14 +2834,11 @@ def guarantee_type_edit(request,guarantee_type_id):
         cguarantee_type=request.POST.get('guarantee_type')
         cdate = datetime.now().date()
         
-        # Update the attributes
         edit.guarantee_type = cguarantee_type
         edit.modified_date = cdate
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Guarantee Type Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/guarantee_type")
 
     d = GuaranteeType.objects.get(guarantee_type_id=guarantee_type_id)
@@ -3238,7 +3201,6 @@ def reject_task(request, id):
     try:
         task = TaskAssignment.objects.get(pk=id)
         task.approval_status = 'Rejected'
-        # task.status = None
         task.save()
         return JsonResponse({'message': 'Task Rejected successfully.'})
     except EmployeeLeave.DoesNotExist:
@@ -3337,15 +3299,12 @@ def job_edit(request,job_id):
             }
             return render(request, 'employee/job_edit.html', context)
         
-        # Update the attributes
         edit.job_title = cjob_title
         edit.job_min_salary = cjob_min_salary
         edit.job_max_salary = cjob_max_salary
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Job Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/job")
 
     d = Job.objects.get(job_id=job_id)
@@ -3452,14 +3411,11 @@ def item_edit(request,item_id):
         cname=request.POST.get('name')
         cdate = datetime.now().date()
         
-        # Update the attributes
         edit.name = cname
         edit.modified_date = cdate
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Item Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/item")
 
     d = Item.objects.get(item_id=item_id)
@@ -3510,14 +3466,11 @@ def supplier_type_edit(request,supplier_type_id):
         csupplier_type=request.POST.get('supplier_type')
         cdate = datetime.now().date()
         
-        # Update the attributes
         edit.supplier_type = csupplier_type
         edit.modified_date = cdate
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Supplier Type Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/supplier_type")
 
     d = SupplierType.objects.get(supplier_type_id=supplier_type_id)
@@ -3554,12 +3507,12 @@ def supplier(request):
     type_data = SupplierType.objects.all()
 
     all_addresses = FarmEntityAddress.objects.all()
-    # Create a dictionary to store the first address for each farm_entity_id
+
     address_dict = {}
     for address in all_addresses:
         if address.farm_entity_id not in address_dict:
             address_dict[address.farm_entity_id] = address
-    # Convert the dictionary values to a list
+
     address_data = list(address_dict.values())
     context = {
         "data1": paginated_data,
@@ -3608,15 +3561,12 @@ def supplier_edit(request,farm_entity_id):
         csupplier_type = request.POST.get('supplier_type')
         caccount_number = request.POST.get('account_number')
         
-        # Update the attributes
         edit.supplier_name = csupplier_name
         edit.supplier_type_id = csupplier_type
         edit.account_number = caccount_number
         
-        # Save the changes
         edit.save()
         messages.warning(request, "Supplier Updated Successfully!")
-        # Optionally, redirect to a success page or another view
         return redirect("/supplier")
 
     d = Supplier.objects.get(farm_entity_id=farm_entity_id)
@@ -3646,7 +3596,6 @@ def add_supplier_contact(request):
         ccontact_type = request.POST.get('contact_type')
         ccontact = request.POST.get('contact')
             
-        # Create a new contact
         contact = FarmEntityContact(
             farm_entity_id=csupplier_id,
             contact_type_id=ccontact_type,
@@ -3753,8 +3702,6 @@ def request_order_add(request):
         
         order.requested_date = datetime.now().date()
         order.request_approved = 'Pending'
-        # order.purchase_approved = 'Pending'
-        # order.inventory_approved = 'Pending'
         order.save()
 
         query = OrderHasItem.objects.create(order=order, item_id=citem_name, type_id=citem_type, item_measurement_id=citem_measurement_id, quantity=cquantity, modified_date=cdate)
@@ -3834,7 +3781,6 @@ def request_order_delete(request, order_id):
         order = order_item.order
         order_item.delete()
 
-        # Check if there are any remaining items associated with this order
         remaining_items = OrderHasItem.objects.filter(order=order)
         if remaining_items.count() == 0:
             order.delete()
@@ -3955,7 +3901,6 @@ def rfq_add(request, order_id):
 def rfq_edit(request,id):
     if not request.user.has_perm('erp.change_orderhasitemsupplier'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    # edit = OrderHasItemSupplier.objects.get(id=id)
     edit = get_object_or_404(OrderHasItemSupplier, id=id)
     
     if request.method == "POST":
@@ -4129,12 +4074,9 @@ def generate_purchase_order(request, order_id):
     
     data = OrderHasItemSupplier.objects.filter(order_id=order_id, status='approved')
     item_data = Item.objects.all()
-    # supplier_data = Supplier.objects.all()
     supplier_ids = set(item.supplier.farm_entity_id for item in data)
     current_date = timezone.now()
-    # contact_data = FarmEntityContact.objects.filter(farm_entity__in=[item.supplier.farm_entity_id for item in data])
     contact_data = []
-    # address_data = FarmEntityAddress.objects.filter(farm_entity__in=[item.supplier.farm_entity_id for item in data])
     address_data = []
     supplier_data = Supplier.objects.filter(farm_entity_id__in=supplier_ids)
     
@@ -4662,8 +4604,7 @@ def stockout_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data1': Stock.objects.all(),
-                # 'data1' : Item.objects.all(),
+                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
                 'data2': ItemMeasurement.objects.all(),
                 'data3': ItemType.objects.all(),
             }
@@ -4674,15 +4615,23 @@ def stockout_add(request):
             type_id=citem_type,
             item_measurement_id=citem_measurement_id
         ).first()
+        
         if not stock_item:
-            return JsonResponse({'error': 'Stock item not found'}, status=404)
+            errors.append("Stock item not found.")
+            context = {
+                'errors': errors,
+                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+                'data2': ItemMeasurement.objects.all(),
+                'data3': ItemType.objects.all(),
+            }
+            return render(request, 'inventory/stockout_add.html', context)
         
         current_stock_quantity = float(stock_item.quantity)
 
         if cquantity > current_stock_quantity:
             errors.append("Requested quantity exceeds current stock")
             
-            item_data = Stock.objects.all()
+            item_data = Stock.objects.values('item_id', 'item__name').distinct()
             measurement_data = ItemMeasurement.objects.all()
             type_data = ItemType.objects.all()
             
@@ -4702,8 +4651,7 @@ def stockout_add(request):
         messages.success(request, "Stock out request sent Successfully!")
         return redirect("/stock_out")
     
-    item_data = Stock.objects.all()
-    # item_data = Item.objects.all()
+    item_data = Stock.objects.values('item_id', 'item__name').distinct()
     measurement_data = ItemMeasurement.objects.all()
     type_data = ItemType.objects.all()
     context = {
@@ -4719,6 +4667,10 @@ def stockout_edit(request,id):
     if not request.user.has_perm('erp.change_stockout'):
         return HttpResponse('You are not authorised to view this page', status=403)
     edit = Stockout.objects.get(id=id)
+
+    current_item_id = edit.item_id if edit.item_id else None
+    current_item_type_id = edit.item_type_id if edit.item_type_id else None
+    current_item_measurement_id = edit.measurement_id if edit.measurement_id else None
     
     if request.method == "POST":
         cquantity=request.POST.get('quantity')
@@ -4744,11 +4696,13 @@ def stockout_edit(request,id):
                 'errors': errors,
                 "d": Stockout.objects.get(id=id), 
                 "item": edit,
-                'data1': Stock.objects.all(),
-                'data2': ItemMeasurement.objects.all(),
-                'data3': ItemType.objects.all(),
+                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+                'current_item_id': current_item_id,
+                'current_item_type_id': current_item_type_id,
+                'current_item_measurement_id': current_item_measurement_id,
             }
             return render(request, 'inventory/stockout_edit.html', context)
+
 
         stock_item = Stock.objects.filter(
             item_id=citem_id,
@@ -4756,7 +4710,18 @@ def stockout_edit(request,id):
             item_measurement_id=citem_measurement_id
         ).first()
         if not stock_item:
-            return JsonResponse({'error': 'Stock item not found'}, status=404)
+            errors.append("Stock item not found.")
+            context = {
+                'errors': errors,
+                "d": Stockout.objects.get(id=id), 
+                "item": edit,
+                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+                'current_item_id': current_item_id,
+                'current_item_type_id': current_item_type_id,
+                'current_item_measurement_id': current_item_measurement_id,
+
+            }
+            return render(request, 'inventory/stockout_edit.html', context)
         
         current_stock_quantity = float(stock_item.quantity)
 
@@ -4764,21 +4729,13 @@ def stockout_edit(request,id):
             errors.append("Requested quantity exceeds current stock")
             
             d = Stockout.objects.get(id=id)
-            data1 = Stock.objects.all()
-            data2 = ItemMeasurement.objects.all()
-            data3 = ItemType.objects.all()
-
-            current_item_id = edit.item_id if edit.item_id else None
-            current_item_type_id = edit.item_type_id if edit.item_type_id else None
-            current_item_measurement_id = edit.measurement_id if edit.measurement_id else None
+            data1 = Stock.objects.values('item_id', 'item__name').distinct()
             
             context = {
                 'errors': errors,
                 'd': d,
                 'item': edit,
                 'data1': data1,
-                'data2': data2,
-                'data3': data3,
                 'current_item_id': current_item_id,
                 'current_item_type_id': current_item_type_id,
                 'current_item_measurement_id': current_item_measurement_id,
@@ -4796,21 +4753,13 @@ def stockout_edit(request,id):
         messages.warning(request, "Stockout Updated Successfully!")
         return redirect("/stock_out")
 
-    current_item_id = edit.item_id if edit.item_id else None
-    current_item_type_id = edit.item_type_id if edit.item_type_id else None
-    current_item_measurement_id = edit.measurement_id if edit.measurement_id else None
-
     d = Stockout.objects.get(id=id)
-    data1 = Stock.objects.all()
-    data2 = ItemMeasurement.objects.all()
-    data3 = ItemType.objects.all()
+    data1 = Stock.objects.values('item_id', 'item__name').distinct()
         
     context = {
         'd': d,
         'item': edit,
         'data1': data1,
-        'data2': data2,
-        'data3': data3,
         'current_item_id': current_item_id,
         'current_item_type_id': current_item_type_id,
         'current_item_measurement_id': current_item_measurement_id,
@@ -4849,14 +4798,11 @@ def approve_stockout(request, id):
         inventory.approved_by_id = user_profile.employee_id
         inventory.status = 'Approved'
         inventory.save()
-        
-        # stock_item.quantity = str(current_stock_quantity - requested_quantity)
-        # stock_item.modified_date = timezone.now()
-        # stock_item.save()
 
         new_stock_quantity = current_stock_quantity - requested_quantity
         stock_item.quantity = str(new_stock_quantity)
         stock_item.modified_date = timezone.now()
+        stock_item.save()
 
         if new_stock_quantity == 0:
             stock_item.delete()
@@ -5227,7 +5173,6 @@ def employee_delete(request, farm_entity_id):
         return HttpResponse('You are not authorised to view this page', status=403)
     farm_entity = get_object_or_404(FarmEntity, farm_entity_id=farm_entity_id)
 
-    # Delete related objects
     person = get_object_or_404(Person, farm_entity=farm_entity)
     employee = get_object_or_404(Employee, person_farm_entity=person)
     person.delete()
@@ -5248,7 +5193,6 @@ def add_contact(request):
         ccontact_type = request.POST.get('contact_type')
         ccontact = request.POST.get('contact')
             
-        # Create a new contact
         contact = FarmEntityContact(
             farm_entity_id=cemployee_id,
             contact_type_id=ccontact_type,
@@ -5899,43 +5843,6 @@ def profit_loss(request):
     }
     return render(request, 'finance/profit_loss.html', context)
 
-
-
-# @login_required(login_url='login')
-# def profit_loss(request):
-#     # start_date = request.GET.get('start_date')
-#     # end_date = request.GET.get('end_date')
-
-
-#     current_year = now().year
-#     past_year = current_year - 1
-
-#     current_year_incomes = {
-#         'sales_income': SalesOrder.objects.filter(payment_status='Fully Paid',order_date__year__lte=current_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0,
-#         'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year, transaction_type='Income', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
-#     }
-#     current_year_total_incomes = sum(current_year_incomes.values())
-
-#     current_year_expenses = {
-#         'procurement_expense': get_accounts_payable_value(OrderHasItemSupplier.objects.filter(inventory_status='Approved'), current_year),
-#         'stockin_expense': DirectlyAddedItem.objects.filter(added_date__year__lte=current_year,approval_status='Approved').aggregate(total_value=Sum('total_price'))['total_value'] or 0,
-#         'other_expense': OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year,transaction_type='Expense',transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
-
-#     }
-#     current_year_total_expenses = sum(current_year_expenses.values())
-
-
-#     context = {
-#         'current_year': {
-#             'incomes': current_year_incomes,
-#             'total_incomes': current_year_total_incomes,
-#             'expenses': current_year_expenses,
-#             'total_expenses': current_year_total_expenses,
-#         },
-#     }
-
-#     return render(request, 'finance/profit_loss.html', context)
-
 @login_required(login_url='login')
 def reports(request):
     return render(request, 'reports/reports.html')
@@ -6009,7 +5916,6 @@ def stock_report(request):
     paginated_data = paginate_data(request, stock_data, 10) 
 
     context = {
-        # 'stock_data': stock_data,
         'item_list': item_list,
         'filters_applied': bool(start_date or end_date or item_id),
         'stock_data': paginated_data,
