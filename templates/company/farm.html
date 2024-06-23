@@ -26,7 +26,7 @@
   {% endfor %}
 
   <section class="content">
-    <form action="/farm/" method="post">
+    <form action="/farm/" method="post" enctype="multipart/form-data">
       {% csrf_token %}
       <div class="row">
         <div class="col-md-6">
@@ -47,6 +47,10 @@
               <div class="form-group">
                 <label for="inputDescription">Nick Name</label>
                 <input type="text" id="inputName" name="nick_name" value="{{ latest_farm.nick_name }}" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="inputLogo">Farm Logo</label>
+                <input type="file" id="inputLogo" name="logo_photo" accept="image/*">
               </div>
               <div class="form-group">
                 <label for="inputDescription">Country</label>

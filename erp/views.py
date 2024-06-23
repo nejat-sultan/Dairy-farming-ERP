@@ -38,6 +38,143 @@ from django.contrib.auth.decorators import permission_required
 from django.contrib.auth import update_session_auth_hash
 from .utils import get_low_quantity_items, get_overdue_vaccines, paginate_data 
 
+def get_latest_farm():
+    return Farm.objects.last()
+
+@login_required(login_url='login')
+def farm(request):
+    if not request.user.has_perm('erp.add_farm'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    
+    latest_farm = get_latest_farm()
+
+    if request.method == 'POST':
+        full_name = request.POST.get('full_name')
+        nick_name = request.POST.get('nick_name')
+        country = request.POST.get('country')
+        region_id = request.POST.get('region_id')
+        house_number = request.POST.get('house_number')
+        kebele = request.POST.get('kebele')
+        woreda = request.POST.get('woreda')
+        zone_subcity = request.POST.get('zone_subcity')
+        date = timezone.now().date()
+        
+        if 'logo_photo' in request.FILES:
+            photo_file = request.FILES['logo_photo']
+            fs = FileSystemStorage(location=settings.MEDIA_ROOT + '/photos')
+            filename = fs.save(photo_file.name, photo_file)
+            logo_photo_url = settings.MEDIA_URL + 'photos/' + filename
+
+        else:
+            logo_photo_url = None
+        
+        if latest_farm:
+            latest_farm.full_name = full_name
+            latest_farm.nick_name = nick_name
+            latest_farm.country = country
+            latest_farm.region_id = region_id
+            latest_farm.house_number = house_number
+            latest_farm.kebele = kebele
+            latest_farm.woreda = woreda
+            latest_farm.zone_subcity = zone_subcity
+            latest_farm.modified_date = date
+            if logo_photo_url:
+                latest_farm.logo_url = logo_photo_url
+
+            latest_farm.save()
+            messages.success(request, "Farm Updated Successfully!")
+        else:
+            Farm.objects.create(full_name=full_name,logo_url=logo_photo_url, nick_name=nick_name, country=country, region_id=region_id, house_number=house_number, kebele=kebele, woreda=woreda, zone_subcity=zone_subcity, modified_date=date)
+            messages.success(request, "Farm Added Successfully!")
+
+        return redirect('farm')
+    
+    region_data = Region.objects.all()
+    farm_contacts = FarmContacts.objects.all()
+    context = {'latest_farm': latest_farm, 'farm_contacts': farm_contacts, 'data1': region_data}
+
+    return render(request, 'company/farm.html', context)
+
+def farm_context_processor(request):
+    latest_farm = get_latest_farm()
+    overdue_cattle = get_overdue_vaccines()
+    low_quantity_items = get_low_quantity_items()
+    notifications = {
+        'overdue_cattle': overdue_cattle,
+        'low_quantity_items': low_quantity_items,
+    }
+    total_notifications = len(overdue_cattle) + len(low_quantity_items)
+
+    return {
+        'latest_farm': latest_farm,
+        'notifications': notifications,
+        'total_notifications': total_notifications,
+        'overdue_count': len(overdue_cattle),
+        'low_quantity_count': len(low_quantity_items),
+    }
+
+
+@login_required(login_url='login')
+def farm_contact_add(request):
+    if not request.user.has_perm('erp.add_farmcontacts'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    
+    if request.method == "POST":
+        cfarm_id = request.POST.get('farm_id')
+        ccontact_type_id = request.POST.get('contact_type_id')
+        ccontact = request.POST.get('contact')
+
+        query = FarmContacts(farm_id=cfarm_id, contact_type_id=ccontact_type_id, contact=ccontact)
+        query.save()
+        messages.success(request, "Farm Contact Added Successfully!")
+        return redirect("farm")
+    
+    farm_data = Farm.objects.all()
+    type_data = ContactType.objects.all()
+    context = {
+        'data1': farm_data,
+        'data2': type_data,
+    }
+    return render(request, 'company/farm_contact_add.html', context)
+
+@login_required(login_url='login')
+def farm_contact_edit(request, id):
+    if not request.user.has_perm('erp.change_farmcontacts'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    edit = FarmContacts.objects.get(id=id)
+    if request.method == "POST":
+        cfarm_id = request.POST.get('farm_id')
+        ccontact_type_id = request.POST.get('contact_type_id')
+        ccontact = request.POST.get('contact')
+
+        edit.farm_id = cfarm_id
+        edit.contact_type_id = ccontact_type_id
+        edit.contact = ccontact
+
+        edit.save()
+        messages.warning(request, "Farm Contact Updated Successfully!")
+        return redirect("/farm")
+        
+    
+    farm_data = Farm.objects.all()
+    type_data = ContactType.objects.all()
+    context = {
+        "farm": edit,
+        'data1': farm_data,
+        'data2': type_data,
+    }
+    
+    return render(request, 'company/farm_contact_edit.html', context)
+
+@login_required(login_url='login')
+def farm_contact_delete(request, id):
+    if not request.user.has_perm('erp.delete_farmcontacts'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = FarmContacts.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Farm Contact Deleted Successfully!")
+    return redirect("/farm")
+
 
 @login_required(login_url='login')
 def user(request):
@@ -419,6 +556,7 @@ def index(request):
 
     overdue_cattle = get_overdue_vaccines()
     low_quantity_items = get_low_quantity_items()
+    total_notifications = len(overdue_cattle) + len(low_quantity_items)
  
     cattle_photos = {}
     for cow in cattle:
@@ -445,113 +583,9 @@ def index(request):
         "data1":data,'orderdatas': orderdatas,'item_data': item_data,
         'cattle': cattle,'cattle_photos': cattle_photos,'breeds': breeds, 
         'employeedatas':employeedatas,'healthdatas':healthdatas,'cattlepregnancy':cattlepregnancy,'leave':leave,'task':task,
-        'overdue_cattle': overdue_cattle,'low_quantity_items': low_quantity_items,
-
+        'overdue_cattle': overdue_cattle,'low_quantity_items': low_quantity_items, 
     }
     return render(request, 'index.html',context)
-
-@login_required(login_url='login')
-def farm(request):
-    if not request.user.has_perm('erp.add_farm'):
-        return HttpResponse('You are not authorised to view this page', status=403)
-    latest_farm = Farm.objects.last()
-    
-    if request.method == 'POST':
-        full_name = request.POST.get('full_name')
-        nick_name = request.POST.get('nick_name')
-        country = request.POST.get('country')
-        region_id = request.POST.get('region_id')
-        house_number = request.POST.get('house_number')
-        kebele = request.POST.get('kebele')
-        woreda = request.POST.get('woreda')
-        zone_subcity = request.POST.get('zone_subcity')
-        date = datetime.now().date()
-        
-        if latest_farm:
-            latest_farm.full_name = full_name
-            latest_farm.nick_name = nick_name
-            latest_farm.country = country
-            latest_farm.region_id = region_id
-            latest_farm.house_number = house_number
-            latest_farm.kebele = kebele
-            latest_farm.woreda = woreda
-            latest_farm.zone_subcity = zone_subcity
-            latest_farm.modified_date = date
-            latest_farm.save()
-            messages.success(request, "Farm Updated Successfully!")
-        else:
-            Farm.objects.create(full_name=full_name, nick_name=nick_name, country=country, region_id=region_id, house_number=house_number, kebele=kebele, woreda=woreda, zone_subcity=zone_subcity, modified_date=date)
-            messages.success(request, "Farm Added Successfully!")
-
-        return redirect('farm')
-    
-    region_data = Region.objects.all()
-    farm_contacts = FarmContacts.objects.all()
-    context = {'latest_farm': latest_farm, 'farm_contacts': farm_contacts, 'data1': region_data}
-
-    return render(request, 'company/farm.html', context)
-
-@login_required(login_url='login')
-def farm_contact_add(request):
-    if not request.user.has_perm('erp.add_farmcontacts'):
-        return HttpResponse('You are not authorised to view this page', status=403)
-    
-    if request.method == "POST":
-        cfarm_id = request.POST.get('farm_id')
-        ccontact_type_id = request.POST.get('contact_type_id')
-        ccontact = request.POST.get('contact')
-
-        query = FarmContacts(farm_id=cfarm_id, contact_type_id=ccontact_type_id, contact=ccontact)
-        query.save()
-        messages.success(request, "Farm Contact Added Successfully!")
-        return redirect("farm")
-    
-    farm_data = Farm.objects.all()
-    type_data = ContactType.objects.all()
-    context = {
-        'data1': farm_data,
-        'data2': type_data,
-    }
-    return render(request, 'company/farm_contact_add.html', context)
-
-@login_required(login_url='login')
-def farm_contact_edit(request, id):
-    if not request.user.has_perm('erp.change_farmcontacts'):
-        return HttpResponse('You are not authorised to view this page', status=403)
-    edit = FarmContacts.objects.get(id=id)
-    if request.method == "POST":
-        cfarm_id = request.POST.get('farm_id')
-        ccontact_type_id = request.POST.get('contact_type_id')
-        ccontact = request.POST.get('contact')
-
-        edit.farm_id = cfarm_id
-        edit.contact_type_id = ccontact_type_id
-        edit.contact = ccontact
-
-        edit.save()
-        messages.warning(request, "Farm Contact Updated Successfully!")
-        return redirect("/farm")
-        
-    
-    farm_data = Farm.objects.all()
-    type_data = ContactType.objects.all()
-    context = {
-        "farm": edit,
-        'data1': farm_data,
-        'data2': type_data,
-    }
-    
-    return render(request, 'company/farm_contact_edit.html', context)
-
-@login_required(login_url='login')
-def farm_contact_delete(request, id):
-    if not request.user.has_perm('erp.delete_farmcontacts'):
-        return HttpResponse('You are not authorised to view this page', status=403)
-    d = FarmContacts.objects.get(id=id)
-    d.delete()
-    messages.error(request, "Farm Contact Deleted Successfully!")
-    return redirect("/farm")
-    
 
 @login_required(login_url='login')
 def cattle(request):

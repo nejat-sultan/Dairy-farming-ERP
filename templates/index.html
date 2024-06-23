@@ -29,37 +29,6 @@
 
     <section class="content">
       <div class="container-fluid">
-        {% if request.user|has_permission:"erp.view_vetdashboard" or request.user|has_permission:"erp.view_admindashboard" %}
-        <div class="card">
-          <div class="card-body">
-            {% if overdue_cattle %}
-                <div class="alert alert-warning">
-                    <strong>Warning:</strong> The following cattle have overdue vaccinations:
-                    <ul>
-                        {% for cattle in overdue_cattle %}
-                            <li>
-                                {{ cattle.name }} - Last Vaccination: {{ cattle.last_vaccination }}
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            {% endif %} 
-
-            {% if low_quantity_items %}
-            <div class="alert alert-warning">
-                <strong>Warning:</strong> The following items have quantity below 5:
-                <ul>
-                    {% for item in low_quantity_items %}
-                    <li>{{ item.item.name }} - Quantity: {{ item.quantity }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-
-          </div>
-        </div>
-        {% endif %}
-
         {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_storeclerkdashboard" or request.user|has_permission:"erp.view_laboremployeedashboard" %}
         {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_storeclerkdashboard" or request.user|has_permission:"erp.view_vetdashboard" or request.user|has_permission:"erp.view_dataentryclerkdashboard" %}
         <div class="row">
@@ -584,7 +553,55 @@
       </div>
     </section>
 
-  </div> 
+  
+    <div id="notifications" style="display:none;">
+    {% if request.user|has_permission:"erp.view_vetdashboard" or request.user|has_permission:"erp.view_admindashboard" %}
+      {% if overdue_cattle %}
+        <div id="overdue-cattle-notification">
+            {% for cattle in overdue_cattle %}
+                {{ cattle.name }} - Last Vaccination: {{ cattle.last_vaccination }}<br>
+            {% endfor %}
+        </div>
+      {% endif %}
+    {% endif %}
+
+    {% if request.user|has_permission:"erp.view_storeclerkdashboard" or request.user|has_permission:"erp.view_admindashboard" %}
+      {% if low_quantity_items %}
+        <div id="low-quantity-items-notification">
+          {% for item in low_quantity_items %}
+              {{ item.item.name }} - Quantity: {{ item.quantity }}<br>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endif %}
+    </div>
+
+    <script>
+      $(document).ready(function() {
+        var overdueCattleNotification = $('#overdue-cattle-notification').html();
+        if (overdueCattleNotification) {
+            toastr.error(overdueCattleNotification, 'error', {
+                timeOut: 5000,
+                extendedTimeOut: 3000,
+                closeButton: true,
+                progressBar: true
+            });
+        }
+    
+        var lowQuantityItemsNotification = $('#low-quantity-items-notification').html();
+        if (lowQuantityItemsNotification) {
+            toastr.error(lowQuantityItemsNotification, 'error', {
+                timeOut: 5000,
+                extendedTimeOut: 3000,
+                closeButton: true,
+                progressBar: true
+            });
+        }
+    });
+    </script>
+
+
+</div> 
 
 {% endblock %}
 

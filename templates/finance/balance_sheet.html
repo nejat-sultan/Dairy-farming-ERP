@@ -24,27 +24,20 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        {% comment %} <div class="card-header" style="background-color: #007f5c;color: #fff;">
-                            <h1 class="card-title">Balance Sheet</h1>
-                        </div> {% endcomment %}
-
                         <div class="card-body">
                             <table id="example1" class="table table-bordered table-striped">
                                 <thead>
                                     <tr style="background-color: #007f5c; color: #fff;">
-                                        <th>Balance Sheet</th>
+                                        <th>Category</th>
                                         <th>{{ current_year.cyear }}</th>
                                         <th>{{ past_year.pyear }}</th>
-                                    </tr>
-                                    <tr style="background-color: #007f5c; color: #fff;">
-                                        <th></th>
-                                        <th>Current Year</th>
-                                        <th>Past Year</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td colspan="3"><strong>Assets</strong></td>
+                                        <td><strong>Assets</strong></td>
+                                        <td></td>
+                                        <td></td>
                                     </tr>
                                     <tr>
                                         <td>Cattle</td>
@@ -72,7 +65,9 @@
                                         <td><strong>{{ past_year.total_assets | floatformat:2 }}</strong></td>
                                     </tr>
                                     <tr>
-                                        <td colspan="3"><strong>Liabilities</strong></td>
+                                        <td><strong>Liabilities</strong></td>
+                                        <td></td>
+                                        <td></td>
                                     </tr>
                                     <tr>
                                         <td>Other Expenses</td>
@@ -89,49 +84,19 @@
                                         <td><strong>{{ current_year.total_liabilities | floatformat:2 }}</strong></td>
                                         <td><strong>{{ past_year.total_liabilities | floatformat:2 }}</strong></td>
                                     </tr>
-                                    {% comment %} <tr>
-                                        <td colspan="3"><strong>Equity</strong></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total Equity</td>
-                                        <td>{{ current_year.equity }}</td>
-                                        <td>{{ past_year.equity }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td colspan="3"><strong>Income</strong></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Total Income</td>
-                                        <td>{{ current_year.income }}</td>
-                                        <td>{{ past_year.income }}</td>
-                                    </tr> 
-                                    <tr>
-                                        <td colspan="3"><strong>Total</strong></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Assets</td>
-                                        <td>{{ current_year.total_assets }}</td>
-                                        <td>{{ past_year.total_assets }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Liabilities + Equity</td>
-                                        <td>{{ current_year.total_liabilities_equity }}</td>
-                                        <td>{{ past_year.total_liabilities_equity }}</td>
-                                    </tr> {% endcomment %}
                                 </tbody>
                             </table>
+                            
                         </div> 
                     </div>
                 </div>
             </div>
             
-            <div class="row no-print">
+            {% comment %} <div class="row no-print">
                 <div class="col-12">
                   <a href="#" id="printButton" class="btn btn-default"><i class="fas fa-print"></i> Print</a>
-                  {% comment %} <button id="exportPdfButton" class="btn btn-default"><i class="fas fa-file-pdf"></i> Export to PDF</button>
-                  <button id="exportExcelButton" class="btn btn-default"><i class="fas fa-file-excel"></i> Export to Excel</button> {% endcomment %}
                 </div>
-            </div>
+            </div> {% endcomment %}
             
         </div>
     </section>
@@ -146,24 +111,78 @@
     });
     });
 
-    $(document).ready(function() {
+    {% comment %} $(document).ready(function() {
         $('#example1').DataTable({
-            dom: 'Bfrtip',
-            buttons: [
-                'pdfHtml5',
-                'excelHtml5'
-            ]
+            "responsive": true,
+            "lengthChange": false,
+            "autoWidth": false,
+            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"],
+            "order": [] 
         });
-
-        $('#exportPdfButton').on('click', function() {
-            $('#example1').DataTable().buttons().trigger('pdfHtml5');
-        });
-
-        $('#exportExcelButton').on('click', function() {
-            $('#example1').DataTable().buttons().trigger('excelHtml5');
-        });
-    });
+    
+        $('#example1_wrapper .col-md-6:eq(0)').append($('#example1').DataTable().buttons().container());
+    }); {% endcomment %}
 </script> 
+
+
+<script>
+    $(document).ready(function() {
+        function initializeDataTables(companyName) {
+            var table = $('#example1').DataTable({
+                responsive: true,
+                lengthChange: false,
+                autoWidth: false,
+                buttons: [
+                    'copy', 'excel', 'pdf', 'print'
+                ],
+                order: [],
+                dom: 'Bfrtip', 
+                buttons: [
+                    'copy',
+                    {
+                        extend: 'excel',
+                        title: function() {
+                            return companyName + 'Balance Sheet Report - ' + new Date().toLocaleDateString();
+                        },
+                        customize: function(xlsx) {
+                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                            $('row c[r^="A"]', sheet).attr('s', '2');
+                        }
+                    },
+                    {
+                        extend: 'pdf',
+                        title: function() {
+                            return 'Balance Sheet Report';
+                        },
+                        customize: function(doc) {
+                            doc.content.splice(0, 0, {
+                                text: new Date().toLocaleDateString() + '\n' + companyName,
+                                style: 'header'
+                            });
+                        }
+                    },
+                    {
+                        extend: 'print',
+                        title: function() {
+                            return 'Balance Sheet Report';
+                        },
+                        customize: function(win) {
+                            $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
+                            $(win.document.body).prepend('<h5 style="text-align:center;">' + new Date().toLocaleDateString() + '</h5>');
+
+                            $(win.document.body).find('h3, h5').css('text-align', 'center');
+                        }
+                    },
+                ]
+            });
+
+            table.buttons().container().appendTo($('#example1_wrapper .col-md-6:eq(0)'));
+        }
+
+        var companyName = "{{ latest_farm.full_name }}"; 
+        initializeDataTables(companyName);
+    });
+</script>
 
 {% endblock %}
 

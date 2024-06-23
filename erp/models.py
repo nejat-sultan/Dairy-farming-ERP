@@ -562,7 +562,8 @@ class OtherIncomeExpense(models.Model):
 
 class Farm(models.Model):
     id = models.AutoField(primary_key=True)
-    full_name = models.CharField(max_length=300, null=True, )
+    logo_url = models.CharField(max_length=200, null=True,)
+    full_name = models.CharField(max_length=300, null=True,)
     nick_name = models.CharField(max_length=45, null=True,)
     country = models.CharField(max_length=100, null=True,)
     region = models.OneToOneField(Region, on_delete=models.CASCADE, null=True)
