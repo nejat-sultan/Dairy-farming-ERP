@@ -580,7 +580,7 @@
       $(document).ready(function() {
         var overdueCattleNotification = $('#overdue-cattle-notification').html();
         if (overdueCattleNotification) {
-            toastr.error(overdueCattleNotification, 'error', {
+            toastr.error(overdueCattleNotification, 'Alert', {
                 timeOut: 5000,
                 extendedTimeOut: 3000,
                 closeButton: true,
@@ -590,7 +590,7 @@
     
         var lowQuantityItemsNotification = $('#low-quantity-items-notification').html();
         if (lowQuantityItemsNotification) {
-            toastr.error(lowQuantityItemsNotification, 'error', {
+            toastr.error(lowQuantityItemsNotification, 'Alert', {
                 timeOut: 5000,
                 extendedTimeOut: 3000,
                 closeButton: true,

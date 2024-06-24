@@ -41,6 +41,17 @@
                   <label for="inputName">Department</label>
                   <input type="text" id="inputName" name="department" value="{{ d.department_name }}" class="form-control" required>
                 </div>
+                <div class="form-group">
+                  <label for="inputemployee">Department Head</label>
+                  <select id="inputemployee" name="manager_id" class="form-control custom-select">
+                    {% for dd in data1 %}
+                    <option value="{{dd.person_farm_entity_id}}" 
+                      {% if dd.person_farm_entity_id == d.manager_id %} selected {% endif %}>
+                        {{ dd.person_farm_entity.first_name }} {{ dd.person_farm_entity.middle_name }}
+                    </option>
+                    {% endfor %}
+                  </select>
+                </div>
               </div>
             </div>
           </div>

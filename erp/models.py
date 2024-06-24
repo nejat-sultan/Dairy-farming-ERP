@@ -52,6 +52,7 @@ class Department(models.Model):
     department_id = models.AutoField(primary_key=True)
     department_name = models.CharField(max_length=45, null=True)
     # manager = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True)
+    manager = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, related_name='managed_department')
 
     class Meta:
         db_table = 'department'
@@ -111,7 +112,7 @@ class Employee(models.Model):
     contract_type = models.CharField(max_length=30, null=True)
     contract_period_in_month = models.IntegerField(null=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
-    department = models.ForeignKey(Department, on_delete=models.CASCADE)
+    department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='employees')
 
     class Meta:
         db_table = 'employee'
@@ -481,7 +482,6 @@ class Stockout(models.Model):
         db_table = 'stockout'
 
 
-
 class FeedFormulation(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, null=True)
@@ -533,20 +533,39 @@ class PaymentMethod(models.Model):
     class Meta:
         db_table = 'payment_method'
 
+# class SalesOrder(models.Model):
+#     id = models.AutoField(primary_key=True)
+#     # order_date = models.CharField(max_length=45, null=True)
+#     order_date = models.DateTimeField(null=True)
+#     quantity = models.FloatField()
+#     unit_price = models.FloatField(null=True)
+#     payment_status = models.CharField(max_length=45, null=True)
+#     total_amount = models.FloatField(null=True)
+#     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+#     # stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+#     stock = models.ForeignKey(Stock, on_delete=models.SET_NULL, null=True)
+#     payment_method = models.OneToOneField(PaymentMethod, on_delete=models.CASCADE, null=True)
+
+#     class Meta:
+#         db_table = 'sales_order'
+
 class SalesOrder(models.Model):
     id = models.AutoField(primary_key=True)
-    # order_date = models.CharField(max_length=45, null=True)
     order_date = models.DateTimeField(null=True)
     quantity = models.FloatField()
     unit_price = models.FloatField(null=True)
     payment_status = models.CharField(max_length=45, null=True)
     total_amount = models.FloatField(null=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+    stock = models.ForeignKey(Stock, on_delete=models.SET_NULL, null=True)
     payment_method = models.OneToOneField(PaymentMethod, on_delete=models.CASCADE, null=True)
+    item_name = models.CharField(max_length=100, null=True)
+    item_type = models.CharField(max_length=100, null=True)
+    item_measurement = models.CharField(max_length=100, null=True)
 
     class Meta:
         db_table = 'sales_order'
+
 
 class OtherIncomeExpense(models.Model):
     id = models.AutoField(primary_key=True)

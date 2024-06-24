@@ -366,7 +366,6 @@ def logout_user(request):
 @login_required(login_url='login')
 def profile(request):
     user = request.user
-
     try:
         user_profile = UserProfile.objects.get(user=user)
         employee = Employee.objects.get(pk=user_profile.employee_id)
@@ -1614,10 +1613,12 @@ def milk_production_add(request):
         if camount_in_liter:
             try:
                 camount_in_liter = float(camount_in_liter)
+                if camount_in_liter <= 0:
+                    errors.append("Amount in Liter must be a positive number.")
             except ValueError:
-                errors.append('Amount in liter must be a number.')
+                errors.append("Amount in liter must be a number.")
         else:
-            camount_in_liter = None 
+            camount_in_liter = None
 
         if cfat_content:
             try:
@@ -1625,7 +1626,7 @@ def milk_production_add(request):
             except ValueError:
                 errors.append('Fat content must be a number.')
         else:
-            cfat_content = None 
+            cfat_content = 0 
 
         if cprotein_content:
             try:
@@ -1633,7 +1634,7 @@ def milk_production_add(request):
             except ValueError:
                 errors.append('Protein content must be a number.')
         else:
-            cprotein_content = None 
+            cprotein_content = 0 
 
         if csomatic_cell_count:
             try:
@@ -1641,15 +1642,17 @@ def milk_production_add(request):
             except ValueError:
                 errors.append('Somatic cell count content must be a number.')
         else:
-            csomatic_cell_count = None 
+            csomatic_cell_count = 0 
 
         if cduration_in_min:
             try:
                 cduration_in_min = float(cduration_in_min)
+                if cduration_in_min < 0:
+                    errors.append("Duration in min count must be a positive number.")
             except ValueError:
-                errors.append('Duration in min count content must be a number.')
+                errors.append('Duration in min count must be a number.')
         else:
-            cduration_in_min = None 
+            cduration_in_min = 0 
             
         if errors:
             context = {
@@ -1699,10 +1702,12 @@ def milk_production_edit(request,milk_production_id):
         if camount_in_liter:
             try:
                 camount_in_liter = float(camount_in_liter)
+                if camount_in_liter <= 0:
+                    errors.append("Amount in Liter must be a positive number.")
             except ValueError:
-                errors.append('Amount in liter must be a number.')
+                errors.append("Amount in liter must be a number.")
         else:
-            camount_in_liter = None 
+            camount_in_liter = None
 
         if cfat_content:
             try:
@@ -1710,7 +1715,7 @@ def milk_production_edit(request,milk_production_id):
             except ValueError:
                 errors.append('Fat content must be a number.')
         else:
-            cfat_content = None 
+            cfat_content = 0 
 
         if cprotein_content:
             try:
@@ -1718,7 +1723,7 @@ def milk_production_edit(request,milk_production_id):
             except ValueError:
                 errors.append('Protein content must be a number.')
         else:
-            cprotein_content = None 
+            cprotein_content = 0 
 
         if csomatic_cell_count:
             try:
@@ -1726,15 +1731,17 @@ def milk_production_edit(request,milk_production_id):
             except ValueError:
                 errors.append('Somatic cell count content must be a number.')
         else:
-            csomatic_cell_count = None 
+            csomatic_cell_count = 0 
 
         if cduration_in_min:
             try:
                 cduration_in_min = float(cduration_in_min)
+                if cduration_in_min < 0:
+                    errors.append("Duration in min count must be a positive number.")
             except ValueError:
-                errors.append('Duration in min count content must be a number.')
+                errors.append('Duration in min count must be a number.')
         else:
-            cduration_in_min = None 
+            cduration_in_min = 0 
             
         if errors:
             context = {
@@ -2569,11 +2576,11 @@ def sales_order(request):
 def sales_order_add(request):
     if not request.user.has_perm('erp.add_salesorder'):
         return HttpResponse('You are not authorised to view this page', status=403)
-  
+
     if request.method == "POST":
         citem_name = request.POST.get('item_name')
-        citem_type = request.POST.get('item_type') 
-        citem_measurement_id=request.POST.get('item_measurement_id')
+        citem_type = request.POST.get('item_type')
+        citem_measurement_id = request.POST.get('item_measurement_id')
         ccustomer_id = request.POST.get('customer_id')
         cquantity = request.POST.get('quantity')
         corder_date = request.POST.get('order_date')
@@ -2620,12 +2627,46 @@ def sales_order_add(request):
             }
             return render(request, 'sales/sales_order_add.html', context)
 
-        ctotal_amount = cquantity * cunit_price
+        try:
+            stock_instance = Stock.objects.get(item_id=citem_name, type_id=citem_type, item_measurement_id=citem_measurement_id)
 
-        stock_instance = Stock.objects.get(item_id=citem_name, type_id=citem_type, item_measurement_id=citem_measurement_id)
+            if float(stock_instance.quantity) < cquantity:
+                errors.append("Order quantity exceeds available stock.")
+                context = {
+                    'errors': errors,
+                    'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+                    'data2': Customer.objects.all(),
+                    'data3': PaymentMethod.objects.all(),
+                    'data4': ItemType.objects.all(),
+                }
+                return render(request, 'sales/sales_order_add.html', context)
 
-        if float(stock_instance.quantity) < cquantity:
-            errors.append("Order quantity exceeds available stock.")
+            query = SalesOrder(
+                stock=stock_instance,
+                customer_id=ccustomer_id,
+                quantity=cquantity,
+                order_date=corder_date,
+                unit_price=cunit_price,
+                payment_method_id=cpayment_method,
+                payment_status=cpayment_status,
+                total_amount=cquantity * cunit_price,
+                item_name=stock_instance.item.name, 
+                item_type=stock_instance.type.item_type, 
+                item_measurement=stock_instance.item_measurement.measurement 
+            )
+            query.save()
+
+            stock_instance.quantity = str(float(stock_instance.quantity) - cquantity)
+            if float(stock_instance.quantity) <= 0.0:
+                stock_instance.delete()
+            else:
+                stock_instance.save()
+
+            messages.success(request, "Sales Order Added Successfully!")
+            return redirect("/sales_order")
+
+        except Stock.DoesNotExist:
+            errors.append("Stock item does not exist.")
             context = {
                 'errors': errors,
                 'data1': Stock.objects.values('item_id', 'item__name').distinct(),
@@ -2634,30 +2675,17 @@ def sales_order_add(request):
                 'data4': ItemType.objects.all(),
             }
             return render(request, 'sales/sales_order_add.html', context)
-        
-        stock_instance.quantity = str(float(stock_instance.quantity) - cquantity)  
-        stock_instance.save()
+        except Exception as e:
+            errors.append(f"An unexpected error occurred: {e}")
+            context = {
+                'errors': errors,
+                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+                'data2': Customer.objects.all(),
+                'data3': PaymentMethod.objects.all(),
+                'data4': ItemType.objects.all(),
+            }
+            return render(request, 'sales/sales_order_add.html', context)
 
-        query = SalesOrder(
-            stock=stock_instance,
-            customer_id=ccustomer_id,
-            quantity=cquantity,
-            order_date=corder_date,
-            unit_price=cunit_price,
-            payment_method_id=cpayment_method,
-            payment_status=cpayment_status,
-            total_amount=ctotal_amount
-        )
-        query.save()
-
-        if float(stock_instance.quantity) == 0.0:
-            stock_instance.delete()
-        else:
-            stock_instance.save()
-
-        messages.success(request, "Sales Order Added Successfully!")
-        return redirect("/sales_order")
-    
     data1 = Stock.objects.values('item_id', 'item__name').distinct()
     data2 = Customer.objects.all()
     data3 = PaymentMethod.objects.all()
@@ -2671,19 +2699,144 @@ def sales_order_add(request):
 
     return render(request, 'sales/sales_order_add.html', context)
 
+
+# def sales_order_add(request):
+#     if not request.user.has_perm('erp.add_salesorder'):
+#         return HttpResponse('You are not authorised to view this page', status=403)
+
+#     if request.method == "POST":
+#         citem_name = request.POST.get('item_name')
+#         citem_type = request.POST.get('item_type')
+#         citem_measurement_id = request.POST.get('item_measurement_id')
+#         ccustomer_id = request.POST.get('customer_id')
+#         cquantity = request.POST.get('quantity')
+#         corder_date = request.POST.get('order_date')
+#         cunit_price = request.POST.get('unit_price')
+#         cpayment_method = request.POST.get('payment_method')
+#         cpayment_status = request.POST.get('payment_status')
+
+#         errors = []
+#         if cquantity:
+#             try:
+#                 cquantity = float(cquantity)
+#                 if cquantity <= 0:
+#                     errors.append("Quantity must be a positive number.")
+#             except ValueError:
+#                 errors.append("Quantity must be a valid number.")
+#         else:
+#             errors.append("Quantity is required.")
+
+#         if corder_date:
+#             try:
+#                 corder_date = datetime.strptime(corder_date, '%Y-%m-%dT%H:%M')
+#             except ValueError:
+#                 errors.append('Order Date must be in YYYY-MM-DDTHH:MM format.')
+#         else:
+#             errors.append("Order Date is required.")
+
+#         if cunit_price:
+#             try:
+#                 cunit_price = float(cunit_price)
+#                 if cunit_price <= 0:
+#                     errors.append("Price must be a positive number.")
+#             except ValueError:
+#                 errors.append('Price must be a number.')
+#         else:
+#             errors.append("Price is required.")
+
+#         if errors:
+#             context = {
+#                 'errors': errors,
+#                 'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+#                 'data2': Customer.objects.all(),
+#                 'data3': PaymentMethod.objects.all(),
+#                 'data4': ItemType.objects.all(),
+#             }
+#             return render(request, 'sales/sales_order_add.html', context)
+
+#         try:
+#             stock_instance = Stock.objects.get(item_id=citem_name, type_id=citem_type, item_measurement_id=citem_measurement_id)
+
+#             if float(stock_instance.quantity) < cquantity:
+#                 errors.append("Order quantity exceeds available stock.")
+#                 context = {
+#                     'errors': errors,
+#                     'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+#                     'data2': Customer.objects.all(),
+#                     'data3': PaymentMethod.objects.all(),
+#                     'data4': ItemType.objects.all(),
+#                 }
+#                 return render(request, 'sales/sales_order_add.html', context)
+
+#             query = SalesOrder(
+#                 stock=stock_instance,
+#                 customer_id=ccustomer_id,
+#                 quantity=cquantity,
+#                 order_date=corder_date,
+#                 unit_price=cunit_price,
+#                 payment_method_id=cpayment_method,
+#                 payment_status=cpayment_status,
+#                 total_amount=cquantity * cunit_price
+#             )
+#             query.save()
+
+#             stock_instance.quantity = str(float(stock_instance.quantity) - cquantity)
+#             if float(stock_instance.quantity) <= 0.0:
+#                 stock_instance.delete()
+#             else:
+#                 stock_instance.save()
+
+#             messages.success(request, "Sales Order Added Successfully!")
+#             return redirect("/sales_order")
+
+#         except Stock.DoesNotExist:
+#             errors.append("Stock item does not exist.")
+#             context = {
+#                 'errors': errors,
+#                 'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+#                 'data2': Customer.objects.all(),
+#                 'data3': PaymentMethod.objects.all(),
+#                 'data4': ItemType.objects.all(),
+#             }
+#             return render(request, 'sales/sales_order_add.html', context)
+#         except Exception as e:
+#             errors.append(f"An unexpected error occurred: {e}")
+#             context = {
+#                 'errors': errors,
+#                 'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+#                 'data2': Customer.objects.all(),
+#                 'data3': PaymentMethod.objects.all(),
+#                 'data4': ItemType.objects.all(),
+#             }
+#             return render(request, 'sales/sales_order_add.html', context)
+
+#     data1 = Stock.objects.values('item_id', 'item__name').distinct()
+#     data2 = Customer.objects.all()
+#     data3 = PaymentMethod.objects.all()
+#     data4 = ItemType.objects.all()
+#     context = {
+#         'data1': data1,
+#         'data2': data2,
+#         'data3': data3,
+#         'data4': data4,
+#     }
+
+#     return render(request, 'sales/sales_order_add.html', context)
+
 @login_required(login_url='login')
 def sales_order_edit(request, id):
     if not request.user.has_perm('erp.change_salesorder'):
         return HttpResponse('You are not authorised to view this page', status=403)
+    
     edit = SalesOrder.objects.get(id=id)
 
-    if request.method=="POST":
-        ccustomer_id=request.POST.get('customer_id')
-        cquantity=request.POST.get('quantity')
-        corder_date=request.POST.get('order_date')
-        cunit_price=request.POST.get('unit_price')
-        cpayment_method=request.POST.get('payment_method')
-        cpayment_status=request.POST.get('payment_status')
+    if request.method == "POST":
+        ccustomer_id = request.POST.get('customer_id')
+        cquantity = request.POST.get('quantity')
+        corder_date = request.POST.get('order_date')
+        cunit_price = request.POST.get('unit_price')
+        cpayment_method = request.POST.get('payment_method')
+        cpayment_status = request.POST.get('payment_status')
 
         errors = []
         if cquantity:
@@ -2717,7 +2870,7 @@ def sales_order_edit(request, id):
         if errors:
             context = {
                 'errors': errors,
-                'd': SalesOrder.objects.get(id=id),
+                'd': edit,
                 'data1': Stock.objects.all(),
                 'data2': Customer.objects.all(),
                 'data3': PaymentMethod.objects.all(),
@@ -2726,20 +2879,25 @@ def sales_order_edit(request, id):
         
         ctotal_amount = cquantity * cunit_price
 
-        stock_instance = edit.stock  
-        if float(stock_instance.quantity) + edit.quantity - float(cquantity) < 0:
+        stock_instance = edit.stock
+        current_stock_quantity = float(stock_instance.quantity) if stock_instance else 0
+        old_order_quantity = edit.quantity
+        new_order_quantity = cquantity
+
+        if current_stock_quantity + old_order_quantity - new_order_quantity < 0:
             errors.append("Order quantity exceeds available stock.")
             context = {
                 'errors': errors,
-                'd': SalesOrder.objects.get(id=id),
+                'd': edit,
                 'data1': Stock.objects.all(),
                 'data2': Customer.objects.all(),
                 'data3': PaymentMethod.objects.all(),
             }
             return render(request, 'sales/sales_order_edit.html', context)
 
-        stock_instance.quantity = str(float(stock_instance.quantity) + edit.quantity - float(cquantity))
-        stock_instance.save()
+        if stock_instance:
+            stock_instance.quantity = str(current_stock_quantity + old_order_quantity - new_order_quantity)
+            stock_instance.save()
 
         edit.customer_id = ccustomer_id
         edit.quantity = cquantity
@@ -2750,15 +2908,13 @@ def sales_order_edit(request, id):
         edit.total_amount = ctotal_amount
         edit.save()
 
-        if float(stock_instance.quantity) == 0.0:
+        if stock_instance and float(stock_instance.quantity) == 0.0:
             stock_instance.delete()
-        else:
-            stock_instance.save()
 
         messages.success(request, "Sales Order updated Successfully!")
         return redirect("/sales_order")
     
-    d = SalesOrder.objects.get(id=id)
+    d = edit
     data1 = Stock.objects.all()
     data2 = Customer.objects.all()
     data3 = PaymentMethod.objects.all()
@@ -2769,6 +2925,7 @@ def sales_order_edit(request, id):
         'data3': data3,
     }
     return render(request, 'sales/sales_order_edit.html', context)
+
 
 def sales_order_delete(request, id):
     if not request.user.has_perm('erp.delete_salesorder'):
@@ -4878,13 +5035,17 @@ def department_add(request):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         cdepartment=request.POST.get('department')
+        cmanager_id=request.POST.get('manager_id')
 
-        query = Department(department_name=cdepartment)
+        query = Department(department_name=cdepartment, manager_id=cmanager_id)
         query.save()
         messages.success(request, "Department Added Successfully!")
         return redirect("/department")
 
-    return render(request, 'employee/department_add.html')
+    data1 = Employee.objects.all()
+    context = {"data1":data1}
+
+    return render(request, 'employee/department_add.html', context)
 
 @login_required(login_url='login')
 def department_edit(request,department_id):
@@ -4894,14 +5055,17 @@ def department_edit(request,department_id):
     
     if request.method == "POST":
         cdepartment=request.POST.get('department')
+        cmanager_id=request.POST.get('manager_id')
 
         edit.department_name = cdepartment
+        edit.manager_id = cmanager_id
         edit.save()
         messages.warning(request, "Department Updated Successfully!")
         return redirect("/department")
 
     d = Department.objects.get(department_id=department_id)
-    context = {"d": d}
+    data1 = Employee.objects.all()
+    context = {"d": d, "data1":data1}
 
     return render(request, 'employee/department_edit.html', context)
 
@@ -5558,7 +5722,7 @@ def reject_leave(request, leave_id):
 
 @login_required(login_url='login')
 def transaction(request):
-    if not request.user.has_perm('erp.view_otherincomeexpense'):
+    if not request.user.has_perm('erp.view_transaction'):
         return HttpResponse('You are not authorised to view this page', status=403)
     data = OtherIncomeExpense.objects.all()
     paginated_data = paginate_data(request, data, 10) 
@@ -5568,7 +5732,7 @@ def transaction(request):
 
 @login_required(login_url='login')
 def transaction_add(request):
-    if not request.user.has_perm('erp.add_otherincomeexpense'):
+    if not request.user.has_perm('erp.add_transaction'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method=="POST":
         ctransaction_type=request.POST.get('transaction_type')
@@ -5618,7 +5782,7 @@ def transaction_add(request):
 
 @login_required(login_url='login')
 def transaction_edit(request, id):
-    if not request.user.has_perm('erp.change_otherincomeexpense'):
+    if not request.user.has_perm('erp.change_transaction'):
         return HttpResponse('You are not authorised to view this page', status=403)
     edit = OtherIncomeExpense.objects.get(id=id)
 
@@ -5676,7 +5840,7 @@ def transaction_edit(request, id):
     return render(request, 'finance/transaction_edit.html', context)
 
 def transaction_delete(request, id):
-    if not request.user.has_perm('erp.delete_otherincomeexpense'):
+    if not request.user.has_perm('erp.delete_transaction'):
         return HttpResponse('You are not authorised to view this page', status=403)
     d = OtherIncomeExpense.objects.get(id=id)
     d.delete()
@@ -5695,6 +5859,8 @@ def get_accounts_payable_value(queryset, year):
 
 @login_required(login_url='login')
 def balance_sheet(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     current_year = now().year
     past_year = current_year - 1
 
@@ -5762,6 +5928,8 @@ def get_procurement_value(queryset, start_date, end_date):
 
 @login_required(login_url='login')
 def profit_loss(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
@@ -5879,10 +6047,14 @@ def profit_loss(request):
 
 @login_required(login_url='login')
 def reports(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     return render(request, 'reports/reports.html')
 
 @login_required(login_url='login')
 def milk_production_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     cattle_id = request.GET.get('cattle')
@@ -5909,6 +6081,8 @@ def milk_production_report(request):
 
 @login_required(login_url='login')
 def total_milk_production_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
@@ -5926,6 +6100,7 @@ def total_milk_production_report(request):
     context = {
         'total_milk_production_data': paginated_data,
         'total_amount': total_amount,
+        'filters_applied': bool(start_date or end_date),
     }
 
     return render(request, 'reports/total_milk_production_report.html', context)
@@ -5933,6 +6108,8 @@ def total_milk_production_report(request):
 
 @login_required(login_url='login')
 def stock_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     item_id = request.GET.get('item')
@@ -5959,6 +6136,8 @@ def stock_report(request):
 
 @login_required(login_url='login')
 def sales_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
@@ -5973,12 +6152,15 @@ def sales_report(request):
 
     context = {
         'sales_data': paginated_data,
+        'filters_applied': bool(start_date or end_date),
     }
 
     return render(request, 'reports/sales_report.html', context)
 
 @login_required(login_url='login')
 def procurement_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
@@ -5993,12 +6175,15 @@ def procurement_report(request):
 
     context = {
         'procurement_data': paginated_data,
+        'filters_applied': bool(start_date or end_date),
     }
 
     return render(request, 'reports/procurement_report.html', context)
 
 @login_required(login_url='login')
 def feed_formulation_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     formulation_data = FeedFormulation.objects.all()
     paginated_data = paginate_data(request, formulation_data, 10) 
 
@@ -6010,6 +6195,8 @@ def feed_formulation_report(request):
 
 @login_required(login_url='login')
 def employee_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     employee_id = request.GET.get('employee')
@@ -6035,6 +6222,8 @@ def employee_report(request):
 
 @login_required(login_url='login')
 def employee_with_task_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
     today = timezone.now().date()
     task_data = TaskAssignment.objects.filter(due_time__date=today)
     paginated_data = paginate_data(request, task_data, 10) 

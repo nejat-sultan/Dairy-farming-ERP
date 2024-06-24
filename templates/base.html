@@ -532,7 +532,7 @@
           </li>
         {% endif %}
 
-          {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
+        {% if request.user|has_permission:"erp.view_transaction" or request.user|has_permission:"erp.view_reports" %}
             <li class="nav-item">
               <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-dollar-sign"></i>
@@ -540,6 +540,7 @@
                   <i class="fas fa-angle-left right"></i>
               </a>
               <ul class="nav nav-treeview pl-3">
+                {% if request.user|has_permission:"erp.view_transaction" %}
                 <li class="nav-item">
                   <a href="../../transaction" class="nav-link">
                     <i class="nav-icon fas fa-table"></i>
@@ -548,6 +549,9 @@
                     </p>
                   </a>
                 </li>
+                {% endif %}
+
+                {% if request.user|has_permission:"erp.view_reports" %}
                 <li class="nav-item">
                   <a href="../../balance_sheet" class="nav-link">
                     <i class="nav-icon fas fa-table"></i>
@@ -564,9 +568,12 @@
                     </p>
                   </a>
                 </li>
+                {% endif %}
               </ul>
             </li>
+        {% endif %}
           
+        {% if request.user|has_permission:"erp.view_reports" %}
             <li class="nav-header">Report & Analytics</li>
             <li class="nav-item">
               <a href="../../reports/" class="nav-link">
@@ -575,7 +582,7 @@
                 </p>
               </a>
             </li>
-            {% endif %}
+        {% endif %}
 
             {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" or request.user|has_permission:"erp.view_persontype" or request.user|has_permission:"erp.view_persontitle" or request.user|has_permission:"erp.view_contacttype" or request.user|has_permission:"erp.view_region" or request.user|has_permission:"erp.view_guaranteetype"  or request.user|has_permission:"erp.view_job" or request.user|has_permission:"erp.view_task" or request.user|has_permission:"erp.view_suppliertype" or request.user|has_permission:"erp.view_itemtype" or request.user|has_permission:"erp.view_item" or request.user|has_permission:"erp.view_itemmeasurement" or request.user|has_permission:"erp.view_saletype" or request.user|has_permission:"auth.view_changepassword" %}
             <li class="nav-header">Settings
@@ -833,7 +840,7 @@
   </div>
 
   <footer class="main-footer">
-    <strong>Copyright &copy; 2014-2024 <a href="">BiloFarm</a>.</strong> All rights reserved.
+    <strong>Copyright &copy; 2024 <a href="">BiloFarm</a>.</strong> All rights reserved.
   </footer>
 
 

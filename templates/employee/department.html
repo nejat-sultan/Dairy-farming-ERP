@@ -50,8 +50,11 @@
                       <th style="width: 20%">
                           Id
                       </th> 
-                      <th style="width: 50%">
+                      <th style="width: 25%">
                         Department 
+                      </th>
+                      <th style="width: 25%">
+                        Department Head
                       </th>
                     
                       <th style="width: 30%"> Actions </th>
@@ -66,7 +69,10 @@
                       <td>
                         {{d.department_name}}
                       </td>
-
+                      <td>
+                        {{ d.manager.person_farm_entity.first_name }} {{ d.manager.person_farm_entity.middle_name }}
+                      </td>
+                      
                       <td class="project-actions">
                           <a class="btn btn-info btn-sm" href="/department_edit/{{d.department_id}}">
                               <i class="fas fa-pencil-alt">

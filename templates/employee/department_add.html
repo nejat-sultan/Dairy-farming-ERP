@@ -42,7 +42,14 @@
                 <label for="inputName">Department</label>
                 <input type="text" id="inputName" name="department" class="form-control" required>
               </div>
-             
+              <div class="form-group">
+                <label for="inputemployee">Department Head</label>
+                <select id="inputemployee" name="manager_id" class="form-control custom-select">
+                  {% for d in data1 %}
+                  <option value="{{d.person_farm_entity_id}}">{{ d.person_farm_entity.first_name}} {{ d.person_farm_entity.middle_name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -52,7 +59,6 @@
         <div class="col-12">
           <a href="department" class="btn btn-secondary">Back</a>
           <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Department</button>
-          {% comment %} <input type="submit" value="Add Cattle" class="btn btn-success float-right"> {% endcomment %}
         </div>
       </div>
     </form>
