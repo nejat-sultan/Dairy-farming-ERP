@@ -66,6 +66,11 @@
                                     <option value="">Select measurement</option>
                                 </select>
                             </div>
+
+                            {% comment %} <div class="form-group">
+                                <div id="stock_quantity">Available Stock: </div>
+                              </div>  {% endcomment %}
+                
                             <div class="form-group">
                                 <label for="quantity">Quantity</label>
                                 <input type="text" id="quantity" name="quantity" value="{{ d.quantity }}" class="form-control" required>
@@ -129,6 +134,25 @@
             }
         }
     });
+
+    {% comment %} document.getElementById('item_measurement_id').addEventListener('change', function() {
+        var itemId = document.getElementById('item_name').value;
+        var typeId = document.getElementById('item_type').value;
+        var measurementId = this.value;
+        if (itemId && typeId && measurementId) {
+            fetch(`/get_stock_quantity/${itemId}/${typeId}/${measurementId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    var stockQuantityDiv = document.getElementById('stock_quantity');
+                    if (data.error) {
+                        stockQuantityDiv.innerHTML = `Error: ${data.error}`;
+                    } else {
+                        stockQuantityDiv.innerHTML = `Available Stock: ${data.quantity}`;
+                    }
+                });
+        }
+  
+      }); {% endcomment %}
 </script>
 
 {% endblock %}

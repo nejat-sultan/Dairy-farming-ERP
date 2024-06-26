@@ -89,14 +89,14 @@
                     <option>Female</option>
                   </select>
                 </div>
-                <div class="form-group">
+                {% comment %} <div class="form-group">
                   <label for="inputStatus">Employee Type</label>
                   <select id="inputStatus" name="type" class="form-control custom-select">
                     {% for d in data3 %}
                     <option value="{{d.person_type_id}}">{{ d.person_type}}</option>
                     {% endfor %}
                   </select>
-                </div>
+                </div> {% endcomment %}
               </div>
 
             </div>

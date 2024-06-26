@@ -50,7 +50,6 @@
               
               <div class="form-group">
                 <label for="inputName">Pregnancy Type</label>
-                {% comment %} <input type="text" id="inputName" name="pregnancy_type" class="form-control"> {% endcomment %}
                 <select id="inputStatus" name="pregnancy_type" class="form-control custom-select">
                   <option selected disabled>Select one</option>
                   <option>Artificial Insemination</option>
@@ -63,7 +62,6 @@
               </div>
               <div class="form-group">
                 <label for="inputName">Cattle</label>
-                {% comment %} <input type="text" id="inputName" name="cattle_id" class="form-control"> {% endcomment %}
                 <select id="inputStatus" name="cattle_id" class="form-control custom-select">
                   {% for d in data1 %}
                   <option value="{{d.farm_entity_id}}">{{ d.cattle_name}}</option>
@@ -77,6 +75,10 @@
                   <option value="{{d.pregnancy_status_id}}">{{ d.pregnancy_status}}</option>
                   {% endfor %}
                 </select>
+              </div>
+              <div class="form-group">
+                <label for="inputName">Checked by</label>
+                <input type="text" id="inputName" name="checked_by" class="form-control">
               </div>
             </div>
           </div>

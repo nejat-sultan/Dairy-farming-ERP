@@ -4,7 +4,6 @@
 {% block content %}
 
   <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
     <section class="content-header">
       <div class="container-fluid">
         <div class="row mb-2">
@@ -18,7 +17,7 @@
             </ol>
           </div>
         </div>
-      </div><!-- /.container-fluid -->
+      </div>
     </section>
 
     <section class="content">
@@ -36,27 +35,6 @@
                 </div>
               </div>
               <div class="card-body">
-                {% comment %} <div class="form-group">
-                  <label for="inputName">Cattle</label>
-                  <select id="inputStatus" name="cattle_id" class="form-control custom-select">
-                    {% for d in data1 %}
-                    <option value="{{d.cattle_id}}">{{ d.cattle_name}}</option>
-                    {% endfor %}
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="inputName">Findings</label>
-                  <input type="text" id="inputName" name="findings" class="form-control">
-                </div>
-                <div class="form-group">
-                  <label for="inputName">Checked by</label>
-                  <select id="inputStatus" name="checked_by" class="form-control custom-select">
-                    {% for d in data2 %}
-                    <option value="{{d.farm_entity_id}}">{{ d.first_name}}</option>
-                    {% endfor %}
-                  </select>
-                </div> {% endcomment %}
-                
                 <div class="form-group">
                   <label for="inputName">Cattle</label>
                   <select id="inputStatus" name="cattle_id" class="form-control custom-select">
@@ -73,15 +51,8 @@
                 </div>
                 <div class="form-group">
                   <label for="inputName">Checked by</label>
-                  <select id="inputStatus" name="checked_by" class="form-control custom-select">
-                    {% for d in persons %} 
-                    <option value="{{d.farm_entity_id}}" {% if d.farm_entity_id == person.check_by_id %} selected {% endif %}>
-                      {{ d.first_name }}
-                    </option>
-                  {% endfor %}
-                    </select>
+                  <input type="text" id="inputName" name="checked_by" value="{{ d.checked_by }}" class="form-control">
                 </div>
-
               </div>
             </div>
           </div>

@@ -52,11 +52,7 @@
               </div>
               <div class="form-group">
                 <label for="inputName">Checked by</label>
-                <select id="inputStatus" name="checked_by" class="form-control custom-select">
-                  {% for d in data2 %}
-                  <option value="{{d.farm_entity_id}}">{{ d.first_name}}</option>
-                  {% endfor %}
-                </select>
+                <input type="text" id="inputName" name="checked_by" class="form-control">
               </div>
               
             </div>

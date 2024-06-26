@@ -61,9 +61,6 @@
                       <th style="width: 20%">
                         Checked By
                       </th>
-                      {% comment %} <th style="width: 20%">
-                        Data Added By
-                      </th> {% endcomment %}
 
                       <th style="width: 25%"> Actions </th>
                   </tr>
@@ -86,20 +83,8 @@
                         {{d.findings}}
                       </td>
                       <td>
-                        {% for person in person %}
-                          {% if person.farm_entity_id == d.checked_by_id %}
-                            {{ person.first_name }}
-                          {% endif %}
-                        {% endfor %}
+                        {{d.checked_by}}
                       </td>
-                    {% comment %} 
-                      <td>
-                        {% for employee in employee %}
-                          {% if employee.person_farm_entity_id == d.data_encoded_by_id %}
-                            {{ person.first_name }}
-                          {% endif %}
-                        {% endfor %}
-                      </td> {% endcomment %}
 
                       <td class="project-actions">
                           <a class="btn btn-sm" href="/cattle_health_checkup_view/{{d.id}}" style="background-color: #007f5c;color: #fff;">

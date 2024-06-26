@@ -2,6 +2,70 @@
 {% load static %}
 
 {% block content %}
+<style>
+  .main-photo-container, .product-image-thumb {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .main-photo-container img, .product-image-thumb img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  
+  .change-photo-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+    text-align: center;
+    padding: 5px 0;
+    display: none;
+    color: white;
+  }
+  
+  .change-photo-container a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
+  .main-photo-container:hover .change-photo-container,
+  .product-image-thumb:hover .change-photo-container {
+    display: block;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const changePhotoLinks = document.querySelectorAll('.change-photo-link');
+
+      changePhotoLinks.forEach(link => {
+          link.addEventListener('click', function(event) {
+              event.preventDefault();
+              const photoId = this.getAttribute('data-photo-id');
+              const cattleId = this.getAttribute('data-cattle-id');
+
+              document.getElementById('changePhotoId').value = photoId;
+              document.getElementById('changeCattleId').value = cattleId;
+
+              $('#changePhotoModal').modal('show');
+          });
+      });
+
+      $('.main-photo-container, .product-image-thumb').hover(
+          function() {
+              $(this).find('.change-photo-link').show();
+          },
+          function() {
+              $(this).find('.change-photo-link').hide();
+          }
+      );
+  });
+</script>
+    
 
 <div class="content-wrapper">
   <section class="content-header">
@@ -27,19 +91,73 @@
         <div class="row">
           <div class="col-12 col-sm-6">
             <h3 class="d-inline-block d-sm-none">{{cattle.cattle_name}}</h3>
-            <div class="col-12">
+            {% comment %} <div class="col-12">
               {% if photos %}
                 <img src="{{ photos.0.cattle_photo_url }}" alt="{{ photos.0.cattle_photo_description }}" class="img-fluid">
+                <a href="#" class="change-photo-link position-absolute" style="display: none;" data-photo-id="{{ photo.cattle_photo_id  }}" data-cattle-id="{{ cattle.farm_entity_id }}">Change Photo</a>
               {% endif %}
             </div>
             <div class="col-12 product-image-thumbs d-flex justify-content-center">
               {% for photo in photos|slice:"1:" %}
                 <div class="product-image-thumb">
                   <img src="{{ photo.cattle_photo_url }}" alt="{{ photo.cattle_photo_description }}" class="img-fluid">
+                  <a href="#" class="change-photo-link position-absolute" style="display: none;" data-photo-id="{{ photo.cattle_photo_id  }}" data-cattle-id="{{ cattle.farm_entity_id }}">Change Photo</a>
+                </div>
+              {% endfor %}
+            </div>  {% endcomment %}
+
+            <div class="col-12">
+              {% if photos %}
+                <div class="main-photo-container">
+                  <img src="{{ photos.0.cattle_photo_url }}" alt="{{ photos.0.cattle_photo_description }}" class="img-fluid">
+                  <div class="change-photo-container">
+                    <a href="#" class="change-photo-link" data-photo-id="{{ photos.0.cattle_photo_id }}" data-cattle-id="{{ cattle.farm_entity_id }}">Change Photo</a>
+                  </div>
+                </div>
+              {% endif %}
+            </div>
+            
+            <div class="col-12 product-image-thumbs d-flex justify-content-center">
+              {% for photo in photos|slice:"1:" %}
+                <div class="product-image-thumb">
+                  <img src="{{ photo.cattle_photo_url }}" alt="{{ photo.cattle_photo_description }}" class="img-fluid">
+                  <div class="change-photo-container">
+                    <a href="#" class="change-photo-link" data-photo-id="{{ photo.cattle_photo_id }}" data-cattle-id="{{ cattle.farm_entity_id }}">Change Photo</a>
+                  </div>
                 </div>
               {% endfor %}
             </div>
+
+            <div class="modal fade" id="changePhotoModal" tabindex="-1" role="dialog" aria-labelledby="changePhotoModalLabel" aria-hidden="true">
+              <div class="modal-dialog" role="document">
+                  <div class="modal-content">
+                      <div class="modal-header">
+                          <h5 class="modal-title" id="changePhotoModalLabel">Change Photo</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                              <span aria-hidden="true">&times;</span>
+                          </button>
+                      </div>
+                      <div class="modal-body">
+                          <form action="/change_photo" method="post" id="changePhotoForm" enctype="multipart/form-data">
+                              {% csrf_token %}
+                              <input type="hidden" name="photo_id" id="changePhotoId">
+                              <input type="hidden" name="cattle_id" id="changeCattleId">
+                              <div class="form-group">
+                                  <label for="changePhotoUrl">New Photo</label>
+                                  <input type="file" id="changePhotoUrl" name="photo_url" class="form-control" required>
+                              </div>
+                              <div class="form-group">
+                                  <label for="changePhotoDescription">Photo Description</label>
+                                  <input type="text" id="changePhotoDescription" name="photo_description" class="form-control">
+                              </div>
+                              <button type="submit" class="btn" style="background-color: #007f5c;color: #fff;">Change Photo</button>
+                          </form>
+                      </div>
+                  </div>
+              </div>
+            </div>
           </div>
+
           <div class="col-12 col-sm-6">
             <h3 class="my-3">{{cattle.cattle_name}}</h3>
             <h4 class="mt-0">
@@ -80,11 +198,13 @@
         <div class="row mt-4">
           <nav class="w-100">
             <div class="nav nav-tabs" id="product-tab" role="tablist">
-              <a style="color: #007f5c;" class="nav-item nav-link active" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">Last Milk Production</a>
-              <a style="color: #007f5c;" class="nav-item nav-link" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="false">Vaccination</a>
+              {% if productions %}
+              <a style="color: #007f5c;" class="nav-item nav-link {% if productions %}active{% endif %}" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">Last Milk Production</a>
+              {% endif %}
+              <a style="color: #007f5c;" class="nav-item nav-link {% if not productions %}active{% endif %}" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="{% if not productions %}true{% else %}false{% endif %}">Vaccination</a>
               <a style="color: #007f5c;" class="nav-item nav-link" id="health-tab" data-toggle="tab" href="#health" role="tab" aria-controls="health" aria-selected="false">Health</a>
               <a style="color: #007f5c;" class="nav-item nav-link" id="feed-tab" data-toggle="tab" href="#feed" role="tab" aria-controls="feed" aria-selected="false">Feed</a>
-            </div>
+          </div>
           </nav>
           <div class="tab-content p-3 w-100" id="nav-tabContent">
             <div class="tab-pane fade show active overflow-auto" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab"> 

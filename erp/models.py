@@ -107,7 +107,7 @@ class Employee(models.Model):
     hire_date = models.DateField(null=True)
     national_id = models.CharField(max_length=100, null=True)
     available_leave_hours = models.FloatField(null=True)
-    status = models.SmallIntegerField(null=True)
+    status = models.CharField(max_length=100, null=True)
     modified_date = models.DateTimeField(null=True)
     contract_type = models.CharField(max_length=30, null=True)
     contract_period_in_month = models.IntegerField(null=True)
@@ -291,7 +291,8 @@ class CattlePregnancy(models.Model):
     is_active = models.CharField(max_length=10, null=True)
     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
     pregnancy_status = models.OneToOneField(PregnancyStatus, on_delete=models.CASCADE)
-    check_by = models.ForeignKey(Person, on_delete=models.CASCADE, null=True)
+    checked_by = models.CharField(max_length=250, null=True)
+    # check_by = models.ForeignKey(Person, on_delete=models.CASCADE, null=True)
     data_encoded_by = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True)
 
     class Meta:
@@ -310,6 +311,13 @@ class MilkProduction(models.Model):
     class Meta:
         db_table = 'milk_production'
 
+class CurrentMilkPrice(models.Model):
+    id = models.AutoField(primary_key=True)
+    current_price = models.FloatField()
+
+    class Meta:
+        db_table = 'current_milk_price'
+
 class Medicine(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=200, null=True) 
@@ -323,7 +331,8 @@ class CattleHealthCheckup(models.Model):
     id = models.AutoField(primary_key=True)
     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
     findings = models.CharField(max_length=255, null=True)
-    checked_by = models.ForeignKey(Person, on_delete=models.CASCADE, null=True)
+    checked_by = models.CharField(max_length=250, null=True)
+    # checked_by = models.ForeignKey(Person, on_delete=models.CASCADE, null=True)
     data_encoded_by = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True)
     medicines = models.ManyToManyField(Medicine, through='CattleHealthCheckupHasMedicine', related_name='health_checkups')
 

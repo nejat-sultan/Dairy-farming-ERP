@@ -10,12 +10,14 @@
   <title>Dairy Farming ERP </title>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    {% comment %} <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">  {% endcomment %}
+    <link rel="stylesheet" href="{% static 'plugins/roboto/Roboto-Thin.tff' %}">
     <link rel="stylesheet" href="{% static 'plugins/fontawesome-free/css/all.min.css' %}">
     <link rel="stylesheet" href="{% static 'plugins/datatables-bs4/css/dataTables.bootstrap4.min.css' %}">
     <link rel="stylesheet" href="{% static 'plugins/datatables-responsive/css/responsive.bootstrap4.min.css' %}">
     <link rel="stylesheet" href="{% static 'plugins/datatables-buttons/css/buttons.bootstrap4.min.css' %}">
-    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    {% comment %} <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css"> {% endcomment %}
+    <link rel="stylesheet" href="{% static 'plugins/ionicons/css/ionicons.min.css' %}">
     <link rel="stylesheet" href="{% static 'plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css' %}">
     <link rel="stylesheet" href="{% static 'plugins/icheck-bootstrap/icheck-bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'plugins/jqvmap/jqvmap.min.css' %}">
@@ -133,6 +135,7 @@
                 </a>
                 <div class="dropdown-divider"></div>
             {% endif %}
+            
             {% if notifications.low_quantity_items %}
                 <a href="" class="dropdown-item">
                     <i class="fas fa-exclamation-triangle mr-2"></i> 
@@ -568,6 +571,22 @@
                     </p>
                   </a>
                 </li>
+                <li class="nav-item">
+                  <a href="../../account_receivables" class="nav-link">
+                    <i class="nav-icon fas fa-table"></i>
+                    <p>
+                      Account Receivables
+                    </p>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a href="../../account_payables" class="nav-link">
+                    <i class="nav-icon fas fa-table"></i>
+                    <p>
+                      Account Payables
+                    </p>
+                  </a>
+                </li>
                 {% endif %}
               </ul>
             </li>
@@ -584,7 +603,7 @@
             </li>
         {% endif %}
 
-            {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" or request.user|has_permission:"erp.view_persontype" or request.user|has_permission:"erp.view_persontitle" or request.user|has_permission:"erp.view_contacttype" or request.user|has_permission:"erp.view_region" or request.user|has_permission:"erp.view_guaranteetype"  or request.user|has_permission:"erp.view_job" or request.user|has_permission:"erp.view_task" or request.user|has_permission:"erp.view_suppliertype" or request.user|has_permission:"erp.view_itemtype" or request.user|has_permission:"erp.view_item" or request.user|has_permission:"erp.view_itemmeasurement" or request.user|has_permission:"erp.view_saletype" or request.user|has_permission:"auth.view_changepassword" %}
+            {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" or request.user|has_permission:"erp.view_currentmilkprice" or request.user|has_permission:"erp.view_persontype" or request.user|has_permission:"erp.view_persontitle" or request.user|has_permission:"erp.view_contacttype" or request.user|has_permission:"erp.view_region" or request.user|has_permission:"erp.view_guaranteetype"  or request.user|has_permission:"erp.view_job" or request.user|has_permission:"erp.view_task" or request.user|has_permission:"erp.view_suppliertype" or request.user|has_permission:"erp.view_itemtype" or request.user|has_permission:"erp.view_item" or request.user|has_permission:"erp.view_itemmeasurement" or request.user|has_permission:"erp.view_saletype" or request.user|has_permission:"auth.view_changepassword" %}
             <li class="nav-header">Settings
             {% if request.user|has_permission:"auth.view_user"  %} 
             <li class="nav-item">
@@ -624,7 +643,7 @@
               {% endif %}
               <ul class="nav nav-treeview">
                 <li class="nav-item">
-                  {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" %}
+                  {% if request.user|has_permission:"erp.view_cattlebreed" or request.user|has_permission:"erp.view_cattlestatus" or request.user|has_permission:"erp.view_pregnancystatus" or request.user|has_permission:"erp.view_vaccine" or request.user|has_permission:"erp.view_medicine" or request.user|has_permission:"erp.view_currentmilkprice" %}
                   <a href="#" class="nav-link">
                     <i class="far fa-circle nav-icon"></i>
                     <p>Cattle datas
@@ -669,6 +688,14 @@
                         <a href="../../medicine" class="nav-link">
                           <i class="far fa-circle nav-icon"></i>
                           <p>Medicine</p>
+                        </a>
+                      </li>
+                      {% endif %}
+                      {% if request.user|has_permission:"erp.view_currentmilkprice" %}
+                      <li class="nav-item"> 
+                        <a href="../../current_milk_price" class="nav-link">
+                          <i class="far fa-circle nav-icon"></i>
+                          <p>Current Milk Price</p>
                         </a>
                       </li>
                       {% endif %}
@@ -878,6 +905,7 @@
       'background-color': '#007f5c', 
       'color': '#FFFFFF'             
   });
+  
  </script>
 
 </body>

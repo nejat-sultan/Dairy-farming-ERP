@@ -19,7 +19,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from testproject import settings
-from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, Farm, FarmContacts, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, OtherIncomeExpense, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, CurrentMilkPrice, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, Farm, FarmContacts, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, OtherIncomeExpense, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -36,7 +36,7 @@ from django.db.models.functions import Cast
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth import update_session_auth_hash
-from .utils import get_low_quantity_items, get_overdue_vaccines, paginate_data 
+from .utils import get_approval_required_leave_requests, get_approval_required_orders, get_approval_required_ordersuppliers, get_approval_required_stockin_requests, get_approval_required_stockout_requests, get_assigned_tasks, get_low_quantity_items, get_overdue_vaccines, paginate_data 
 
 def get_latest_farm():
     return Farm.objects.last()
@@ -152,7 +152,7 @@ def farm_contact_edit(request, id):
         edit.contact = ccontact
 
         edit.save()
-        messages.warning(request, "Farm Contact Updated Successfully!")
+        messages.success(request, "Farm Contact Updated Successfully!")
         return redirect("/farm")
         
     
@@ -431,7 +431,7 @@ def change_password(request):
 def index(request):
 #milk production report
     end_date = now()
-    start_date = end_date - timedelta(days=15)
+    start_date = end_date - timedelta(days=14)
     # Query MilkProduction data for the last week
     milk_data = MilkProduction.objects.filter(milk_time__range=(start_date, end_date)).order_by('milk_time')
     # Process the data into a DataFrame
@@ -516,7 +516,7 @@ def index(request):
     dash2.description = 'Stock Available'
 
     dash3 = Dashboard()
-    dash3.amount = 0
+    dash3.amount = SalesOrder.objects.all().count()
     dash3.description = 'Sales'
 
     dash4 = Dashboard()
@@ -532,7 +532,7 @@ def index(request):
     dash6.description = 'Employees'
 
     dash7 = Dashboard()
-    dash7.amount = 0
+    dash7.amount = Customer.objects.all().count()
     dash7.description = 'Customers'
 
     data = OrderHasItem.objects.all()[:10]
@@ -552,10 +552,20 @@ def index(request):
 
     leave = EmployeeLeave.objects.filter(person_farm_entity_id=current_employee)[:10]
     task = TaskAssignment.objects.filter(assigned_to=current_employee)[:10]
+    formulations = FeedFormulation.objects.all()[:10]
+    ingredients = FeedIngredient.objects.select_related('item', 'item_measurement').all()
 
     overdue_cattle = get_overdue_vaccines()
     low_quantity_items = get_low_quantity_items()
     total_notifications = len(overdue_cattle) + len(low_quantity_items)
+    user_profile = UserProfile.objects.get(user=request.user)
+    employee = user_profile.employee
+    assigned_tasks = get_assigned_tasks(employee)
+    pending_orders = get_approval_required_orders()
+    pending_ordersuppliers = get_approval_required_ordersuppliers()
+    pending_leave_requests = get_approval_required_leave_requests()
+    pending_stockout_requests = get_approval_required_stockout_requests()
+    pending_stockin_requests = get_approval_required_stockin_requests()
  
     cattle_photos = {}
     for cow in cattle:
@@ -581,8 +591,10 @@ def index(request):
 
         "data1":data,'orderdatas': orderdatas,'item_data': item_data,
         'cattle': cattle,'cattle_photos': cattle_photos,'breeds': breeds, 
-        'employeedatas':employeedatas,'healthdatas':healthdatas,'cattlepregnancy':cattlepregnancy,'leave':leave,'task':task,
-        'overdue_cattle': overdue_cattle,'low_quantity_items': low_quantity_items, 
+        'employeedatas':employeedatas,'healthdatas':healthdatas,'cattlepregnancy':cattlepregnancy,'leave':leave,'task':task,   'formulations': formulations,'ingredients': ingredients,
+        'overdue_cattle': overdue_cattle,'low_quantity_items': low_quantity_items, 'assigned_tasks': assigned_tasks,'pending_orders': pending_orders,
+        'pending_leave_requests': pending_leave_requests,'pending_stockout_requests': pending_stockout_requests,'pending_stockin_requests': pending_stockin_requests,
+        'pending_ordersuppliers': pending_ordersuppliers,
     }
     return render(request, 'index.html',context)
 
@@ -668,7 +680,7 @@ def cattle_add(request):
             except ValueError:
                 errors.append('Estimated price must be a number.')
         else:
-            cestimatedprice = None 
+            cestimatedprice = 0 
 
         if cacquired_date:
             try:
@@ -747,7 +759,7 @@ def cattle_edit(request,farm_entity_id):
             except ValueError:
                 errors.append('Estimated price must be a number.')
         else:
-            cestimatedprice = None 
+            cestimatedprice = 0 
 
         if cacquired_date:
             try:
@@ -780,7 +792,7 @@ def cattle_edit(request,farm_entity_id):
         edit.acquired_date = cacquired_date
 
         edit.save()
-        messages.warning(request, "Cattle Updated Successfully!")
+        messages.success(request, "Cattle Updated Successfully!")
         return redirect("/cattle")
         
     
@@ -811,7 +823,11 @@ def add_photo(request):
     if request.method == 'POST':
         cattle_id = request.POST.get('cattle_id')
         photo_description = request.POST.get('photo_description')
-
+        
+        existing_photos_count = CattlePhoto.objects.filter(cattle_id=cattle_id).count()
+        if existing_photos_count >= 5:
+            messages.error(request, "This cattle already has 5 photos. You cannot add more photos.")
+            return redirect("/cattle")
 
         if 'photo_url' in request.FILES:
             photo_file = request.FILES['photo_url']
@@ -841,11 +857,43 @@ def add_photo(request):
 
     return render(request, 'cattle/cattle_add.html', context)
 
+def change_photo(request):
+    if request.method == 'POST':
+        photo_id = request.POST.get('photo_id')
+        cattle_id = request.POST.get('cattle_id')
+        photo_description = request.POST.get('photo_description')
+
+        try:
+            cattle_photo = CattlePhoto.objects.get(cattle_photo_id=photo_id, cattle_id=cattle_id)
+        except CattlePhoto.DoesNotExist:
+            messages.error(request, "Photo not found.")
+            return redirect("/cattle") 
+
+        if 'photo_url' in request.FILES:
+            new_photo = request.FILES['photo_url']
+            fs = FileSystemStorage(location=settings.MEDIA_ROOT + '/photos')
+            filename = fs.save(new_photo.name, new_photo)
+            new_photo_url = settings.MEDIA_URL + 'photos/' + filename
+
+            cattle_photo.cattle_photo_url = new_photo_url
+            cattle_photo.cattle_photo_description = photo_description
+            cattle_photo.save()
+
+            messages.success(request, "Cattle Photo Changed Successfully!")
+            return redirect("/cattle")
+        else:
+            messages.error(request, "No photo file provided.")
+            return redirect("/cattle") 
+    else:
+        messages.error(request, "Invalid request method.")
+        return redirect("/cattle")
+
 @login_required(login_url='login')
 def cattle_status(request):
     if not request.user.has_perm('erp.view_cattlestatus'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = CattleStatus.objects.all()
+    data = CattleStatus.objects.all().order_by('-modified_date')
+    
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -879,7 +927,7 @@ def cattle_status_edit(request,cattle_status_id):
         edit.cattle_status = cstatus
         edit.modified_date = cdate
         edit.save()
-        messages.warning(request, "Cattle Status Updated Successfully!")
+        messages.success(request, "Cattle Status Updated Successfully!")
         return redirect("/cattle_status")
 
     d = CattleStatus.objects.get(cattle_status_id=cattle_status_id)
@@ -900,7 +948,7 @@ def cattle_status_delete(request, cattle_status_id):
 def cattle_breed(request):
     if not request.user.has_perm('erp.view_cattlebreed'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = CattleBreed.objects.all()
+    data = CattleBreed.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -938,7 +986,7 @@ def cattle_breed_edit(request,cattle_breed_id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Cattle Breed Updated Successfully!")
+        messages.success(request, "Cattle Breed Updated Successfully!")
         return redirect("/cattle_breed")
 
     d = CattleBreed.objects.get(cattle_breed_id=cattle_breed_id)
@@ -958,7 +1006,7 @@ def cattle_breed_delete(request, cattle_breed_id):
 def pregnancy_status(request):
     if not request.user.has_perm('erp.view_pregnancystatus'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = PregnancyStatus.objects.all()
+    data = PregnancyStatus.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -992,7 +1040,7 @@ def pregnancy_status_edit(request,pregnancy_status_id):
         edit.pregnancy_status = cstatus
         edit.modified_date = cdate
         edit.save()
-        messages.warning(request, "Pregnancy Status Updated Successfully!")
+        messages.success(request, "Pregnancy Status Updated Successfully!")
         return redirect("/pregnancy_status")
 
     d = PregnancyStatus.objects.get(pregnancy_status_id=pregnancy_status_id)
@@ -1014,7 +1062,9 @@ def pregnancy_status_delete(request, pregnancy_status_id):
 def cattle_pregnancy(request):
     if not request.user.has_perm('erp.view_cattlepregnancy'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = CattlePregnancy.objects.all()
+    
+    pregnant_status = PregnancyStatus.objects.filter(pregnancy_status='Pregnant').first()
+    data = CattlePregnancy.objects.filter(pregnancy_status=pregnant_status)
     cattle = Cattle.objects.all()
 
     paginated_data = paginate_data(request, data, 10) 
@@ -1026,11 +1076,20 @@ def cattle_pregnancy(request):
 def cattle_pregnancy_add(request):
     if not request.user.has_perm('erp.add_cattlepregnancy'):
         return HttpResponse('You are not authorised to view this page', status=403)
+    
+    user = request.user
+    try:
+        user_profile = UserProfile.objects.get(user=user)
+    except UserProfile.DoesNotExist:
+        return HttpResponse('User profile not found', status=404)
+
     if request.method=="POST":
         cpregnancy_type=request.POST.get('pregnancy_type')
         cpregnancy_date=request.POST.get('pregnancy_date')
         ccattle_id=request.POST.get('cattle_id')
         cpregnancy_status = request.POST.get('pregnancy_status')
+        cchecked_by=request.POST.get('checked_by')
+        cdata_encoded_by= user_profile.employee
 
         errors = []
 
@@ -1054,7 +1113,7 @@ def cattle_pregnancy_add(request):
             }
             return render(request, 'cattle/cattle_pregnancy_add.html', context)
 
-        query = CattlePregnancy(cattle_pregnancy_type=cpregnancy_type, cattle_pregnancy_date=cpregnancy_date, cattle_id=ccattle_id, pregnancy_status_id=cpregnancy_status)
+        query = CattlePregnancy(cattle_pregnancy_type=cpregnancy_type, cattle_pregnancy_date=cpregnancy_date, cattle_id=ccattle_id, pregnancy_status_id=cpregnancy_status,checked_by=cchecked_by, data_encoded_by=cdata_encoded_by)
         query.save()
         messages.success(request, "Cattle Pregnancy Added Successfully!")
         return redirect("/cattle_pregnancy")
@@ -1073,6 +1132,13 @@ def cattle_pregnancy_add(request):
 def cattle_pregnancy_edit(request,cattle_pregnancy_id):
     if not request.user.has_perm('erp.change_cattlepregnancy'):
         return HttpResponse('You are not authorised to view this page', status=403)
+    
+    user = request.user
+    try:
+        user_profile = UserProfile.objects.get(user=user)
+    except UserProfile.DoesNotExist:
+        return HttpResponse('User profile not found', status=404)
+    
     edit = CattlePregnancy.objects.get(cattle_pregnancy_id=cattle_pregnancy_id)
     
     if request.method == "POST":
@@ -1080,6 +1146,8 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
         cpregnancy_date=request.POST.get('pregnancy_date')
         ccattle_id=request.POST.get('cattle_id')
         cpregnancy_status = request.POST.get('pregnancy_status')
+        cchecked_by=request.POST.get('checked_by')
+        cdata_encoded_by= user_profile.employee
 
         errors = []
         if cpregnancy_date:
@@ -1107,9 +1175,11 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
         edit.cattle_pregnancy_date = cpregnancy_date
         edit.cattle_id = ccattle_id
         edit.pregnancy_status_id = cpregnancy_status
+        edit.checked_by = cchecked_by
+        edit.data_encoded_by = cdata_encoded_by
         
         edit.save()
-        messages.warning(request, "Cattle Pregnancy Updated Successfully!")
+        messages.success(request, "Cattle Pregnancy Updated Successfully!")
         return redirect("/cattle_pregnancy")
     
 
@@ -1170,7 +1240,7 @@ def vaccine_edit(request,vaccine_id):
         edit.vaccine_recommended_time = cvaccine_recommended_time
         
         edit.save()
-        messages.warning(request, "Vaccine Updated Successfully!")
+        messages.success(request, "Vaccine Updated Successfully!")
         return redirect("/vaccine")
 
     d = Vaccine.objects.get(vaccine_id=vaccine_id)
@@ -1274,7 +1344,7 @@ def cattle_has_vaccine_edit(request,id):
         edit.cattle_id = ccattle_id
         
         edit.save()
-        messages.warning(request, "Cattle Vaccination Updated Successfully!")
+        messages.success(request, "Cattle Vaccination Updated Successfully!")
         return redirect("/cattle_has_vaccine")
     
 
@@ -1298,7 +1368,7 @@ def cattle_has_vaccine_delete(request, id):
 def medicine(request):
     if not request.user.has_perm('erp.view_medicine'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = Medicine.objects.all()
+    data = Medicine.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -1336,7 +1406,7 @@ def medicine_edit(request, id):
         edit.modified_date=cdate
         
         edit.save()
-        messages.warning(request, "Medicine Updated Successfully!")
+        messages.success(request, "Medicine Updated Successfully!")
         return redirect("/medicine")
 
     d = Medicine.objects.get(id=id)
@@ -1383,22 +1453,27 @@ def cattle_health_checkup_view(request, id):
 def cattle_health_checkup_add(request):
     if not request.user.has_perm('erp.add_cattlehealthcheckup'):
         return HttpResponse('You are not authorised to view this page', status=403)
+    
+    user = request.user
+    try:
+        user_profile = UserProfile.objects.get(user=user)
+    except UserProfile.DoesNotExist:
+        return HttpResponse('User profile not found', status=404)
+
     if request.method=="POST":
         ccattle_id=request.POST.get('cattle_id')
         cfindings=request.POST.get('findings')
         cchecked_by=request.POST.get('checked_by')
+        cdata_encoded_by= user_profile.employee
 
-
-        query = CattleHealthCheckup(findings=cfindings, checked_by_id=cchecked_by, cattle_id=ccattle_id,)
+        query = CattleHealthCheckup(findings=cfindings, checked_by=cchecked_by, cattle_id=ccattle_id, data_encoded_by= cdata_encoded_by)
         query.save()
         messages.success(request, "Cattle Checkup Added Successfully!")
         return redirect("/cattle_health_checkup")
     
     cattle_data = Cattle.objects.all()
-    person_data = Person.objects.all()
     context = {
         'data1': cattle_data,
-        'data2': person_data,
     }
 
     return render(request, 'cattle/cattle_health_checkup_add.html', context)
@@ -1407,25 +1482,33 @@ def cattle_health_checkup_add(request):
 def cattle_health_checkup_edit(request, id):
     if not request.user.has_perm('erp.change_cattlehealthcheckup'):
         return HttpResponse('You are not authorised to view this page', status=403)
+    
+    user = request.user
+    try:
+        user_profile = UserProfile.objects.get(user=user)
+    except UserProfile.DoesNotExist:
+        return HttpResponse('User profile not found', status=404)
+    
     edit = CattleHealthCheckup.objects.get(id=id)
     
     if request.method == "POST":
         ccattle_id=request.POST.get('cattle_id')
         cfindings=request.POST.get('findings')
         cchecked_by=request.POST.get('checked_by')
+        cdata_encoded_by= user_profile.employee
 
         edit.cattle_id = ccattle_id
         edit.findings = cfindings
-        edit.checked_by_id=cchecked_by
+        edit.checked_by=cchecked_by
+        edit.data_encoded_by=cdata_encoded_by
         
         edit.save()
-        messages.warning(request, "Checkup Updated Successfully!")
+        messages.success(request, "Checkup Updated Successfully!")
         return redirect("/cattle_health_checkup")
 
     d = CattleHealthCheckup.objects.get(id=id)
     cattles = Cattle.objects.all()
-    persons = Person.objects.all()
-    context = {"d": d, "cattle": edit, "cattles": cattles, "persons": persons,}
+    context = {"d": d, "cattle": edit, "cattles": cattles,}
 
     return render(request, 'cattle/cattle_health_checkup_edit.html', context)
 
@@ -1486,7 +1569,7 @@ def checkup_medicine_edit(request, id):
         edit.modified_date = modified_date
         
         edit.save()
-        messages.warning(request, "Medicine Updated Successfully!")
+        messages.success(request, "Medicine Updated Successfully!")
         return redirect('/cattle_health_checkup')
 
     d = CattleHealthCheckupHasMedicine.objects.get(id=id)
@@ -1553,7 +1636,7 @@ def checkup_symptom_edit(request, id):
         edit.modified_date = modified_date
         
         edit.save()
-        messages.warning(request, "Symptom Updated Successfully!")
+        messages.success(request, "Symptom Updated Successfully!")
         return redirect('/cattle_health_checkup')
 
     d = HealthCheckupSymptoms.objects.get(id=id)
@@ -1587,28 +1670,30 @@ def milk_production(request):
 
     return render(request, 'cattle/milk_production.html', context)
 
+from django.core.exceptions import ObjectDoesNotExist 
 @login_required(login_url='login')
 def milk_production_add(request):
     if not request.user.has_perm('erp.add_milkproduction'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    if request.method=="POST":
-        camount_in_liter=request.POST.get('amount_in_liter')
-        cmilk_time=request.POST.get('milk_time')
-        cfat_content=request.POST.get('fat_content')
-        cprotein_content=request.POST.get('protein_content')
-        csomatic_cell_count=request.POST.get('somatic_cell_count')
-        cduration_in_min=request.POST.get('duration_in_min')
-        ccattle_id=request.POST.get('cattle_id')
+
+    if request.method == "POST":
+        camount_in_liter = request.POST.get('amount_in_liter')
+        cmilk_time = request.POST.get('milk_time')
+        cfat_content = request.POST.get('fat_content')
+        cprotein_content = request.POST.get('protein_content')
+        csomatic_cell_count = request.POST.get('somatic_cell_count')
+        cduration_in_min = request.POST.get('duration_in_min')
+        ccattle_id = request.POST.get('cattle_id')
 
         errors = []
- 
+
         if cmilk_time:
             try:
                 cmilk_time = datetime.strptime(cmilk_time, '%Y-%m-%dT%H:%M')
             except ValueError:
                 errors.append('Invalid Milk Time format. Use YYYY-MM-DDTHH:MM format.')
         else:
-            cmilk_time = None 
+            cmilk_time = None
 
         if camount_in_liter:
             try:
@@ -1618,7 +1703,7 @@ def milk_production_add(request):
             except ValueError:
                 errors.append("Amount in liter must be a number.")
         else:
-            camount_in_liter = None
+            camount_in_liter = 0
 
         if cfat_content:
             try:
@@ -1626,7 +1711,7 @@ def milk_production_add(request):
             except ValueError:
                 errors.append('Fat content must be a number.')
         else:
-            cfat_content = 0 
+            cfat_content = 0
 
         if cprotein_content:
             try:
@@ -1634,7 +1719,7 @@ def milk_production_add(request):
             except ValueError:
                 errors.append('Protein content must be a number.')
         else:
-            cprotein_content = 0 
+            cprotein_content = 0
 
         if csomatic_cell_count:
             try:
@@ -1642,7 +1727,7 @@ def milk_production_add(request):
             except ValueError:
                 errors.append('Somatic cell count content must be a number.')
         else:
-            csomatic_cell_count = 0 
+            csomatic_cell_count = 0
 
         if cduration_in_min:
             try:
@@ -1652,8 +1737,8 @@ def milk_production_add(request):
             except ValueError:
                 errors.append('Duration in min count must be a number.')
         else:
-            cduration_in_min = 0 
-            
+            cduration_in_min = 0
+
         if errors:
             context = {
                 'errors': errors,
@@ -1661,33 +1746,100 @@ def milk_production_add(request):
             }
             return render(request, 'cattle/milk_production_add.html', context)
 
-        query = MilkProduction(amount_in_liter=camount_in_liter, milk_time=cmilk_time, fat_content=cfat_content, protein_content=cprotein_content, somatic_cell_count=csomatic_cell_count, duration_in_min=cduration_in_min, cattle_id=ccattle_id)
-        query.save()
-        messages.success(request, "Milk Production Added Successfully!")
-        return redirect("/milk_production")
-    
-    cattle_data = Cattle.objects.all()
+        try:
+            item = Item.objects.get(name='Milk')
+            item_type = ItemType.objects.get(item_type='Milk')
+            item_measurement = ItemMeasurement.objects.get(measurement='Liter')
+
+            query = MilkProduction(
+                amount_in_liter=camount_in_liter,
+                milk_time=cmilk_time,
+                fat_content=cfat_content,
+                protein_content=cprotein_content,
+                somatic_cell_count=csomatic_cell_count,
+                duration_in_min=cduration_in_min,
+                cattle_id=ccattle_id
+            )
+            query.save()
+
+            try:
+                current_price = CurrentMilkPrice.objects.latest('id').current_price
+            except CurrentMilkPrice.DoesNotExist:
+                query.delete()  # Delete the milk production entry if current price is not set
+                errors.append("Current milk price is not set. Please set the current milk price.")
+                context = {
+                    'errors': errors,
+                    'data2': Cattle.objects.all(),
+                }
+                return render(request, 'cattle/milk_production_add.html', context)
+
+            try:
+                existing_stock = Stock.objects.filter(
+                    item=item,
+                    type=item_type,
+                    item_measurement=item_measurement
+                ).first()
+
+                if existing_stock:
+                    existing_stock.quantity = str(float(existing_stock.quantity) + camount_in_liter)
+                    existing_stock.current_unit_price = current_price
+                    existing_stock.modified_date = timezone.now()
+                    existing_stock.save()
+                else:
+                    Stock.objects.create(
+                        item=item,
+                        quantity=str(camount_in_liter),
+                        current_unit_price=current_price,
+                        type=item_type,
+                        modified_date=timezone.now(),
+                        item_measurement=item_measurement,
+                        approval_status='Approved'
+                    )
+            except Exception as e:
+                query.delete()  # Delete the milk production entry if there's an error updating the stock
+                errors.append(f"Error updating stock: {str(e)}")
+                context = {
+                    'errors': errors,
+                    'data2': Cattle.objects.all(),
+                }
+                return render(request, 'cattle/milk_production_add.html', context)
+
+            messages.success(request, "Milk Production Added Successfully!")
+            return redirect("/milk_production")
+
+        except ObjectDoesNotExist as e:
+            errors.append(f"Error: {str(e)}")
+        except Exception as e:
+            errors.append(f"Error: {str(e)}")
+
+        context = {
+            'errors': errors,
+            'data2': Cattle.objects.all(),
+        }
+        return render(request, 'cattle/milk_production_add.html', context)
+
+    cattle_data = Cattle.objects.filter(cattle_gender="Female")
     context = {
         'data2': cattle_data,
     }
 
-    return render(request, 'cattle/milk_production_add.html',context)
+    return render(request, 'cattle/milk_production_add.html', context)
 
 @login_required(login_url='login')
-def milk_production_edit(request,milk_production_id):
+def milk_production_edit(request, milk_production_id):
     if not request.user.has_perm('erp.change_milkproduction'):
         return HttpResponse('You are not authorised to view this page', status=403)
 
-    edit = MilkProduction.objects.get(milk_production_id=milk_production_id)
-    
+    edit = get_object_or_404(MilkProduction, milk_production_id=milk_production_id)
+
     if request.method == "POST":
-        camount_in_liter=request.POST.get('amount_in_liter')
-        cmilk_time=request.POST.get('milk_time')
-        cfat_content=request.POST.get('fat_content')
-        cprotein_content=request.POST.get('protein_content')
-        csomatic_cell_count=request.POST.get('somatic_cell_count')
-        cduration_in_min=request.POST.get('duration_in_min')
-        ccattle_id=request.POST.get('cattle_id')
+        camount_in_liter = request.POST.get('amount_in_liter')
+        cmilk_time = request.POST.get('milk_time')
+        cfat_content = request.POST.get('fat_content')
+        cprotein_content = request.POST.get('protein_content')
+        csomatic_cell_count = request.POST.get('somatic_cell_count')
+        cduration_in_min = request.POST.get('duration_in_min')
+        ccattle_id = request.POST.get('cattle_id')
 
         errors = []
 
@@ -1698,7 +1850,7 @@ def milk_production_edit(request,milk_production_id):
                 errors.append('Invalid Milk Time format. Use YYYY-MM-DDTHH:MM format.')
         else:
             cmilk_time = None 
-            
+
         if camount_in_liter:
             try:
                 camount_in_liter = float(camount_in_liter)
@@ -1707,7 +1859,7 @@ def milk_production_edit(request,milk_production_id):
             except ValueError:
                 errors.append("Amount in liter must be a number.")
         else:
-            camount_in_liter = None
+            camount_in_liter = 0
 
         if cfat_content:
             try:
@@ -1744,15 +1896,19 @@ def milk_production_edit(request,milk_production_id):
             cduration_in_min = 0 
             
         if errors:
+            cattles = Cattle.objects.all()
             context = {
                 'cattle': edit,
                 'errors': errors,
-                'cattles': Cattle.objects.all(),
-                'd': MilkProduction.objects.get(milk_production_id=milk_production_id)
-
+                'cattles': cattles,
+                'd': edit 
             }
             return render(request, 'cattle/milk_production_edit.html', context)
-        
+
+        old_quantity = edit.amount_in_liter if edit.amount_in_liter else 0
+        new_quantity = camount_in_liter if camount_in_liter else 0
+        quantity_difference = new_quantity - old_quantity
+
         edit.amount_in_liter = camount_in_liter
         edit.milk_time = cmilk_time
         edit.fat_content = cfat_content
@@ -1760,14 +1916,92 @@ def milk_production_edit(request,milk_production_id):
         edit.somatic_cell_count = csomatic_cell_count
         edit.duration_in_min = cduration_in_min
         edit.cattle_id = ccattle_id
-        
-        edit.save()
-        messages.warning(request, "Milk Production Updated Successfully!")
+
+        try:
+            item = Item.objects.get(name='Milk')
+            item_type = ItemType.objects.get(item_type='Milk')
+            item_measurement = ItemMeasurement.objects.get(measurement='Liter')
+        except ObjectDoesNotExist as e:
+            errors.append(f"Error: {str(e)}")
+            context = {
+                'errors': errors,
+                'cattles': Cattle.objects.all(),
+                "d": edit,
+            }
+            return render(request, 'cattle/milk_production_edit.html', context)
+        except Exception as e:
+            errors.append(f"Error: {str(e)}")
+            context = {
+                'errors': errors,
+                'cattles': Cattle.objects.all(),
+                "d": edit,  
+            }
+            return render(request, 'cattle/milk_production_edit.html', context)
+
+        try:
+            current_price = CurrentMilkPrice.objects.latest('id').current_price
+        except CurrentMilkPrice.DoesNotExist:
+            errors.append("Current milk price is not set. Please set the current milk price.")
+            context = {
+                'errors': errors,
+                "d": edit,  
+                "cattles": Cattle.objects.all()
+            }
+            return render(request, 'cattle/milk_production_edit.html', context)
+
+        try:
+            existing_stock = Stock.objects.filter(
+                item=item,
+                type=item_type,
+                item_measurement=item_measurement
+            ).first()
+
+            if existing_stock:
+                existing_stock.quantity = str(float(existing_stock.quantity) + quantity_difference)
+                existing_stock.current_unit_price = current_price
+                existing_stock.modified_date = timezone.now()
+                existing_stock.save()
+            else:
+                Stock.objects.create(
+                    item=item,
+                    quantity=str(camount_in_liter),
+                    current_unit_price=current_price,
+                    type=item_type,
+                    modified_date=timezone.now(),
+                    item_measurement=item_measurement,
+                    approval_status='Approved'
+                )
+
+            edit.save()
+        except Exception as e:
+            if existing_stock:
+                existing_stock.quantity = str(float(existing_stock.quantity) - quantity_difference)
+                existing_stock.save()
+            else:
+                Stock.objects.filter(
+                    item=item,
+                    type=item_type,
+                    item_measurement=item_measurement,
+                    quantity=str(camount_in_liter)
+                ).delete()
+
+            errors.append(f"Error updating stock: {str(e)}")
+            context = {
+                'errors': errors,
+                'cattles': Cattle.objects.all(),
+                "d": edit,  
+            }
+            return render(request, 'cattle/milk_production_edit.html', context)
+
+        messages.success(request, "Milk Production Updated Successfully!")
         return redirect("/milk_production")
 
-    d = MilkProduction.objects.get(milk_production_id=milk_production_id)
-    cattles = Cattle.objects.all()
-    context = {"d": d, "cattle": edit, "cattles": cattles}
+    cattles = Cattle.objects.filter(cattle_gender="Female")
+    context = {
+        "d": edit,  
+        "cattle": edit,
+        "cattles": cattles
+    }
 
     return render(request, 'cattle/milk_production_edit.html', context)
 
@@ -1780,10 +2014,98 @@ def milk_production_delete(request, milk_production_id):
     return redirect("/milk_production")
 
 @login_required(login_url='login')
+def current_milk_price(request):
+    if not request.user.has_perm('erp.view_currentmilkprice'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    data = CurrentMilkPrice.objects.all()
+    paginated_data = paginate_data(request, data, 10) 
+    context = {"data1":paginated_data}
+
+    return render(request, 'cattle/current_milk_price.html', context)
+
+@login_required(login_url='login')
+def current_milk_price_add(request):
+    if not request.user.has_perm('erp.add_currentmilkprice'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method=="POST":
+        ccurrent_price=request.POST.get('current_price')
+
+        errors = []
+        if ccurrent_price:
+            try:
+                ccurrent_price = float(ccurrent_price)
+                if ccurrent_price <= 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append('Price must be a number.')
+        else:
+            errors.append("Price is required.")
+
+        if errors:
+            context = {
+                'errors': errors,
+            }
+            return render(request, 'cattle/current_milk_price_add.html', context)
+
+        query = CurrentMilkPrice(current_price=ccurrent_price)
+        query.save()
+        messages.success(request, "Current Price Added Successfully!")
+        return redirect("/current_milk_price")
+
+    return render(request, 'cattle/current_milk_price_add.html')
+
+@login_required(login_url='login')
+def current_milk_price_edit(request,id):
+    if not request.user.has_perm('erp.change_currentmilkprice'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    edit = CurrentMilkPrice.objects.get(id=id)
+    
+    if request.method == "POST":
+        ccurrent_price=request.POST.get('current_price')
+
+        errors = []
+        if ccurrent_price:
+            try:
+                ccurrent_price = float(ccurrent_price)
+                if ccurrent_price <= 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append('Price must be a number.')
+        else:
+            errors.append("Price is required.")
+
+        if errors:
+            context = {
+                'errors': errors,
+                'd': CurrentMilkPrice.objects.get(id=id)
+            }
+            return render(request, 'cattle/current_milk_price_edit.html', context)
+        
+        edit.current_price = ccurrent_price
+        
+        edit.save()
+        messages.success(request, "Current Price Updated Successfully!")
+        return redirect("/current_milk_price")
+
+    d = CurrentMilkPrice.objects.get(id=id)
+    context = {"d": d}
+
+    return render(request, 'cattle/current_milk_price_edit.html', context)
+
+def current_milk_price_delete(request, id):
+    if not request.user.has_perm('erp.delete_currentmilkprice'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = CurrentMilkPrice.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Current Price Deleted Successfully!")
+    return redirect("/current_milk_price")
+
+
+@login_required(login_url='login')
 def feed_formulation(request):
     if not request.user.has_perm('erp.view_feedformulation'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = FeedFormulation.objects.all()
+    data = FeedFormulation.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -1838,7 +2160,7 @@ def feed_formulation_edit(request,id):
         edit.modified_date = cmodified_date
         
         edit.save()
-        messages.warning(request, "Feed Formulation Updated Successfully!")
+        messages.success(request, "Feed Formulation Updated Successfully!")
         return redirect("/feed_formulation")
 
     d = FeedFormulation.objects.get(id=id)
@@ -1874,7 +2196,7 @@ def ingredient_add(request, id):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if errors:
             context = {
@@ -1923,7 +2245,7 @@ def ingredient_edit(request,id):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if errors:
             context = {
@@ -1944,7 +2266,7 @@ def ingredient_edit(request,id):
         edit.modified_date = cmodified_date
         
         edit.save()
-        messages.warning(request, "Feed Ingredient Updated Successfully!")
+        messages.success(request, "Feed Ingredient Updated Successfully!")
         return redirect("/feed_formulation")
 
     d = FeedIngredient.objects.get(id=id)
@@ -1968,7 +2290,7 @@ def ingredient_delete(request, id):
 def cattle_has_feed(request):
     if not request.user.has_perm('erp.view_cattlehasfeed'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = CattleHasFeed.objects.all()
+    data = CattleHasFeed.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
 
     cattle_data = Cattle.objects.all()
@@ -2065,7 +2387,7 @@ def cattle_has_feed_edit(request,id):
         edit.modified_date = cmodified_date
         
         edit.save()
-        messages.warning(request, "Cattle Feed Updated Successfully!")
+        messages.success(request, "Cattle Feed Updated Successfully!")
         return redirect("/cattle_has_feed")
 
     d = CattleHasFeed.objects.get(id=id)
@@ -2090,7 +2412,7 @@ def cattle_has_feed_delete(request, id):
 def person_type(request):
     if not request.user.has_perm('erp.view_persontype'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = PersonType.objects.all()
+    data = PersonType.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -2125,7 +2447,7 @@ def person_type_edit(request,person_type_id):
         edit.modified_date = cdate
 
         edit.save()
-        messages.warning(request, "Person Type Updated Successfully!")
+        messages.success(request, "Person Type Updated Successfully!")
         return redirect("/person_type")
 
     d = PersonType.objects.get(person_type_id=person_type_id)
@@ -2145,7 +2467,7 @@ def person_type_delete(request, person_type_id):
 def person_title(request):
     if not request.user.has_perm('erp.view_persontitle'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = PersonTitle.objects.all()
+    data = PersonTitle.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -2180,7 +2502,7 @@ def person_title_edit(request,person_title_id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Person Title Updated Successfully!")
+        messages.success(request, "Person Title Updated Successfully!")
         return redirect("/person_title")
 
     d = PersonTitle.objects.get(person_title_id=person_title_id)
@@ -2200,7 +2522,7 @@ def person_title_delete(request, person_title_id):
 def contact_type(request):
     if not request.user.has_perm('erp.view_contacttype'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = ContactType.objects.all()
+    data = ContactType.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -2238,7 +2560,7 @@ def contact_type_edit(request,contact_id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Contact Type Updated Successfully!")
+        messages.success(request, "Contact Type Updated Successfully!")
         return redirect("/contact_type")
 
     d = ContactType.objects.get(contact_id=contact_id)
@@ -2259,7 +2581,7 @@ def contact_type_delete(request, contact_id):
 def payment_method(request):
     if not request.user.has_perm('erp.view_paymentmethod'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = PaymentMethod.objects.all()
+    data = PaymentMethod.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -2294,7 +2616,7 @@ def payment_method_edit(request,id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Payment Method Updated Successfully!")
+        messages.success(request, "Payment Method Updated Successfully!")
         return redirect("/payment_method")
 
     d = PaymentMethod.objects.get(id=id)
@@ -2417,7 +2739,7 @@ def customer_edit(request, customer_id):
             person.person_type_id = person_type
             person.save()
 
-            messages.warning(request, "Customer Updated Successfully!")
+            messages.success(request, "Customer Updated Successfully!")
             return redirect("/customer")
 
         except Exception as e:
@@ -2543,14 +2865,6 @@ def get_item_measurements(request, item_id):
         print(f"Error in get_item_measurements: {e}")
         return JsonResponse({'error': str(e)}, status=500)
 
-    
-# def get_stock_quantity(request, item_id, type_id):
-#     try:
-#         stock_item = Stock.objects.get(item_id=item_id, type_id=type_id)
-#         quantity = stock_item.quantity
-#         return JsonResponse({'quantity': quantity})
-#     except Stock.DoesNotExist:
-#         return JsonResponse({'error': 'Stock not found'}, status=404)
 def get_stock_quantity(request, item_id, type_id, item_measurement_id):
     try:
         stock_item = Stock.objects.get(item_id=item_id, type_id=type_id, item_measurement_id=item_measurement_id)
@@ -2939,7 +3253,7 @@ def sales_order_delete(request, id):
 def region(request):
     if not request.user.has_perm('erp.view_region'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = Region.objects.all()
+    data = Region.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -2974,7 +3288,7 @@ def region_edit(request,region_id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Region Updated Successfully!")
+        messages.success(request, "Region Updated Successfully!")
         return redirect("/region")
 
     d = Region.objects.get(region_id=region_id)
@@ -2994,7 +3308,7 @@ def region_delete(request, region_id):
 def guarantee_type(request):
     if not request.user.has_perm('erp.view_guaranteetype'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = GuaranteeType.objects.all()
+    data = GuaranteeType.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -3029,7 +3343,7 @@ def guarantee_type_edit(request,guarantee_type_id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Guarantee Type Updated Successfully!")
+        messages.success(request, "Guarantee Type Updated Successfully!")
         return redirect("/guarantee_type")
 
     d = GuaranteeType.objects.get(guarantee_type_id=guarantee_type_id)
@@ -3049,7 +3363,7 @@ def guarantee_type_delete(request, guarantee_type_id):
 def shift(request):
     if not request.user.has_perm('erp.view_shift'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = Shift.objects.all()
+    data = Shift.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -3137,7 +3451,7 @@ def shift_edit(request,id):
         edit.modified_date=cdate
         
         edit.save()
-        messages.warning(request, "Shift Updated Successfully!")
+        messages.success(request, "Shift Updated Successfully!")
         return redirect("/shift")
 
     d = Shift.objects.get(id=id)
@@ -3158,7 +3472,7 @@ def shift_delete(request, id):
 def task(request):
     if not request.user.has_perm('erp.view_task'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = Task.objects.all()
+    data = Task.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -3196,7 +3510,7 @@ def task_edit(request,id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Task Updated Successfully!")
+        messages.success(request, "Task Updated Successfully!")
         return redirect("/task")
 
     d = Task.objects.get(id=id)
@@ -3316,7 +3630,7 @@ def assign_task_edit(request,id):
         edit.due_time = cdue_time
         
         edit.save()
-        messages.warning(request, "Assigned Task Updated Successfully!")
+        messages.success(request, "Assigned Task Updated Successfully!")
         return redirect("/assign_task")
 
     d = TaskAssignment.objects.get(id=id)
@@ -3426,7 +3740,7 @@ def job_add(request):
             except ValueError:
                 errors.append('Minimum Salary must be a number.')
         else:
-            cjob_min_salary = None 
+            cjob_min_salary = 0 
 
         if cjob_max_salary:
             try:
@@ -3436,7 +3750,7 @@ def job_add(request):
             except ValueError:
                 errors.append('Maximum Salary must be a number.')
         else:
-            cjob_max_salary = None 
+            cjob_max_salary = 0 
 
         if errors:
             context = {
@@ -3471,7 +3785,7 @@ def job_edit(request,job_id):
             except ValueError:
                 errors.append('Minimum Salary must be a number.')
         else:
-            cjob_min_salary = None 
+            cjob_min_salary = 0 
 
         if cjob_max_salary:
             try:
@@ -3481,7 +3795,7 @@ def job_edit(request,job_id):
             except ValueError:
                 errors.append('Maximum Salary must be a number.')
         else:
-            cjob_max_salary = None 
+            cjob_max_salary = 0 
 
         if errors:
             context = {
@@ -3495,7 +3809,7 @@ def job_edit(request,job_id):
         edit.job_max_salary = cjob_max_salary
         
         edit.save()
-        messages.warning(request, "Job Updated Successfully!")
+        messages.success(request, "Job Updated Successfully!")
         return redirect("/job")
 
     d = Job.objects.get(job_id=job_id)
@@ -3516,7 +3830,7 @@ def job_delete(request, job_id):
 def item_type(request):
     if not request.user.has_perm('erp.view_itemtype'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = ItemType.objects.all()
+    data = ItemType.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -3551,7 +3865,7 @@ def item_type_edit(request,item_type_id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Item Type Updated Successfully!")
+        messages.success(request, "Item Type Updated Successfully!")
         return redirect("/item_type")
 
     d = ItemType.objects.get(item_type_id=item_type_id)
@@ -3571,7 +3885,7 @@ def item_type_delete(request, item_type_id):
 def item(request):
     if not request.user.has_perm('erp.view_item'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = Item.objects.all()
+    data = Item.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -3606,7 +3920,7 @@ def item_edit(request,item_id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Item Updated Successfully!")
+        messages.success(request, "Item Updated Successfully!")
         return redirect("/item")
 
     d = Item.objects.get(item_id=item_id)
@@ -3626,7 +3940,7 @@ def item_delete(request, item_id):
 def supplier_type(request):
     if not request.user.has_perm('erp.view_suppliertype'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = SupplierType.objects.all()
+    data = SupplierType.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -3661,7 +3975,7 @@ def supplier_type_edit(request,supplier_type_id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Supplier Type Updated Successfully!")
+        messages.success(request, "Supplier Type Updated Successfully!")
         return redirect("/supplier_type")
 
     d = SupplierType.objects.get(supplier_type_id=supplier_type_id)
@@ -3757,7 +4071,7 @@ def supplier_edit(request,farm_entity_id):
         edit.account_number = caccount_number
         
         edit.save()
-        messages.warning(request, "Supplier Updated Successfully!")
+        messages.success(request, "Supplier Updated Successfully!")
         return redirect("/supplier")
 
     d = Supplier.objects.get(farm_entity_id=farm_entity_id)
@@ -3879,7 +4193,7 @@ def request_order_add(request):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if errors:
             context = {
@@ -3933,7 +4247,7 @@ def request_order_edit(request,order_id):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if errors:
             context = {
@@ -3953,7 +4267,7 @@ def request_order_edit(request,order_id):
         edit.quantity = cquantity
         edit.modified_date = cdate
         edit.save()
-        messages.warning(request, "Request Updated Successfully!")
+        messages.success(request, "Request Updated Successfully!")
         return redirect("/request_order")
 
     d = OrderHasItem.objects.get(order_id=order_id)
@@ -4032,7 +4346,7 @@ def rfq_add(request, order_id):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if cprice:
             try:
@@ -4042,7 +4356,7 @@ def rfq_add(request, order_id):
             except ValueError:
                 errors.append("Price must be a valid number.")
         else:
-            cprice = None
+            cprice = 0
 
         if errors:
             supplier_data = Supplier.objects.all()
@@ -4110,7 +4424,7 @@ def rfq_edit(request,id):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if cprice:
             try:
@@ -4120,7 +4434,7 @@ def rfq_edit(request,id):
             except ValueError:
                 errors.append("Price must be a valid number.")
         else:
-            cprice = None
+            cprice = 0
 
         if errors:
             d = OrderHasItemSupplier.objects.get(id=id)
@@ -4145,7 +4459,7 @@ def rfq_edit(request,id):
         edit.modified_date = cdate
 
         edit.save()
-        messages.warning(request, "RFQ Updated Successfully!")
+        messages.success(request, "RFQ Updated Successfully!")
         return redirect(reverse('request_order_view', args=[edit.order_id]))
 
     d = OrderHasItemSupplier.objects.get(id=id)
@@ -4410,7 +4724,7 @@ def reject_inventory(request, id):
 def item_measurement(request):
     if not request.user.has_perm('erp.view_itemmeasurement'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = ItemMeasurement.objects.all()
+    data = ItemMeasurement.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -4448,7 +4762,7 @@ def item_measurement_edit(request,id):
         edit.modified_date = cdate
         
         edit.save()
-        messages.warning(request, "Item Measurement Updated Successfully!")
+        messages.success(request, "Item Measurement Updated Successfully!")
         return redirect("/item_measurement")
 
     d = ItemMeasurement.objects.get(id=id)
@@ -4469,7 +4783,7 @@ def item_measurement_delete(request, id):
 def stock(request):
     if not request.user.has_perm('erp.view_stock'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = Stock.objects.all()
+    data = Stock.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data1":paginated_data}
 
@@ -4535,7 +4849,7 @@ def stock_edit(request,stock_id):
         edit.modified_date = cmodified_date
         
         edit.save()
-        messages.warning(request, "Stock Updated Successfully!")
+        messages.success(request, "Stock Updated Successfully!")
         return redirect("/stock")
 
     d = Stock.objects.get(stock_id=stock_id)
@@ -4582,6 +4896,7 @@ def stockin_add(request):
         cunit_price = float(cunit_price)
         ctotal_price = cunit_price * cquantity
         capproval_status = 'Pending'
+        cadded_date = datetime.now().date()
 
         errors = []
         if cquantity:
@@ -4592,7 +4907,7 @@ def stockin_add(request):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if cunit_price:
             try:
@@ -4602,7 +4917,7 @@ def stockin_add(request):
             except ValueError:
                 errors.append("Price must be a valid number.")
         else:
-            cunit_price = None
+            cunit_price = 0
 
         if errors:
             context = {
@@ -4613,7 +4928,7 @@ def stockin_add(request):
             }
             return render(request, 'inventory/stockin_add.html', context)
 
-        DirectlyAddedItem.objects.create(quantity=cquantity,item_type_id=ctype,item_id=citem_id,measurement_id=citem_measurement_id,unit_price=cunit_price,description=cdescription,total_price=ctotal_price,approval_status=capproval_status)
+        DirectlyAddedItem.objects.create(quantity=cquantity,item_type_id=ctype,item_id=citem_id,measurement_id=citem_measurement_id,unit_price=cunit_price,description=cdescription,total_price=ctotal_price,approval_status=capproval_status, added_date=cadded_date)
         messages.success(request, "Stock request sent Successfully!")
         return redirect("/stock_in")
     
@@ -4645,6 +4960,7 @@ def stockin_edit(request,id):
         cunit_price = float(cunit_price)
         ctotal_price = cunit_price * cquantity
         capproval_status = 'Pending'
+        cadded_date = datetime.now().date()
 
         errors = []
         if cquantity:
@@ -4655,7 +4971,7 @@ def stockin_edit(request,id):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if cunit_price:
             try:
@@ -4665,7 +4981,7 @@ def stockin_edit(request,id):
             except ValueError:
                 errors.append("Price must be a valid number.")
         else:
-            cunit_price = None
+            cunit_price = 0
 
         if errors:
             context = {
@@ -4686,9 +5002,10 @@ def stockin_edit(request,id):
         edit.description = cdescription
         edit.total_price = ctotal_price
         edit.approval_status = capproval_status
+        edit.added_date = cadded_date
         
         edit.save()
-        messages.warning(request, "Stock request updated Successfully!")
+        messages.success(request, "Stock request updated Successfully!")
         return redirect("/stock_in")
 
     d = DirectlyAddedItem.objects.get(id=id)
@@ -4790,7 +5107,7 @@ def stockout_add(request):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if errors:
             context = {
@@ -4880,7 +5197,7 @@ def stockout_edit(request,id):
             except ValueError:
                 errors.append("Quantity must be a valid number.")
         else:
-            cquantity = None
+            cquantity = 0
 
         if errors:
             context = {
@@ -4941,7 +5258,7 @@ def stockout_edit(request,id):
         edit.modified_date = cmodified_date
         
         edit.save()
-        messages.warning(request, "Stockout Updated Successfully!")
+        messages.success(request, "Stockout Updated Successfully!")
         return redirect("/stock_out")
 
     d = Stockout.objects.get(id=id)
@@ -5060,7 +5377,7 @@ def department_edit(request,department_id):
         edit.department_name = cdepartment
         edit.manager_id = cmanager_id
         edit.save()
-        messages.warning(request, "Department Updated Successfully!")
+        messages.success(request, "Department Updated Successfully!")
         return redirect("/department")
 
     d = Department.objects.get(department_id=department_id)
@@ -5120,7 +5437,7 @@ def employee_add(request):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == "POST":
         ctitle = request.POST.get('title')
-        ctype = request.POST.get('type')
+        # ctype = request.POST.get('type')
         cfname = request.POST.get('fname')
         cmname = request.POST.get('mname')
         clname = request.POST.get('lname')
@@ -5168,7 +5485,7 @@ def employee_add(request):
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
-            csalary = None 
+            csalary = 0 
 
         if ccontract_period:
             try:
@@ -5176,7 +5493,7 @@ def employee_add(request):
             except ValueError:
                 errors.append('Contract Period must be a number.')
         else:
-            ccontract_period = None 
+            ccontract_period = 0 
 
         
         if errors:
@@ -5196,10 +5513,12 @@ def employee_add(request):
 
         farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
 
+        employee_type = PersonType.objects.get(person_type="Employee")
+
         person = Person.objects.create(
             farm_entity=farm_entity,
             person_title_id=ctitle,
-            person_type_id=ctype,
+            person_type_id=employee_type.person_type_id,
             first_name=cfname,
             middle_name=cmname,
             last_name=clname,
@@ -5259,7 +5578,9 @@ def employee_edit(request, farm_entity_id):
 
     if request.method == "POST":
         person.person_title_id = request.POST.get('title')
-        person.person_type_id = request.POST.get('type')
+        # person.person_type_id = request.POST.get('type')
+        employee_type = PersonType.objects.get(person_type="Employee")
+        person.person_type = employee_type
         person.first_name = request.POST.get('fname')
         person.middle_name = request.POST.get('mname')
         person.last_name = request.POST.get('lname')
@@ -5305,7 +5626,7 @@ def employee_edit(request, farm_entity_id):
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
-            employee.salary = None 
+            employee.salary = 0 
 
         if employee.contract_period_in_month:
             try:
@@ -5313,7 +5634,7 @@ def employee_edit(request, farm_entity_id):
             except ValueError:
                 errors.append('Contract Period must be a number.')
         else:
-            employee.contract_period_in_month = None
+            employee.contract_period_in_month = 0
 
         if errors:
             context = {
@@ -5334,7 +5655,7 @@ def employee_edit(request, farm_entity_id):
         person.save()
         employee.save()
 
-        messages.warning(request, "Employee Updated Successfully!")
+        messages.success(request, "Employee Updated Successfully!")
         return redirect("/employee")
 
     title_data = PersonTitle.objects.all()
@@ -5473,7 +5794,7 @@ def add_experience(request):
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
-            csalary = None 
+            csalary = 0 
 
         if errors:
             context = {
@@ -5518,7 +5839,7 @@ def add_guarantee(request):
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
-            csalary_evaluation = None 
+            csalary_evaluation = 0 
 
         if errors:
             context = {
@@ -5562,7 +5883,7 @@ def add_jobhistory(request):
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
-            csalary = None 
+            csalary = 0 
 
         if cstart_date:
             parsed_start_date = parse_date(cstart_date)
@@ -5668,7 +5989,7 @@ def leave_edit(request,leave_id):
         edit.reason = creason
         
         edit.save()
-        messages.warning(request, "Request Updated Successfully!")
+        messages.success(request, "Request Updated Successfully!")
         return redirect("/leave")
 
     d = EmployeeLeave.objects.get(leave_id=leave_id)
@@ -5724,7 +6045,7 @@ def reject_leave(request, leave_id):
 def transaction(request):
     if not request.user.has_perm('erp.view_transaction'):
         return HttpResponse('You are not authorised to view this page', status=403)
-    data = OtherIncomeExpense.objects.all()
+    data = OtherIncomeExpense.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
     context = {"data":paginated_data}
 
@@ -5757,7 +6078,7 @@ def transaction_add(request):
             except ValueError:
                 errors.append('Amount must be a number.')
         else:
-            camount = None 
+            camount = 0 
 
         if ctransaction_date:
             try:
@@ -5809,7 +6130,7 @@ def transaction_edit(request, id):
             except ValueError:
                 errors.append('Amount must be a number.')
         else:
-            camount = None 
+            camount = 0 
 
         if ctransaction_date:
             try:
@@ -5918,6 +6239,129 @@ def balance_sheet(request):
     }
 
     return render(request, 'finance/balance_sheet.html', context)
+
+@login_required(login_url='login')
+def account_receivables(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    accounts_receivable_value = 0
+    other_income_value = 0
+
+    if start_date and end_date:
+        accounts_receivable_value = SalesOrder.objects.filter(
+            payment_status='Not Paid',
+            order_date__range=[start_date, end_date]
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
+        other_income_value = OtherIncomeExpense.objects.filter(
+            transaction_date__range=[start_date, end_date],
+            transaction_type='Income',
+            transaction_status='Pending'
+        ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+
+    elif start_date:
+        accounts_receivable_value = SalesOrder.objects.filter(
+            payment_status='Not Paid',
+            order_date__gte=start_date
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
+        other_income_value = OtherIncomeExpense.objects.filter(
+            transaction_date__gte=start_date,
+            transaction_type='Income',
+            transaction_status='Pending'
+        ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+
+    elif end_date:
+        accounts_receivable_value = SalesOrder.objects.filter(
+            payment_status='Not Paid',
+            order_date__lte=end_date
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
+        other_income_value = OtherIncomeExpense.objects.filter(
+            transaction_date__lte=end_date,
+            transaction_type='Income',
+            transaction_status='Pending'
+        ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+
+    accounts_receivable_total = accounts_receivable_value + other_income_value
+
+    context = {
+        'accounts_receivable': accounts_receivable_total,
+        'accounts_receivable_value': accounts_receivable_value,
+        'other_income_value': other_income_value,
+        'filters_applied': bool(start_date or end_date),
+    }
+
+    return render(request, 'finance/account_receivables.html', context)
+
+def get_accounts_payable_value2(queryset, start_date=None, end_date=None):
+    if start_date and end_date:
+        approved_orders = Order.objects.filter(
+            request_approved_date__range=[start_date, end_date]
+        )
+    elif start_date:
+        approved_orders = Order.objects.filter(
+            request_approved_date__gte=start_date
+        )
+    elif end_date:
+        approved_orders = Order.objects.filter(
+            request_approved_date__lte=end_date
+        )
+    else:
+        approved_orders = Order.objects.all()
+
+    return queryset.filter(order__order__in=approved_orders).annotate(
+        quantity_float=Cast('quantity', FloatField())
+    ).aggregate(total_value=Sum(F('quantity_float') * F('price')))['total_value'] or 0
+
+@login_required(login_url='login')
+def account_payables(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    accounts_payable_value = get_accounts_payable_value2(
+        OrderHasItemSupplier.objects.filter(inventory_status='Pending'),
+        start_date,
+        end_date
+    )
+
+    other_expense_value = OtherIncomeExpense.objects.filter(
+        transaction_type='Expense',
+        transaction_status='Pending'
+    )
+    if start_date and end_date:
+        other_expense_value = other_expense_value.filter(
+            transaction_date__range=[start_date, end_date]
+        )
+    elif start_date:
+        other_expense_value = other_expense_value.filter(
+            transaction_date__gte=start_date
+        )
+    elif end_date:
+        other_expense_value = other_expense_value.filter(
+            transaction_date__lte=end_date
+        )
+    other_expense_value = other_expense_value.aggregate(
+        total_value=Sum('amount')
+    )['total_value'] or 0
+
+    total_accounts_payable = accounts_payable_value + other_expense_value
+
+    context = {
+        'accounts_payable_value': accounts_payable_value,
+        'other_expense_value': other_expense_value,
+        'total_accounts_payable': total_accounts_payable,
+        'filters_applied': bool(start_date or end_date),
+    }
+
+    return render(request, 'finance/account_payables.html', context)
 
 def get_procurement_value(queryset, start_date, end_date):
     approved_orders_current_year = Order.objects.filter(request_approved_date__range=[start_date, end_date])
@@ -6194,6 +6638,34 @@ def feed_formulation_report(request):
     return render(request, 'reports/feed_formulation_report.html', context)
 
 @login_required(login_url='login')
+def pregnancy_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    pregnancy_status_id = request.GET.get('pregnancystatus')
+
+    pregnancy_status_data = CattlePregnancy.objects.all()
+
+    if start_date:
+        pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_date__gte=start_date)
+    if end_date:
+        pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_date__lte=end_date)
+    if pregnancy_status_id:
+        pregnancy_status_data = pregnancy_status_data.filter(pregnancy_status_id=pregnancy_status_id)
+
+    status_list = PregnancyStatus.objects.filter(cattlepregnancy__isnull=False).distinct()
+    paginated_data = paginate_data(request, pregnancy_status_data, 10) 
+
+    context = {
+        'pregnancy_status_data': paginated_data,
+        'status_list':status_list,
+        'filters_applied': bool(start_date or end_date or pregnancy_status_id),
+    }
+
+    return render(request, 'reports/pregnancy_report.html', context)
+
+@login_required(login_url='login')
 def employee_report(request):
     if not request.user.has_perm('erp.view_reports'):
         return HttpResponse('You are not authorised to view this page', status=403)
@@ -6233,6 +6705,3 @@ def employee_with_task_report(request):
     }
 
     return render(request, 'reports/employee_with_task_report.html', context)
-
-
-

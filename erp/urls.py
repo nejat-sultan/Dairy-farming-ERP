@@ -82,7 +82,13 @@ urlpatterns = [
     path('milk_production_edit/<str:milk_production_id>', views.milk_production_edit, name='milk_production_edit'),
     path('milk_production_delete/<str:milk_production_id>', views.milk_production_delete),
 
+    path('current_milk_price', views.current_milk_price),
+    path('current_milk_price_add', views.current_milk_price_add),
+    path('current_milk_price_edit/<int:id>', views.current_milk_price_edit, name='current_milk_price_edit'),
+    path('current_milk_price_delete/<int:id>', views.current_milk_price_delete),
+
     path('add_photo', views.add_photo),
+    path('change_photo', views.change_photo, name='change_photo'),
 
     path('person_type', views.person_type),
     path('person_type_add', views.person_type_add),
@@ -267,6 +273,8 @@ urlpatterns = [
     path('transaction_delete/<int:id>', views.transaction_delete),
     path('balance_sheet', views.balance_sheet),
     path('profit_loss', views.profit_loss),
+    path('account_receivables', views.account_receivables),
+    path('account_payables', views.account_payables),
 
     path('reports/', views.reports),
     path('milk_production_report/', views.milk_production_report),
@@ -275,6 +283,7 @@ urlpatterns = [
     path('sales_report/', views.sales_report),
     path('procurement_report/', views.procurement_report),
     path('feed_formulation_report/', views.feed_formulation_report),
+    path('pregnancy_report/', views.pregnancy_report),
     path('employee_report/', views.employee_report),
     path('employee_with_task_report/', views.employee_with_task_report),
 

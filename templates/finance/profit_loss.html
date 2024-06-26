@@ -135,7 +135,7 @@
                     {
                         extend: 'excel',
                         title: function() {
-                            return companyName + ' Balance Sheet Report - ' + startDate + ' to ' + endDate;
+                            return companyName + ' PL Report - ' + startDate + ' to ' + endDate;
                         },
                         customize: function(xlsx) {
                             var sheet = xlsx.xl.worksheets['sheet1.xml'];
@@ -145,7 +145,7 @@
                     {
                         extend: 'pdf',
                         title: function() {
-                            return 'Balance Sheet Report'
+                            return 'PL Report'
                         },
                         customize: function(doc) {
                             doc.content.splice(0, 0, {
@@ -157,7 +157,7 @@
                     {
                         extend: 'print',
                         title: function() {
-                            return 'Balance Sheet Report';
+                            return 'PL Report';
                         },
                         customize: function(win) {
                             $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
