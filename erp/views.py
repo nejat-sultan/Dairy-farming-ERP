@@ -95,22 +95,85 @@ def farm(request):
 
     return render(request, 'company/farm.html', context)
 
+# def farm_context_processor(request):
+#     latest_farm = get_latest_farm()
+#     overdue_cattle = get_overdue_vaccines()
+#     low_quantity_items = get_low_quantity_items()
+#     notifications = {
+#         'overdue_cattle': overdue_cattle,
+#         'low_quantity_items': low_quantity_items,
+#     }
+#     total_notifications = len(overdue_cattle) + len(low_quantity_items)
+
+#     return {
+#         'latest_farm': latest_farm,
+#         'notifications': notifications,
+#         'total_notifications': total_notifications,
+#         'overdue_count': len(overdue_cattle),
+#         'low_quantity_count': len(low_quantity_items),
+#     }
+
+def get_assigned_tasks(employee):
+    assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status=None).order_by('-due_time')
+    return assigned_tasks
+
 def farm_context_processor(request):
     latest_farm = get_latest_farm()
     overdue_cattle = get_overdue_vaccines()
     low_quantity_items = get_low_quantity_items()
-    notifications = {
-        'overdue_cattle': overdue_cattle,
-        'low_quantity_items': low_quantity_items,
-    }
-    total_notifications = len(overdue_cattle) + len(low_quantity_items)
+    approval_required_orders = get_approval_required_orders()
+    approval_required_ordersuppliers = get_approval_required_ordersuppliers()
+    approval_required_leave_requests = get_approval_required_leave_requests()
+    approval_required_stockout_requests = get_approval_required_stockout_requests()
+    approval_required_stockin_requests = get_approval_required_stockin_requests()
+
+    if request.user.is_authenticated:
+        try:
+            user_profile = UserProfile.objects.get(user=request.user)
+            employee = user_profile.employee
+            assigned_tasks = get_assigned_tasks(employee)
+        except UserProfile.DoesNotExist:
+            assigned_tasks = []
+    else:
+        assigned_tasks = []
+
+    notifications = {}
+    total_notifications = 0
+
+    if request.user.has_perm('erp.view_admindashboard'):
+        notifications['overdue_cattle'] = overdue_cattle
+        notifications['approval_required_orders'] = approval_required_orders
+        notifications['approval_required_ordersuppliers'] = approval_required_ordersuppliers
+        notifications['approval_required_leave_requests'] = approval_required_leave_requests
+        notifications['approval_required_stockout_requests'] = approval_required_stockout_requests
+        notifications['approval_required_stockin_requests'] = approval_required_stockin_requests
+        total_notifications += (len(overdue_cattle) +
+                                len(approval_required_orders) +
+                                len(approval_required_ordersuppliers) +
+                                len(approval_required_leave_requests) +
+                                len(approval_required_stockout_requests) +
+                                len(approval_required_stockin_requests))
+
+    if request.user.has_perm('erp.view_storeclerkdashboard') or request.user.has_perm('erp.view_admindashboard'):
+        notifications['low_quantity_items'] = low_quantity_items
+        total_notifications += len(low_quantity_items)
+
+    if request.user.has_perm('erp.view_laboremployeedashboard'):
+        notifications['assigned_tasks'] = assigned_tasks
+        total_notifications += len(assigned_tasks)
 
     return {
         'latest_farm': latest_farm,
         'notifications': notifications,
         'total_notifications': total_notifications,
-        'overdue_count': len(overdue_cattle),
-        'low_quantity_count': len(low_quantity_items),
+        'overdue_count': len(overdue_cattle) if 'overdue_cattle' in notifications else 0,
+        'low_quantity_count': len(low_quantity_items) if 'low_quantity_items' in notifications else 0,
+        'approval_required_orders_count': len(approval_required_orders) if 'approval_required_orders' in notifications else 0,
+        'approval_required_ordersuppliers_count': len(approval_required_ordersuppliers) if 'approval_required_ordersuppliers' in notifications else 0,
+        'approval_required_leave_requests_count': len(approval_required_leave_requests) if 'approval_required_leave_requests' in notifications else 0,
+        'approval_required_stockout_requests_count': len(approval_required_stockout_requests) if 'approval_required_stockout_requests' in notifications else 0,
+        'approval_required_stockin_requests_count': len(approval_required_stockin_requests) if 'approval_required_stockin_requests' in notifications else 0,
+        'assigned_tasks_count': len(assigned_tasks) if 'assigned_tasks' in notifications else 0,
     }
 
 
@@ -557,7 +620,6 @@ def index(request):
 
     overdue_cattle = get_overdue_vaccines()
     low_quantity_items = get_low_quantity_items()
-    total_notifications = len(overdue_cattle) + len(low_quantity_items)
     user_profile = UserProfile.objects.get(user=request.user)
     employee = user_profile.employee
     assigned_tasks = get_assigned_tasks(employee)
@@ -6512,7 +6574,8 @@ def milk_production_report(request):
     if cattle_id:
         milk_production_data = milk_production_data.filter(cattle_id=cattle_id)
 
-    cattle_list = Cattle.objects.filter(milkproduction__isnull=False).distinct()
+    # cattle_list = Cattle.objects.filter(milkproduction__isnull=False).distinct()
+    cattle_list = Cattle.objects.filter(cattle_gender="Female")
     paginated_data = paginate_data(request, milk_production_data, 10) 
 
     context = {
@@ -6567,7 +6630,8 @@ def stock_report(request):
     if item_id:
         stock_data = stock_data.filter(item_id=item_id)
 
-    item_list = Item.objects.filter(stock__isnull=False).distinct()
+    # item_list = Item.objects.filter(stock__isnull=False).distinct()
+    item_list = Item.objects.all()
     paginated_data = paginate_data(request, stock_data, 10) 
 
     context = {
@@ -6654,7 +6718,8 @@ def pregnancy_report(request):
     if pregnancy_status_id:
         pregnancy_status_data = pregnancy_status_data.filter(pregnancy_status_id=pregnancy_status_id)
 
-    status_list = PregnancyStatus.objects.filter(cattlepregnancy__isnull=False).distinct()
+    # status_list = PregnancyStatus.objects.filter(cattlepregnancy__isnull=False).distinct()
+    status_list = PregnancyStatus.objects.all()
     paginated_data = paginate_data(request, pregnancy_status_data, 10) 
 
     context = {

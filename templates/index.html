@@ -626,7 +626,7 @@
     </section>
 
     <div id="notifications" style="display:none;">
-    {% if request.user|has_permission:"erp.view_vetdashboard" or request.user|has_permission:"erp.view_admindashboard" %}
+    {% if request.user|has_permission:"erp.view_admindashboard" %}
       {% if overdue_cattle %}
         <div id="overdue-cattle-notification">
             {% for cattle in overdue_cattle %}
