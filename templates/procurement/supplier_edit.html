@@ -1,184 +1,416 @@
 {% extends 'base.html' %}
 
-
 {% block content %}
 
-  <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
+<div class="content-wrapper">
     <section class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1>Supplier Edit</h1>
-          </div>
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="../supplier">Home</a></li>
-              <li class="breadcrumb-item active">Supplier Edit</li>
-            </ol>
-          </div>
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Supplier Edit</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="../supplier">Home</a></li>
+                        <li class="breadcrumb-item active">Supplier Edit</li>
+                    </ol>
+                </div>
+            </div>
         </div>
-      </div><!-- /.container-fluid -->
     </section>
 
     <section class="content">
-      <form action="/supplier_edit/{{d.farm_entity_id}}" method="post">
-        {% csrf_token %}
-        <div class="row">
-          <div class="col-md-12">
-            <div class="card card-primary">
-              <div class="card-header" style="background-color: #007f5c;color: #fff;">
-                <h3 class="card-title">Basic Information</h3>
-                <div class="card-tools">
-                  <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
-                    <i class="fas fa-minus"></i>
-                  </button>
+        <form action="/supplier_edit/{{d.farm_entity_id}}" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-primary">
+                        <div class="card-header" style="background-color: #007f5c;color: #fff;">
+                            <h3 class="card-title">Basic Information</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <br>
+                        {% for message in messages %}
+                        <div class="alert alert-{{message.tags}} alert-dismissible fade show" role="alert">
+                          <strong>{{message}}</strong>
+                        </div>
+                        {% endfor %}
+
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="inputName">Supplier Name</label>
+                                <input type="text" id="inputName" name="supplier_name" value="{{ d.supplier_name }}" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputName">Supplier Type</label>
+                                <select id="inputStatus" name="supplier_type" class="form-control custom-select">
+                                    {% for type in data1 %}
+                                    <option value="{{ type.supplier_type_id }}" {% if type.supplier_type_id == d.supplier_type_id %} selected {% endif %}>
+                                        {{ type.supplier_type }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputName">Account Number</label>
+                                <input type="text" id="inputName" name="account_number" value="{{ d.account_number }}" class="form-control">
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div class="card-body">
-                <div class="form-group">
-                  <label for="inputName">Supplier Name</label>
-                  <input type="text" id="inputName" name="supplier_name" value="{{ d.supplier_name }}" class="form-control" required>
-                </div>
-                <div class="form-group">
-                  <label for="inputName">Supplier Type</label>
-                  <select id="inputStatus" name="supplier_type" class="form-control custom-select">
-                  {% for d in data1 %}
-                    <option value="{{d.supplier_type_id}}" {% if d.supplier_type_id == type.supplier_type_id %} selected {% endif %}>
-                      {{ d.supplier_type }}
-                    </option>
-                  {% endfor %}    
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="inputName">Account Number</label>
-                  <input type="text" id="inputName" name="account_number" value="{{ d.account_number }}" class="form-control">
-                </div>
-              </div>
             </div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col-12">
-            <a href="../supplier" class="btn btn-secondary">Back</a>
-            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Supplier</button>
-          </div>
-        </div>
-      </form>
-      <br>
-
-        <button type="button" class="btn btn-primary mr-3" id="addcontactBtn">Add Contact</button>
-        <button type="button" class="btn btn-info mr-3" id="addaddressBtn">Add Address</button>
-
-      <br><br>
-
-      <!-- Hidden section for contact form -->
-      <div class="card" id="contactFormSection" style="display: none;">
-        <div class="card-body">
-            <form action="/add_supplier_contact" method="post" id="contactForm" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputStatus">Supplier</label>
-                            <input type="text" id="inputName" name="supplier_id" value="{{d.farm_entity_id}}" class="form-control" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Contact Type</label>
-                            <select id="inputStatus" name="contact_type" class="form-control custom-select" >
-                              {% for dd in data6 %}
-                              <option value="{{ dd.contact_id }}">{{ dd.contact_type }}</option>
-                              {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Contact</label>
-                            <input type="text" id="inputPhotoDescription" name="contact" class="form-control" required>
-                        </div>
-                    </div>
+            <div class="row">
+                <div class="col-12">
+                    <a href="../supplier" class="btn btn-secondary">Back</a>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Supplier</button>
                 </div>
+            </div>
+        </form>
+        <br>
+
+        <button type="button" class="btn btn-primary mr-3" id="showContactTableBtn">Manage Contacts</button>
+        <button type="button" class="btn btn-info mr-3" id="showAddressTableBtn">Manage Addresses</button>
+        <br><br>
+
+        <div class="card" id="contactTableSection" style="display: none;">
+            <div class="card-body">
                 <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Contact</button>
+                  <div class="col-10">
+                    
+                  </div>
+                  <div class="col-2">
+                    <button type="button" class="btn mb-3" style="background-color: #007f5c;color: #fff;" data-toggle="modal" data-target="#addContactModal">
+                      <i class="fas fa-plus"></i> Add Contact
+                    </button>
                   </div>
                 </div>
-                <br>
-            </form>
+                <div class="table-responsive">
+                  <table class="table table-striped projects">
+                    <thead>
+                        <tr>
+                            <th>Contact Type</th>
+                            <th>Contact</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contact in contacts %}
+                        <tr>
+                            <td>{{ contact.contact_type.contact_type }}</td>
+                            <td>{{ contact.contact }}</td>
+                            <td>
+                                <button class="btn btn-info btn-sm edit-contact-btn" data-contact-id="{{ contact.id }}" data-toggle="modal" data-target="#editContactModal">
+                                  <i class="fas fa-pencil-alt"></i>
+                                </button>
+                                <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ contact.id }}')">
+                                  <i class="fas fa-trash">
+                                  </i>
+                                </a>
+                                <script>
+                                  function confirmDelete(contactId) {
+                                      if (confirm("Are you sure you want to delete this Contact?")) {
+                                          window.location.href = "/delete_supplier_contact/" + contactId;
+                                      }
+                                  }
+                                </script>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+            </div>
         </div>
-      </div>
 
-      <!-- Hidden section for Address form -->
-      <div class="card" id="addressFormSection" style="display: none;">
-        <div class="card-body">
-            <form action="/add_supplier_address" method="post" id="addressForm" enctype="multipart/form-data">
-                {% csrf_token %}
+        <div class="card" id="addressTableSection" style="display: none;">
+            <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
+                  <div class="col-10">
+                    
+                  </div>
+                  <div class="col-2">
+                    <button type="button" class="btn mb-3" style="background-color: #007f5c;color: #fff;" data-toggle="modal" data-target="#addAddressModal">
+                      <i class="fas fa-plus"></i> Add Address</button>
+                  </div>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-striped projects">
+                    <thead>
+                        <tr>
+                            <th>Country</th>
+                            <th>Region</th>
+                            <th>Zone/Subcity</th>
+                            <th>Woreda</th>
+                            <th>Kebele</th>
+                            <th>House No</th>
+                            <th>Street Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for address in addresses %}
+                        <tr>
+                            <td>{{ address.country }}</td>
+                            <td>{{ address.region.region }}</td>
+                            <td>{{ address.zone_subcity }}</td>
+                            <td>{{ address.woreda }}</td>
+                            <td>{{ address.kebele }}</td>
+                            <td>{{ address.house_number }}</td>
+                            <td>{{ address.street_name }}</td>
+                            <td>
+                                <button class="btn btn-info btn-sm edit-address-btn" data-address-id="{{ address.id }}" data-toggle="modal" data-target="#editAddressModal">
+                                  <i class="fas fa-pencil-alt"></i>
+                                </button>
+                                <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete2('{{ address.id }}')">
+                                  <i class="fas fa-trash">
+                                  </i>
+                                </a>
+                                <script>
+                                  function confirmDelete2(cattleId) {
+                                      if (confirm("Are you sure you want to delete this Address?")) {
+                                          window.location.href = "/delete_supplier_address/" + cattleId;
+                                      }
+                                  }
+                                </script>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="addContactModal" tabindex="-1" role="dialog" aria-labelledby="addContactModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addContactModalLabel">Add Contact</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/add_supplier_contact" method="post" id="contactForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="contactSupplier">Supplier</label>
+                                <input type="text" id="contactSupplier" name="supplier_id" value="{{d.farm_entity_id}}" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="contactType">Contact Type</label>
+                                <select id="contactType" name="contact_type" class="form-control custom-select">
+                                    {% for dd in data6 %}
+                                    <option value="{{ dd.contact_id }}">{{ dd.contact_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="contact">Contact</label>
+                                <input type="text" id="contact" name="contact" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Contact</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editContactModal" tabindex="-1" role="dialog" aria-labelledby="editContactModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editContactModalLabel">Edit Contact</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/edit_supplier_contact" method="post" id="editContactForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" id="editContactId" name="contact_id">
+                            <div class="form-group">
+                                <label for="editContactSupplier">Supplier</label>
+                                <input type="text" id="editContactSupplier" name="supplier_id" value="{{d.farm_entity_id}}" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="editContactType">Contact Type</label>
+                                <select id="editContactType" name="contact_type" class="form-control custom-select">
+                                    {% for dd in data6 %}
+                                    <option value="{{ dd.contact_id }}">{{ dd.contact_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editContact">Contact</label>
+                                <input type="text" id="editContact" name="contact" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Contact</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="addAddressModal" tabindex="-1" role="dialog" aria-labelledby="addAddressModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addAddressModalLabel">Add Address</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/add_supplier_address" method="post" id="addressForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="addressSupplier">Supplier</label>
+                                <input type="text" id="addressSupplier" name="supplier_id" value="{{d.farm_entity_id}}" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="addressCountry">Country</label>
+                                <input type="text" id="addressCountry" name="country" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="addressRegion">Region</label>
+                                <select id="addressRegion" name="region" class="form-control custom-select">
+                                    {% for d in data7 %}
+                                    <option value="{{ d.region_id }}">{{ d.region }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="addressZone">Zone/Subcity</label>
+                                <input type="text" id="addressZone" name="zone_subcity" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="addressWoreda">Woreda</label>
+                                <input type="text" id="addressWoreda" name="woreda" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="addressKebele">Kebele</label>
+                                <input type="text" id="addressKebele" name="kebele" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="addressHouse">House Number</label>
+                                <input type="text" id="addressHouse" name="house_number" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="addressStreet">Street Name</label>
+                                <input type="text" id="addressStreet" name="street_name" class="form-control" >
+                            </div>
+                            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Address</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editAddressModal" tabindex="-1" role="dialog" aria-labelledby="editAddressModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editAddressModalLabel">Edit Address</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                      <form action="/edit_supplier_address" method="post" id="editAddressForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" id="editAddressId" name="address_id">
                         <div class="form-group">
-                            <label for="inputStatus">Supplier</label>
-                            <input type="text" id="inputName" name="supplier_id" value="{{d.farm_entity_id}}" class="form-control" readonly>
+                            <label for="editAddressSupplier">Supplier</label>
+                            <input type="text" id="editAddressSupplier" name="supplier_id" value="{{d.farm_entity_id}}" class="form-control" readonly>
                         </div>
                         <div class="form-group">
-                            <label for="inputPhotoDescription">Region</label>
-                            <select id="inputStatus" name="region" class="form-control custom-select">
+                            <label for="editAddressCountry">Country</label>
+                            <input type="text" id="editAddressCountry" name="country" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editAddressRegion">Region</label>
+                            <select id="editAddressRegion" name="region" class="form-control custom-select">
                                 {% for d in data7 %}
-                                    <option value="{{ d.region_id }}">{{ d.region }}</option>
+                                <option value="{{ d.region_id }}">{{ d.region }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="inputPhotoDescription">Woreda</label>
-                            <input type="text" id="inputPhotoDescription" name="woreda" class="form-control">
+                            <label for="editAddressZoneSubcity">Zone/Subcity</label>
+                            <input type="text" id="editAddressZoneSubcity" name="zone_subcity" class="form-control">
                         </div>
                         <div class="form-group">
-                            <label for="inputPhotoDescription">House No</label>
-                            <input type="text" id="inputPhotoDescription" name="house_no" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Country</label>
-                            <input type="text" id="inputPhotoDescription" name="country" class="form-control" required>
+                            <label for="editAddressWoreda">Woreda</label>
+                            <input type="text" id="editAddressWoreda" name="woreda" class="form-control">
                         </div>
                         <div class="form-group">
-                            <label for="inputPhotoDescription">Zone/Subcity</label>
-                            <input type="text" id="inputPhotoDescription" name="zone_subcity" class="form-control">
+                            <label for="editAddressKebele">Kebele</label>
+                            <input type="text" id="editAddressKebele" name="kebele" class="form-control">
                         </div>
                         <div class="form-group">
-                            <label for="inputPhotoDescription">Kebele</label>
-                            <input type="text" id="inputPhotoDescription" name="kebele" class="form-control">
+                            <label for="editAddressStreet">Street Name</label>
+                            <input type="text" id="editAddressStreet" name="street_name" class="form-control">
                         </div>
                         <div class="form-group">
-                            <label for="inputPhotoDescription">Street Name</label>
-                            <input type="text" id="inputPhotoDescription" name="street" class="form-control">
+                            <label for="editAddressHouseNumber">House No</label>
+                            <input type="text" id="editAddressHouseNumber" name="house_number" class="form-control">
                         </div>
+                        <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Address</button>
+                      </form>
                     </div>
                 </div>
-                <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Address</button>
-                  </div>
-                </div>
-                <br>
-            </form>
+            </div>
         </div>
-      </div>
+
     </section>
+</div>
+
+<script>
+document.getElementById('showContactTableBtn').addEventListener('click', function() {
+    document.getElementById('contactTableSection').style.display = 'block';
+    document.getElementById('addressTableSection').style.display = 'none';
+});
+document.getElementById('showAddressTableBtn').addEventListener('click', function() {
+    document.getElementById('contactTableSection').style.display = 'none';
+    document.getElementById('addressTableSection').style.display = 'block';
+});
+
+document.querySelectorAll('.edit-contact-btn').forEach(button => {
+  button.addEventListener('click', function() {
+      const contactId = this.dataset.contactId;
+      fetch(`/get_supplier_contact/${contactId}/`)
+          .then(response => response.json())
+          .then(data => {
+              document.getElementById('editContactId').value = data.id;
+              document.getElementById('editContactType').value = data.contact_type;
+              document.getElementById('editContact').value = data.contact;
+          }).catch(error => console.log('Error fetching contact data:', error));
+  });
+});
+
+document.querySelectorAll('.edit-address-btn').forEach(button => {
+  button.addEventListener('click', function() {
+      const addressId = this.dataset.addressId;
+      fetch(`/get_supplier_address/${addressId}/`)
+          .then(response => response.json())
+          .then(data => {
+              document.getElementById('editAddressId').value = data.id;
+              document.getElementById('editAddressCountry').value = data.country;
+              document.getElementById('editAddressRegion').value = data.region;
+              document.getElementById('editAddressZoneSubcity').value = data.zone_subcity;
+              document.getElementById('editAddressWoreda').value = data.woreda;
+              document.getElementById('editAddressKebele').value = data.kebele;
+              document.getElementById('editAddressStreet').value = data.street_name;
+              document.getElementById('editAddressHouseNumber').value = data.house_number;
+          }).catch(error => console.log('Error fetching address data:', error));
+  });
+});
+</script>
+{% endblock %}
 
   
-  </div>
-  
-  <script>
-    document.getElementById('addcontactBtn').addEventListener('click', function() {
-      document.getElementById('contactFormSection').style.display = 'block';
-      document.getElementById('addressFormSection').style.display = 'none';
-    });
-  
-    document.getElementById('addaddressBtn').addEventListener('click', function() {
-      document.getElementById('contactFormSection').style.display = 'none';
-      document.getElementById('addressFormSection').style.display = 'block';
-    });
-  </script>
-  {% endblock %}

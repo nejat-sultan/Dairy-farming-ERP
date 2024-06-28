@@ -89,7 +89,7 @@
       <li class="nav-item">
         <a class="nav-link" data-widget="pushmenu" href="" role="button"><i class="fas fa-bars"></i></a>
       </li>
-      {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
+      {% if request.user|has_permission:"erp.view_admindashboard" %} 
       <li class="nav-item d-none d-sm-inline-block">
         <a href="../../farm" class="nav-link">Farm</a>
       </li>

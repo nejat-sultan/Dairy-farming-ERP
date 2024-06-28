@@ -117,6 +117,15 @@ urlpatterns = [
     path('add_customer_contact', views.add_customer_contact),
     path('add_customer_address', views.add_customer_address),
 
+    path('add_customer_contact', views.add_customer_contact),
+    path('add_customer_address', views.add_customer_address),
+    path('delete_customer_contact/<str:id>', views.delete_customer_contact),
+    path('delete_customer_address/<str:id>', views.delete_customer_address),
+    path('get_customer_contact/<int:id>/', views.get_customer_contact, name='get_customer_contact'),
+    path('get_customer_address/<int:id>/', views.get_customer_address, name='get_customer_address'),
+    path('edit_customer_contact', views.edit_customer_contact, name='edit_customer_contact'),
+    path('edit_customer_address', views.edit_customer_address, name='edit_customer_address'),
+
     path('payment_method', views.payment_method),
     path('payment_method_add', views.payment_method_add),
     path('payment_method_edit/<str:id>', views.payment_method_edit, name='payment_method_edit'),
@@ -202,8 +211,15 @@ urlpatterns = [
     path('supplier_add', views.supplier_add),
     path('supplier_edit/<str:farm_entity_id>', views.supplier_edit, name='supplier_edit'),
     path('supplier_delete/<str:farm_entity_id>', views.supplier_delete),
+
     path('add_supplier_contact', views.add_supplier_contact),
     path('add_supplier_address', views.add_supplier_address),
+    path('delete_supplier_contact/<str:id>', views.delete_supplier_contact),
+    path('delete_supplier_address/<str:id>', views.delete_supplier_address),
+    path('get_supplier_contact/<int:id>/', views.get_supplier_contact, name='get_supplier_contact'),
+    path('get_supplier_address/<int:id>/', views.get_supplier_address, name='get_supplier_address'),
+    path('edit_supplier_contact', views.edit_supplier_contact, name='edit_supplier_contact'),
+    path('edit_supplier_address', views.edit_supplier_address, name='edit_supplier_address'),
 
     path('request_order', views.request_order),
     path('request_order_view/<str:order_id>', views.request_order_view, name='request_order_view'),

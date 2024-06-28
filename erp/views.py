@@ -2811,12 +2811,16 @@ def customer_edit(request, customer_id):
     data1 = PersonType.objects.all()
     data2 = ContactType.objects.all()
     data3 = Region.objects.all()
+    contacts = FarmEntityContact.objects.filter(farm_entity_id=customer.person_farm_entity.farm_entity_id)
+    addresses = FarmEntityAddress.objects.filter(farm_entity_id=customer.person_farm_entity.farm_entity_id)
     context = {
         'data1': data1,
         'data2': data2,
         'data3': data3,
         'customer': customer,
         'person': person, 
+        'contacts': contacts,
+        'addresses': addresses,
     }
 
     return render(request, 'sales/customer_edit.html', context)
@@ -2858,9 +2862,46 @@ def add_customer_contact(request):
         contact.save()
 
         messages.success(request, "Customer Contact Added Successfully!")
-        return redirect("/customer")
+        return redirect('/customer')
 
     return render(request, 'sales/customer_edit.html')
+
+def get_customer_contact(request, id):
+    contact = get_object_or_404(FarmEntityContact, id=id)
+    data = {
+        'id': contact.id,
+        'contact_type': contact.contact_type.contact_id,
+        'contact': contact.contact,
+    }
+    return JsonResponse(data)
+
+@login_required(login_url='login')
+def edit_customer_contact(request):
+    if not request.user.has_perm('erp.change_farmentitycontact'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+
+    if request.method == 'POST':
+        contact_id = request.POST.get('contact_id')
+        contact = get_object_or_404(FarmEntityContact, id=contact_id)
+        contact_type_id = request.POST.get('contact_type')
+        contact_type = get_object_or_404(ContactType, contact_id=contact_type_id)
+        contact.contact_type = contact_type
+        contact.contact = request.POST.get('contact')
+        contact.save()
+
+        messages.success(request, 'Contact updated successfully.')
+        return redirect('/customer')
+    return redirect('/customer')
+
+@login_required(login_url='login')
+def delete_customer_contact(request, id):
+    if not request.user.has_perm('erp.delete_farmentitycontact'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = FarmEntityContact.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Contact Deleted Successfully!")
+    return redirect('/customer')
+
 
 @login_required(login_url='login')
 def add_customer_address(request):
@@ -2873,8 +2914,8 @@ def add_customer_address(request):
         czone_subcity = request.POST.get('zone_subcity')
         cworeda = request.POST.get('woreda')
         ckebele = request.POST.get('kebele')
-        chouse_no = request.POST.get('house_no')
-        cstreet = request.POST.get('street')
+        chouse_no = request.POST.get('house_number')
+        cstreet = request.POST.get('street_name')
             
         address = FarmEntityAddress(
             farm_entity_id=ccustomer_id,
@@ -2889,10 +2930,57 @@ def add_customer_address(request):
         address.save()
 
         messages.success(request, "Customer Address Added Successfully!")
-        return redirect("/customer")
+        return redirect('/customer')
 
     return render(request, 'sales/customer_edit.html')
+
+def get_customer_address(request, id):
+    address = get_object_or_404(FarmEntityAddress, id=id)
+    data = {
+        'id': address.id,
+        'country': address.country,
+        'region': address.region.region_id,
+        'zone_subcity': address.zone_subcity,
+        'woreda': address.woreda,
+        'kebele': address.kebele,
+        'street_name': address.street_name,
+        'house_number': address.house_number,
+    }
+    return JsonResponse(data)
+
+@login_required(login_url='login')
+def edit_customer_address(request):
+    if not request.user.has_perm('erp.change_farmentityaddress'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method == 'POST':
+        address_id = request.POST.get('address_id')
+        address = get_object_or_404(FarmEntityAddress, id=address_id)
+        region_id = request.POST.get('region')
+        region = get_object_or_404(Region, region_id=region_id)
+        address.country = request.POST.get('country')
+        address.region = region
+        address.zone_subcity = request.POST.get('zone_subcity')
+        address.woreda = request.POST.get('woreda')
+        address.kebele = request.POST.get('kebele')
+        address.street_name = request.POST.get('street_name')
+        address.house_number = request.POST.get('house_number')
+        address.save()
+
+        messages.success(request, 'Address updated successfully.')
+        return redirect('/customer')
+    return redirect('customer_edit')
+
+@login_required(login_url='login')
+def delete_customer_address(request, id):
+    if not request.user.has_perm('erp.delete_farmentityaddress'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = FarmEntityAddress.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Address Deleted Successfully!")
+    return redirect('/customer')
     
+
+
 def get_item_types(request, item_id):
     try:
         stock_items = Stock.objects.filter(item_id=item_id).select_related('type')
@@ -4140,9 +4228,12 @@ def supplier_edit(request,farm_entity_id):
     data1 = SupplierType.objects.all()
     contact_data = ContactType.objects.all() 
     region_data = Region.objects.all() 
+    supplier_contacts = FarmEntityContact.objects.filter(farm_entity_id=farm_entity_id)
+    supplier_addresses = FarmEntityAddress.objects.filter(farm_entity_id=farm_entity_id)
 
-    context = {"d": d, "type": edit, "data1": data1, "data6": contact_data, 
-        "data7": region_data,}
+    context = {"d": d, "type": edit, "data1": data1, "data6": contact_data, "data7": region_data, 
+        "contacts": supplier_contacts,
+        "addresses": supplier_addresses,}
 
     return render(request, 'procurement/supplier_edit.html', context)
 
@@ -4171,9 +4262,46 @@ def add_supplier_contact(request):
         contact.save()
 
         messages.success(request, "Supplier Contact Added Successfully!")
-        return redirect("/supplier")
+        return redirect('supplier_edit', farm_entity_id=csupplier_id)
 
     return render(request, 'procurement/supplier_edit.html')
+
+def get_supplier_contact(request, id):
+    contact = get_object_or_404(FarmEntityContact, id=id)
+    data = {
+        'id': contact.id,
+        'contact_type': contact.contact_type.contact_id,
+        'contact': contact.contact,
+    }
+    return JsonResponse(data)
+
+@login_required(login_url='login')
+def edit_supplier_contact(request):
+    if not request.user.has_perm('erp.change_farmentitycontact'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+
+    if request.method == 'POST':
+        contact_id = request.POST.get('contact_id')
+        contact = get_object_or_404(FarmEntityContact, id=contact_id)
+        contact_type_id = request.POST.get('contact_type')
+        contact_type = get_object_or_404(ContactType, contact_id=contact_type_id)
+        contact.contact_type = contact_type
+        contact.contact = request.POST.get('contact')
+        contact.save()
+
+        messages.success(request, 'Contact updated successfully.')
+        return redirect('supplier_edit', farm_entity_id=contact.farm_entity_id)
+    return redirect('supplier_edit')
+
+@login_required(login_url='login')
+def delete_supplier_contact(request, id):
+    if not request.user.has_perm('erp.delete_farmentitycontact'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = FarmEntityContact.objects.get(id=id)
+    csupplier_id = d.farm_entity_id
+    d.delete()
+    messages.error(request, "Contact Deleted Successfully!")
+    return redirect('supplier_edit', farm_entity_id=csupplier_id)
 
 @login_required(login_url='login')
 def add_supplier_address(request):
@@ -4186,8 +4314,8 @@ def add_supplier_address(request):
         czone_subcity = request.POST.get('zone_subcity')
         cworeda = request.POST.get('woreda')
         ckebele = request.POST.get('kebele')
-        chouse_no = request.POST.get('house_no')
-        cstreet = request.POST.get('street')
+        chouse_no = request.POST.get('house_number')
+        cstreet = request.POST.get('street_name')
             
         address = FarmEntityAddress(
             farm_entity_id=csupplier_id,
@@ -4202,9 +4330,56 @@ def add_supplier_address(request):
         address.save()
 
         messages.success(request, "Supplier Address Added Successfully!")
-        return redirect("/supplier")
+        return redirect('supplier_edit', farm_entity_id=csupplier_id)
 
     return render(request, 'supplier/supplier_edit.html')
+
+
+def get_supplier_address(request, id):
+    address = get_object_or_404(FarmEntityAddress, id=id)
+    data = {
+        'id': address.id,
+        'country': address.country,
+        'region': address.region.region_id,
+        'zone_subcity': address.zone_subcity,
+        'woreda': address.woreda,
+        'kebele': address.kebele,
+        'street_name': address.street_name,
+        'house_number': address.house_number,
+    }
+    return JsonResponse(data)
+
+@login_required(login_url='login')
+def edit_supplier_address(request):
+    if not request.user.has_perm('erp.change_farmentityaddress'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method == 'POST':
+        address_id = request.POST.get('address_id')
+        address = get_object_or_404(FarmEntityAddress, id=address_id)
+        region_id = request.POST.get('region')
+        region = get_object_or_404(Region, region_id=region_id)
+        address.country = request.POST.get('country')
+        address.region = region
+        address.zone_subcity = request.POST.get('zone_subcity')
+        address.woreda = request.POST.get('woreda')
+        address.kebele = request.POST.get('kebele')
+        address.street_name = request.POST.get('street_name')
+        address.house_number = request.POST.get('house_number')
+        address.save()
+
+        messages.success(request, 'Address updated successfully.')
+        return redirect('supplier_edit', farm_entity_id=address.farm_entity_id)
+    return redirect('supplier_edit')
+
+@login_required(login_url='login')
+def delete_supplier_address(request, id):
+    if not request.user.has_perm('erp.delete_farmentityaddress'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = FarmEntityAddress.objects.get(id=id)
+    csupplier_id = d.farm_entity_id
+    d.delete()
+    messages.error(request, "Address Deleted Successfully!")
+    return redirect('supplier_edit', farm_entity_id=csupplier_id)
 
 @login_required(login_url='login')
 def request_order(request):
