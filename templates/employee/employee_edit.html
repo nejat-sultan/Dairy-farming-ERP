@@ -1,10 +1,8 @@
 {% extends 'base.html' %}
 
-
 {% block content %}
 
   <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
     <section class="content-header">
       <div class="container-fluid">
         <div class="row mb-2">
@@ -18,7 +16,7 @@
             </ol>
           </div>
         </div>
-      </div><!-- /.container-fluid -->
+      </div>
     </section>
 
     <section class="content">
@@ -37,6 +35,13 @@
                 </div>
               </div>
               <div class="card-body">
+                <br>
+                {% for message in messages %}
+                <div class="alert alert-{{message.tags}} alert-dismissible fade show" role="alert">
+                  <strong>{{message}}</strong>
+                </div>
+                {% endfor %}
+
               {% if errors %}
               <div class="alert alert-danger">
                 <ul>
@@ -91,7 +96,6 @@
                     <option value="Female" {% if person.gender == 'Female' %} selected {% endif %}>Female</option>
                 </select>
               </div>
-            
               {% comment %} <div class="form-group">
                   <label for="inputStatus">Employee Type</label>
                   <select id="inputStatus" name="type" class="form-control custom-select">
@@ -181,301 +185,869 @@
       </form>
       <br>
 
-        <button type="button" class="btn btn-primary mr-3" id="addcontactBtn">Add Contact</button>
-        <button type="button" class="btn btn-success mr-3" id="addaddressBtn">Add Address</button>
-        <button type="button" class="btn btn-info mr-3" id="addexperienceBtn">Add Experience</button>
-        <button type="button" class="btn btn-warning mr-3" id="addguaranteeBtn">Add Guarantee</button>
-        <button type="button" class="btn btn-dark" id="addjobhistoryBtn">Add Job history</button>
-
+      <button type="button" class="btn btn-primary mr-3" id="showContactTableBtn">Manage Contacts</button>
+      <button type="button" class="btn btn-info mr-3" id="showAddressTableBtn">Manage Addresses</button>
+      <button type="button" class="btn btn-warning mr-3" id="showExperienceTableBtn">Manage Experiences</button>
+      <button type="button" class="btn btn-danger mr-3" id="showGuaranteeTableBtn">Manage Guarantees</button>
+      <button type="button" class="btn btn-secondary mr-3" id="showJobhistoryTableBtn">Manage Jobhistories</button>
       <br><br>
 
-      <!-- Hidden section for contact form -->
-      <div class="card" id="contactFormSection" style="display: none;">
-        <div class="card-body">
-            <form action="/add_contact" method="post" id="contactForm" enctype="multipart/form-data">
-                {% csrf_token %}
+        <div class="card" id="contactTableSection" style="display: none;">
+            <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputStatus">Employee</label>
-                            <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Contact Type</label>
-                            <select id="inputStatus" name="contact_type" class="form-control custom-select" >
-                              {% for d in data6 %}
-                              <option value="{{ d.contact_id }}">{{ d.contact_type }}</option>
-                              {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Contact</label>
-                            <input type="text" id="inputPhotoDescription" name="contact" class="form-control" required>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Contact</button>
+                  <div class="col-10">
+                    
+                  </div>
+                  <div class="col-2">
+                    <button type="button" class="btn mb-3" style="background-color: #007f5c;color: #fff;" data-toggle="modal" data-target="#addContactModal">
+                      <i class="fas fa-plus"></i> Add Contact
+                    </button>
                   </div>
                 </div>
-                <br>
-            </form>
+                <div class="table-responsive">
+                  <table class="table table-striped projects">
+                    <thead>
+                        <tr>
+                            <th>Contact Type</th>
+                            <th>Contact</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contact in contacts %}
+                        <tr>
+                            <td>{{ contact.contact_type.contact_type }}</td>
+                            <td>{{ contact.contact }}</td>
+                            <td>
+                                <button class="btn btn-info btn-sm edit-contact-btn" data-contact-id="{{ contact.id }}" data-toggle="modal" data-target="#editContactModal">
+                                  <i class="fas fa-pencil-alt"></i>
+                                </button>
+                                <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ contact.id }}')">
+                                  <i class="fas fa-trash">
+                                  </i>
+                                </a>
+                                <script>
+                                  function confirmDelete(contactId) {
+                                      if (confirm("Are you sure you want to delete this Contact?")) {
+                                          window.location.href = "/delete_employee_contact/" + contactId;
+                                      }
+                                  }
+                                </script>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+            </div>
         </div>
-      </div>
 
-      <!-- Hidden section for Address form -->
-      <div class="card" id="addressFormSection" style="display: none;">
-        <div class="card-body">
-            <form action="/add_address" method="post" id="addressForm" enctype="multipart/form-data">
-                {% csrf_token %}
+        <div class="card" id="addressTableSection" style="display: none;">
+            <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputStatus">Employee</label>
-                            <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Region</label>
-                            <select id="inputStatus" name="region" class="form-control custom-select">
-                                {% for d in data7 %}
-                                    <option value="{{ d.region_id }}">{{ d.region }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Woreda</label>
-                            <input type="text" id="inputPhotoDescription" name="woreda" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">House No</label>
-                            <input type="text" id="inputPhotoDescription" name="house_no" class="form-control">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Country</label>
-                            <input type="text" id="inputPhotoDescription" name="country" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Zone/Subcity</label>
-                            <input type="text" id="inputPhotoDescription" name="zone_subcity" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Kebele</label>
-                            <input type="text" id="inputPhotoDescription" name="kebele" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Street Name</label>
-                            <input type="text" id="inputPhotoDescription" name="street" class="form-control">
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Address</button>
+                  <div class="col-10">
+                    
+                  </div>
+                  <div class="col-2">
+                    <button type="button" class="btn mb-3" style="background-color: #007f5c;color: #fff;" data-toggle="modal" data-target="#addAddressModal">
+                      <i class="fas fa-plus"></i> Add Address</button>
                   </div>
                 </div>
-                <br>
-            </form>
-        </div>
-      </div>
-    
-      <!-- Hidden section for Experience form -->
-      <div class="card" id="experienceFormSection" style="display: none;">
-        <div class="card-body">
-          
-            <form action="/add_experience" method="post" id="experienceForm" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputStatus">Employee</label>
-                            <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Start Date</label>
-                            <input type="date" id="inputPhotoDescription" name="start_date" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">End Date</label>
-                            <input type="date" id="inputPhotoDescription" name="end_date" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Company</label>
-                            <input type="text" id="inputPhotoDescription" name="company" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Title</label>
-                            <input type="text" id="inputPhotoDescription" name="title" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Salary</label>
-                            <input type="number" id="inputPhotoDescription" name="salary" class="form-control">
-                        </div>
-                    </div>
+                <div class="table-responsive">
+                  <table class="table table-striped projects">
+                    <thead>
+                        <tr>
+                            <th>Country</th>
+                            <th>Region</th>
+                            <th>Zone/Subcity</th>
+                            <th>Woreda</th>
+                            <th>Kebele</th>
+                            <th>House No</th>
+                            <th>Street Name</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for address in addresses %}
+                        <tr>
+                            <td>{{ address.country }}</td>
+                            <td>{{ address.region.region }}</td>
+                            <td>{{ address.zone_subcity }}</td>
+                            <td>{{ address.woreda }}</td>
+                            <td>{{ address.kebele }}</td>
+                            <td>{{ address.house_number }}</td>
+                            <td>{{ address.street_name }}</td>
+                            <td>
+                                <button class="btn btn-info btn-sm edit-address-btn" data-address-id="{{ address.id }}" data-toggle="modal" data-target="#editAddressModal">
+                                  <i class="fas fa-pencil-alt"></i>
+                                </button>
+                                <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete2('{{ address.id }}')">
+                                  <i class="fas fa-trash">
+                                  </i>
+                                </a>
+                                <script>
+                                  function confirmDelete2(cattleId) {
+                                      if (confirm("Are you sure you want to delete this Address?")) {
+                                          window.location.href = "/delete_employee_address/" + cattleId;
+                                      }
+                                  }
+                                </script>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                  </table>
                 </div>
-                <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Experience</button>
-                  </div>
-                </div>
-                <br>
-            </form>
+            </div>
         </div>
-      </div>
 
-      <!-- Hidden section for guarantee form -->
-      <div class="card" id="guaranteeFormSection" style="display: none;">
-        <div class="card-body">
-            <form action="/add_guarantee" method="post" id="guaranteeForm" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="inputStatus">Employee</label>
-                            <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
-                        </div>
-                        <div class="form-group">
-                          <label for="inputPhotoDescription">Name</label>
-                          <input type="text" id="inputPhotoDescription" name="name" class="form-control" required>
-                      </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="inputPhotoDescription">Salary</label>
-                          <input type="number" id="inputPhotoDescription" name="salary_evaluation" class="form-control">
-                        </div>
-                        <div class="form-group">
-                            <label for="inputPhotoDescription">Guarantee Type</label>
-                            <select id="inputStatus" name="guarantee_type" class="form-control custom-select">
-                                {% for d in data9 %}
-                                <option value="{{ d.guarantee_type_id }}">{{ d.guarantee_type }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
+        <div class="card" id="experienceTableSection" style="display: none;">
+          <div class="card-body">
+              <div class="row">
+                <div class="col-10">
+                  
                 </div>
-                <div class="row">
-                  <div class="col-12">
-                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Guarantee</button>
-                  </div>
+                <div class="col-2">
+                  <button type="button" class="btn mb-3" style="background-color: #007f5c;color: #fff;" data-toggle="modal" data-target="#addExperienceModal">
+                    <i class="fas fa-plus"></i> Add Experience</button>
                 </div>
-                <br>
-            </form>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-striped projects">
+                  <thead>
+                      <tr>
+                          <th>Company</th>
+                          <th>Title</th>
+                          <th>Start Date</th>
+                          <th>End Date</th>
+                          <th>Salary</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for experience in experiences %}
+                      <tr>
+                          <td>{{ experience.company }}</td>
+                          <td>{{ experience.title }}</td>
+                          <td>{{ experience.start_date }}</td>
+                          <td>{{ experience.end_date }}</td>
+                          <td>{{ experience.salary }}</td>
+                          <td>
+                              <button class="btn btn-info btn-sm edit-experience-btn" data-experience-id="{{ experience.experience_id }}" data-toggle="modal" data-target="#editExperienceModal">
+                                <i class="fas fa-pencil-alt"></i>
+                              </button>
+                              <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete3('{{ experience.experience_id }}')">
+                                <i class="fas fa-trash">
+                                </i>
+                              </a>
+                              <script>
+                                function confirmDelete3(cattleId) {
+                                    if (confirm("Are you sure you want to delete this Experience?")) {
+                                        window.location.href = "/delete_employee_experience/" + cattleId;
+                                    }
+                                }
+                              </script>
+                          </td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+          </div>
         </div>
-      </div>
 
-            <!-- Hidden section for jobhistory form -->
-            <div class="card" id="jobhistoryFormSection" style="display: none;">
-              <div class="card-body">
-                  <form action="/add_jobhistory" method="post" id="jobhistoryForm" enctype="multipart/form-data">
-                      {% csrf_token %}
-                      <div class="row">
-                          <div class="col-md-6">
+        <div class="card" id="guaranteeTableSection" style="display: none;">
+          <div class="card-body">
+              <div class="row">
+                <div class="col-10">
+                  
+                </div>
+                <div class="col-2">
+                  <button type="button" class="btn mb-3" style="background-color: #007f5c;color: #fff;" data-toggle="modal" data-target="#addGuaranteeModal">
+                    <i class="fas fa-plus"></i> Add Guarantee</button>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-striped projects">
+                  <thead>
+                      <tr>
+                          <th>Name</th>
+                          <th>Guarantee Type</th>
+                          <th>Salary</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for guarantee in guarantees %}
+                      <tr>
+                          <td>{{ guarantee.name }}</td>
+                          <td>{{ guarantee.guarantee_type.guarantee_type }}</td>
+                          <td>{{ guarantee.salary_evaluation }}</td>
+                          <td>
+                              <button class="btn btn-info btn-sm edit-guarantee-btn" data-guarantee-id="{{ guarantee.farm_entity_id }}" data-toggle="modal" data-target="#editGuaranteeModal">
+                                <i class="fas fa-pencil-alt"></i>
+                              </button>
+                              <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete4('{{ guarantee.farm_entity_id }}')">
+                                <i class="fas fa-trash">
+                                </i>
+                              </a>
+                              <script>
+                                function confirmDelete4(cattleId) {
+                                    if (confirm("Are you sure you want to delete this Guarantee?")) {
+                                        window.location.href = "/delete_employee_guarantee/" + cattleId;
+                                    }
+                                }
+                              </script>
+                          </td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+          </div>
+        </div>
+
+        <div class="card" id="jobhistoryTableSection" style="display: none;">
+          <div class="card-body">
+              <div class="row">
+                <div class="col-10">
+                  
+                </div>
+                <div class="col-2">
+                  <button type="button" class="btn mb-3" style="background-color: #007f5c;color: #fff;" data-toggle="modal" data-target="#addJobhistoryModal">
+                    <i class="fas fa-plus"></i> Add Job History</button>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-striped projects">
+                  <thead>
+                      <tr>
+                          <th>Start Date</th>
+                          <th>End Date</th>
+                          <th>Department</th>
+                          <th>Job</th>
+                          <th>Salary</th>
+                          <th>Promoted/Demoted</th>
+                          <th>Actions</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for jobhistory in jobhistories %}
+                      <tr>
+                          <td>{{ jobhistory.start_date }}</td>
+                          <td>{{ jobhistory.end_date }}</td>
+                          <td>{{ jobhistory.department.department_id }}</td>
+                          <td>{{ jobhistory.job.job_title }}</td>
+                          <td>{{ jobhistory.salary }}</td>
+                          <td>{{ jobhistory.promotion_or_demotion }}</td>
+                          <td>
+                              <button class="btn btn-info btn-sm edit-jobhistory-btn" data-jobhistory-id="{{ jobhistory.id }}" data-toggle="modal" data-target="#editJobhistoryModal">
+                                <i class="fas fa-pencil-alt"></i>
+                              </button>
+                              <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete5('{{ jobhistory.id }}')">
+                                <i class="fas fa-trash">
+                                </i>
+                              </a>
+                              <script>
+                                function confirmDelete5(cattleId) {
+                                    if (confirm("Are you sure you want to delete this Jobhistory?")) {
+                                        window.location.href = "/delete_employee_jobhistory/" + cattleId;
+                                    }
+                                }
+                              </script>
+                          </td>
+                      </tr>
+                      {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+          </div>
+        </div>
+
+        <div class="modal fade" id="addContactModal" tabindex="-1" role="dialog" aria-labelledby="addContactModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addContactModalLabel">Add Contact</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/add_employee_contact" method="post" id="contactForm" enctype="multipart/form-data">
+                            {% csrf_token %}
                             <div class="form-group">
-                                <label for="inputStatus">Employee</label>
-                                <input type="text" id="inputName" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                                <label for="contactEmployee">Employee</label>
+                                <input type="text" id="contactEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
                             </div>
                             <div class="form-group">
-                              <label for="job_id">Job</label>
-                              <select id="job_id" name="job_id" class="form-control custom-select">
-                                  {% for d in data4 %}
-                                      <option value="{{ d.job_id }}">{{ d.job_title }}</option>
-                                  {% endfor %}
-                              </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="department_id">Department</label>
-                                <select id="department_id" name="department_id" class="form-control custom-select">
-                                    {% for d in data5 %}
-                                        <option value="{{ d.department_id }}">{{ d.department_name }}</option>
+                                <label for="contactType">Contact Type</label>
+                                <select id="contactType" name="contact_type" class="form-control custom-select">
+                                    {% for dd in data6 %}
+                                    <option value="{{ dd.contact_id }}">{{ dd.contact_type }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                             <div class="form-group">
-                              <label for="salary">Salary</label>
-                              <input type="number" id="salary" name="salary" class="form-control" required>
+                                <label for="contact">Contact</label>
+                                <input type="text" id="contact" name="contact" class="form-control" required>
                             </div>
-                          </div>
-                          <div class="col-md-6">
-                              <div class="form-group">
-                                <label for="start_date">Start Date</label>
-                                <input type="date" id="start_date" name="start_date" class="form-control" >
-                              </div>
-                              <div class="form-group">
-                                  <label for="end_date">End Date</label>
-                                  <input type="date" id="end_date" name="end_date" class="form-control">
-                              </div>
-                              <div class="form-group">
-                                <label for="promotion_or_demotion">Promotion or Demotion</label>
-                                <input type="text" id="promotion_or_demotion" name="promotion_or_demotion" class="form-control">
+                            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Contact</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editContactModal" tabindex="-1" role="dialog" aria-labelledby="editContactModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editContactModalLabel">Edit Contact</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/edit_employee_contact" method="post" id="editContactForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" id="editContactId" name="contact_id">
+                            <div class="form-group">
+                                <label for="editContactEmployee">Employee</label>
+                                <input type="text" id="editContactEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
                             </div>
-            
-                            
-                          </div>
-                      </div>
-                      <div class="row">
-                        <div class="col-12">
-                          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Job history</button>
+                            <div class="form-group">
+                                <label for="editContactType">Contact Type</label>
+                                <select id="editContactType" name="contact_type" class="form-control custom-select">
+                                    {% for dd in data6 %}
+                                    <option value="{{ dd.contact_id }}">{{ dd.contact_type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editContact">Contact</label>
+                                <input type="text" id="editContact" name="contact" class="form-control" required>
+                            </div>
+                            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Contact</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="addAddressModal" tabindex="-1" role="dialog" aria-labelledby="addAddressModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addAddressModalLabel">Add Address</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="/add_employee_address" method="post" id="addressForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="addressEmployee">Employee</label>
+                                <input type="text" id="addressEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="addressCountry">Country</label>
+                                <input type="text" id="addressCountry" name="country" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="addressRegion">Region</label>
+                                <select id="addressRegion" name="region" class="form-control custom-select">
+                                    {% for d in data7 %}
+                                    <option value="{{ d.region_id }}">{{ d.region }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="addressZone">Zone/Subcity</label>
+                                <input type="text" id="addressZone" name="zone_subcity" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="addressWoreda">Woreda</label>
+                                <input type="text" id="addressWoreda" name="woreda" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="addressKebele">Kebele</label>
+                                <input type="text" id="addressKebele" name="kebele" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="addressHouse">House Number</label>
+                                <input type="text" id="addressHouse" name="house_number" class="form-control" >
+                            </div>
+                            <div class="form-group">
+                                <label for="addressStreet">Street Name</label>
+                                <input type="text" id="addressStreet" name="street_name" class="form-control" >
+                            </div>
+                            <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Address</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editAddressModal" tabindex="-1" role="dialog" aria-labelledby="editAddressModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editAddressModalLabel">Edit Address</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                      <form action="/edit_employee_address" method="post" id="editAddressForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" id="editAddressId" name="address_id">
+                        <div class="form-group">
+                            <label for="editAddressEmployee">Employee</label>
+                            <input type="text" id="editAddressEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
                         </div>
+                        <div class="form-group">
+                            <label for="editAddressCountry">Country</label>
+                            <input type="text" id="editAddressCountry" name="country" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editAddressRegion">Region</label>
+                            <select id="editAddressRegion" name="region" class="form-control custom-select">
+                                {% for d in data7 %}
+                                <option value="{{ d.region_id }}">{{ d.region }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editAddressZoneSubcity">Zone/Subcity</label>
+                            <input type="text" id="editAddressZoneSubcity" name="zone_subcity" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="editAddressWoreda">Woreda</label>
+                            <input type="text" id="editAddressWoreda" name="woreda" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="editAddressKebele">Kebele</label>
+                            <input type="text" id="editAddressKebele" name="kebele" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="editAddressStreet">Street Name</label>
+                            <input type="text" id="editAddressStreet" name="street_name" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="editAddressHouseNumber">House No</label>
+                            <input type="text" id="editAddressHouseNumber" name="house_number" class="form-control">
+                        </div>
+                        <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Address</button>
+                      </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="addExperienceModal" tabindex="-1" role="dialog" aria-labelledby="experienceModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                  <div class="modal-header">
+                      <h5 class="modal-title" id="addExperienceModalLabel">Add Experience</h5>
+                      <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                          <span aria-hidden="true">&times;</span>
+                      </button>
+                  </div>
+                  <div class="modal-body">
+                      <form action="/add_employee_experience" method="post" id="experienceForm" enctype="multipart/form-data">
+                          {% csrf_token %}
+                          <div class="form-group">
+                              <label for="experienceEmployee">Employee</label>
+                              <input type="text" id="experienceEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                          </div>
+                          <div class="form-group">
+                              <label for="experienceCompany">Company</label>
+                              <input type="text" id="experienceCompany" name="company" class="form-control" required>
+                          </div>
+                          <div class="form-group">
+                            <label for="experienceTitle">Title</label>
+                            <input type="text" id="experienceTitle" name="title" class="form-control" required>
+                          </div>
+                          <div class="form-group">
+                              <label for="experienceStartdate">Start Date</label>
+                              <input type="date" id="experienceStartdate" name="start_date" class="form-control" required> 
+                          </div>
+                          <div class="form-group">
+                              <label for="experienceEnddate">End Date</label>
+                              <input type="date" id="experienceEnddate" name="end_date" class="form-control" required>
+                          </div>
+                          <div class="form-group">
+                              <label for="experienceSalary">Salary</label>
+                              <input type="text" id="experienceSalary" name="salary" class="form-control" >
+                          </div>
+                          <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Experience</button>
+                      </form>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <div class="modal fade" id="editExperienceModal" tabindex="-1" role="dialog" aria-labelledby="editExperienceModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editExperienceModalLabel">Edit Experience</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="/edit_employee_experience" method="post" id="editExperienceForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" id="editExperienceId" name="experience_id">
+                        <div class="form-group">
+                          <label for="editExperienceEmployee">Employee</label>
+                          <input type="text" id="editExperienceEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="editExperienceCompany">Company</label>
+                            <input type="text" id="editExperienceCompany" name="company" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editExperienceTitle">Title</label>
+                            <input type="text" id="editExperienceTitle" name="title" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editExperienceStartdate">Start Date</label>
+                            <input type="date" id="editExperienceStartdate" name="start_date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editExperienceEnddate">End Date</label>
+                            <input type="date" id="editExperienceEnddate" name="end_date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editExperienceSalary">Salary</label>
+                            <input type="text" id="editExperienceSalary" name="salary" class="form-control">
+                        </div>
+                        <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Experience</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="addJobhistoryModal" tabindex="-1" role="dialog" aria-labelledby="jobhistoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addJobhistoryModalLabel">Add Job History</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form action="/add_employee_jobhistory" method="post" id="jobhistoryForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="jobhistoryEmployee">Employee</label>
+                            <input type="text" id="jobhistoryEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                        </div>
+                        <div class="form-group">
+                          <label for="jobhistoryStartdate">Start Date</label>
+                          <input type="date" id="jobhistoryStartdate" name="start_date" class="form-control" required> 
+                        </div>
+                        <div class="form-group">
+                            <label for="jobhistoryEnddate">End Date</label>
+                            <input type="date" id="jobhistoryEnddate" name="end_date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="jobhistoryDepartment">Department</label>
+                            <select id="jobhistoryDepartment" name="department_id" class="form-control custom-select" required>
+                              {% for d in data5 %}
+                              <option value="{{ d.department_id }}">{{ d.department_name }}</option>
+                              {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                          <label for="jobhistoryJob">Job</label>
+                          <select id="jobhistoryJob" name="job_id" class="form-control custom-select" required>
+                            {% for d in data4 %}
+                            <option value="{{ d.job_id }}">{{ d.job_title }}</option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="jobhistorySalary">Salary</label>
+                            <input type="text" id="jobhistorySalary" name="salary" class="form-control" >
+                        </div>
+                        <div class="form-group">
+                          <label for="jobhistoryPromotion">Promoted/Demoted</label>
+                          <input type="text" id="jobhistoryPromotion" name="promotion_or_demotion" class="form-control" >
+                        </div>
+                        <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Job History</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editJobhistoryModal" tabindex="-1" role="dialog" aria-labelledby="editJobhistoryModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="editJobhistoryModalLabel">Edit Job History</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <form action="/edit_employee_jobhistory" method="post" id="editJobhistoryForm" enctype="multipart/form-data">
+                      {% csrf_token %}
+                      <input type="hidden" id="editJobhistoryId" name="id">
+                      <div class="form-group">
+                        <label for="editJobhistoryEmployee">Employee</label>
+                        <input type="text" id="editJobhistoryEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
                       </div>
-                      <br>
+                      <div class="form-group">
+                        <label for="editJobhistoryStartdate">Start Date</label>
+                        <input type="date" id="editJobhistoryStartdate" name="start_date" class="form-control" required> 
+                      </div>
+                      <div class="form-group">
+                          <label for="editJobhistoryEnddate">End Date</label>
+                          <input type="date" id="editJobhistoryEnddate" name="end_date" class="form-control" required>
+                      </div>
+                      <div class="form-group">
+                        <label for="editJobhistoryDepartment">Department</label>
+                        <select id="editJobhistoryDepartment" name="department_id" class="form-control custom-select" required>
+                          {% for d in data5 %}
+                          <option value="{{ d.department_id }}">{{ d.department_name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="editJobhistoryJob">Job</label>
+                        <select id="editJobhistoryJob" name="job_id" class="form-control custom-select" required>
+                          {% for d in data4 %}
+                          <option value="{{ d.job_id }}">{{ d.job_title }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="form-group">
+                          <label for="editJobhistorySalary">Salary</label>
+                          <input type="text" id="editJobhistorySalary" name="salary" class="form-control" >
+                      </div>
+                      <div class="form-group">
+                        <label for="editJobhistoryPromotion">Promoted/Demoted</label>
+                        <input type="text" id="editJobhistoryPromotion" name="promotion_or_demotion" class="form-control" >
+                      </div>
+                      <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Job History</button>
                   </form>
               </div>
+          </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="addGuaranteeModal" tabindex="-1" role="dialog" aria-labelledby="guaranteeModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="guaranteeModalLabel">Add Guarantee</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                      <span aria-hidden="true">&times;</span>
+                  </button>
+              </div>
+              <div class="modal-body">
+                  <form action="/add_employee_guarantee" method="post" id="guaranteeForm" enctype="multipart/form-data">
+                      {% csrf_token %}
+                      <div class="form-group">
+                          <label for="guaranteeEmployee">Employee</label>
+                          <input type="text" id="guaranteeEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                      </div>
+                      <div class="form-group">
+                        <label for="guaranteeName">Name</label>
+                        <input type="text" id="guaranteeName" name="name" class="form-control" required> 
+                      </div>
+                      <div class="form-group">
+                        <label for="guaranteeSalary">Salary Evaluation</label>
+                        <input type="text" id="guaranteeSalary" name="salary_evaluation" class="form-control" >
+                      </div>
+                      <div class="form-group">
+                          <label for="guaranteeType">Guarantee Type</label>
+                          <select id="guaranteeType" name="guarantee_type_id" class="form-control custom-select" required>
+                            {% for d in data9 %}
+                            <option value="{{ d.guarantee_type_id }}">{{ d.guarantee_type }}</option>
+                            {% endfor %}
+                          </select>
+                      </div>
+                      <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Add Guarantee</button>
+                  </form>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <div class="modal fade" id="editGuaranteeModal" tabindex="-1" role="dialog" aria-labelledby="editGuaranteeModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editGuaranteeModalLabel">Edit Guarantee</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-    </section>
+            <div class="modal-body">
+                <form action="/edit_employee_guarantee" method="post" id="editGuaranteeForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="editGuaranteeId" name="farm_entity_id">
+                    <div class="form-group">
+                      <label for="editGuaranteeEmployee">Employee</label>
+                      <input type="text" id="editGuaranteeEmployee" name="employee_id" value="{{person.farm_entity_id}}" class="form-control" readonly>
+                    </div>
+                    <div class="form-group">
+                      <label for="editGuaranteeName">Name</label>
+                      <input type="text" id="editGuaranteeName" name="name" class="form-control" required> 
+                    </div>
+                    <div class="form-group">
+                      <label for="editGuaranteeSalary">Salary Evaluation</label>
+                      <input type="text" id="editGuaranteeSalary" name="salary_evaluation" class="form-control" >
+                    </div>
+                    <div class="form-group">
+                        <label for="editGuaranteeType">Guarantee Type</label>
+                        <select id="editGuaranteeType" name="guarantee_type_id" class="form-control custom-select" required>
+                          {% for d in data9 %}
+                          <option value="{{ d.guarantee_type_id }}">{{ d.guarantee_type }}</option>
+                          {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;">Update Guarantee</button>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  </section>
   
   </div>
 
-  
 <script>
-
-  document.getElementById('addcontactBtn').addEventListener('click', function() {
-    document.getElementById('contactFormSection').style.display = 'block';
-    document.getElementById('addressFormSection').style.display = 'none';
-    document.getElementById('experienceFormSection').style.display = 'none';
-    document.getElementById('guaranteeFormSection').style.display = 'none';
-    document.getElementById('jobhistoryFormSection').style.display = 'none';
+  document.getElementById('showContactTableBtn').addEventListener('click', function() {
+      document.getElementById('contactTableSection').style.display = 'block';
+      document.getElementById('addressTableSection').style.display = 'none';
+      document.getElementById('experienceTableSection').style.display = 'none';
+      document.getElementById('guaranteeTableSection').style.display = 'none';
+      document.getElementById('jobhistoryTableSection').style.display = 'none';
+  });
+  document.getElementById('showAddressTableBtn').addEventListener('click', function() {
+      document.getElementById('contactTableSection').style.display = 'none';
+      document.getElementById('addressTableSection').style.display = 'block';
+      document.getElementById('experienceTableSection').style.display = 'none';
+      document.getElementById('guaranteeTableSection').style.display = 'none';
+      document.getElementById('jobhistoryTableSection').style.display = 'none';
+  });
+  document.getElementById('showExperienceTableBtn').addEventListener('click', function() {
+    document.getElementById('contactTableSection').style.display = 'none';
+    document.getElementById('addressTableSection').style.display = 'none';
+    document.getElementById('experienceTableSection').style.display = 'block';
+    document.getElementById('guaranteeTableSection').style.display = 'none';
+    document.getElementById('jobhistoryTableSection').style.display = 'none';
+});
+  document.getElementById('showGuaranteeTableBtn').addEventListener('click', function() {
+    document.getElementById('contactTableSection').style.display = 'none';
+    document.getElementById('addressTableSection').style.display = 'none';
+    document.getElementById('experienceTableSection').style.display = 'none';
+    document.getElementById('guaranteeTableSection').style.display = 'block';
+    document.getElementById('jobhistoryTableSection').style.display = 'none';
+  });
+  document.getElementById('showJobhistoryTableBtn').addEventListener('click', function() {
+    document.getElementById('contactTableSection').style.display = 'none';
+    document.getElementById('addressTableSection').style.display = 'none';
+    document.getElementById('experienceTableSection').style.display = 'none';
+    document.getElementById('guaranteeTableSection').style.display = 'none';
+    document.getElementById('jobhistoryTableSection').style.display = 'block';
+});
+  
+  document.querySelectorAll('.edit-contact-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const contactId = this.dataset.contactId;
+        fetch(`/get_employee_contact/${contactId}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editContactId').value = data.id;
+                document.getElementById('editContactType').value = data.contact_type;
+                document.getElementById('editContact').value = data.contact;
+            }).catch(error => console.log('Error fetching contact data:', error));
+    });
+  });
+  
+  document.querySelectorAll('.edit-address-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const addressId = this.dataset.addressId;
+        fetch(`/get_employee_address/${addressId}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editAddressId').value = data.id;
+                document.getElementById('editAddressCountry').value = data.country;
+                document.getElementById('editAddressRegion').value = data.region;
+                document.getElementById('editAddressZoneSubcity').value = data.zone_subcity;
+                document.getElementById('editAddressWoreda').value = data.woreda;
+                document.getElementById('editAddressKebele').value = data.kebele;
+                document.getElementById('editAddressStreet').value = data.street_name;
+                document.getElementById('editAddressHouseNumber').value = data.house_number;
+            }).catch(error => console.log('Error fetching address data:', error));
+    });
   });
 
-  document.getElementById('addaddressBtn').addEventListener('click', function() {
-    document.getElementById('contactFormSection').style.display = 'none';
-    document.getElementById('addressFormSection').style.display = 'block';
-    document.getElementById('experienceFormSection').style.display = 'none';
-    document.getElementById('guaranteeFormSection').style.display = 'none';
-    document.getElementById('jobhistoryFormSection').style.display = 'none';
+  document.querySelectorAll('.edit-experience-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const experienceId = this.dataset.experienceId;
+        fetch(`/get_employee_experience/${experienceId}/`)
+            .then(response => {
+              console.log(`Response status: ${response.status}`);
+              return response.json();
+              //response.json())
+            })
+            .then(data => {
+                document.getElementById('editExperienceId').value = data.experience_id;
+                document.getElementById('editExperienceCompany').value = data.company;
+                document.getElementById('editExperienceTitle').value = data.title;
+                document.getElementById('editExperienceStartdate').value = data.start_date;
+                document.getElementById('editExperienceEnddate').value = data.end_date;
+                document.getElementById('editExperienceSalary').value = data.salary;
+            }).catch(error => console.log('Error fetching experience data:', error));
+    });
   });
 
-  document.getElementById('addexperienceBtn').addEventListener('click', function() {
-    document.getElementById('contactFormSection').style.display = 'none';
-    document.getElementById('addressFormSection').style.display = 'none';
-    document.getElementById('experienceFormSection').style.display = 'block';
-    document.getElementById('guaranteeFormSection').style.display = 'none';
-    document.getElementById('jobhistoryFormSection').style.display = 'none';
+  document.querySelectorAll('.edit-jobhistory-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const jobhistoryId = this.dataset.jobhistoryId;
+        fetch(`/get_employee_jobhistory/${jobhistoryId}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editJobhistoryId').value = data.id;
+                document.getElementById('editJobhistoryStartdate').value = data.start_date;
+                document.getElementById('editJobhistoryEnddate').value = data.end_date;
+                document.getElementById('editJobhistoryDepartment').value = data.department_id;
+                document.getElementById('editJobhistoryJob').value = data.job_id;
+                document.getElementById('editJobhistorySalary').value = data.salary;
+                document.getElementById('editJobhistoryPromotion').value = data.promotion_or_demotion;
+            }).catch(error => console.log('Error fetching jobhistory data:', error));
+    });
   });
 
-  document.getElementById('addguaranteeBtn').addEventListener('click', function() {
-    document.getElementById('contactFormSection').style.display = 'none';
-    document.getElementById('addressFormSection').style.display = 'none';
-    document.getElementById('experienceFormSection').style.display = 'none';
-    document.getElementById('guaranteeFormSection').style.display = 'block';
-    document.getElementById('jobhistoryFormSection').style.display = 'none';
+  document.querySelectorAll('.edit-guarantee-btn').forEach(button => {
+    button.addEventListener('click', function() {
+        const guaranteeId = this.dataset.guaranteeId;
+        fetch(`/get_employee_guarantee/${guaranteeId}/`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('editGuaranteeId').value = data.farm_entity_id;
+                document.getElementById('editGuaranteeName').value = data.name;
+                document.getElementById('editGuaranteeType').value = data.guarantee_type_id;
+                document.getElementById('editGuaranteeSalary').value = data.salary_evaluation;
+            }).catch(error => console.log('Error fetching guarantee data:', error));
+    });
   });
 
-  document.getElementById('addjobhistoryBtn').addEventListener('click', function() {
-    document.getElementById('contactFormSection').style.display = 'none';
-    document.getElementById('addressFormSection').style.display = 'none';
-    document.getElementById('experienceFormSection').style.display = 'none';
-    document.getElementById('guaranteeFormSection').style.display = 'none';
-    document.getElementById('jobhistoryFormSection').style.display = 'block';
-  });
-</script>
-
+  </script>
 
   
+
   {% endblock %}

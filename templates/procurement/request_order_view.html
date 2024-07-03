@@ -4,7 +4,6 @@
 {% block content %}
 
   <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
     <section class="content-header">
       <div class="container-fluid">
         <div class="row mb-2">
@@ -84,17 +83,15 @@
                         </span>
                           {% for orderdata in orderdatas %}
                             {% if orderdata.request_approved == 'Approved' %}
-                                {% if request.user|is_allowed_user:"Admin, Store Clerk" %} 
                                 <a class="btn btn-sm" href="/rfq_add/{{ orderdata.order_id }}" style="background-color: #007f5c;color: #fff;">
                                     RFQ
                                 </a>
-                                {% endif %}
                             {% endif %}
                           {% endfor %}
                       </td>
 
                       <td class="project-actions">
-                      {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
+                      {% if request.user|has_permission:"erp.add_approval" %}
                         {% for orderdata in orderdatas %}
                             {% if orderdata.request_approved == 'Approved' %}
                                 <button class="btn btn-danger btn-sm" onclick="confirmReject({{ orderdata.order_id }})">
@@ -109,7 +106,7 @@
                                 </button>
                             {% endif %}
                         {% endfor %}
-                      {% endif %}
+                      {% endif %} 
                       </td>
                     
                   </tr>
@@ -206,12 +203,6 @@
                         <th style="width: 20%">
                           Supplier Name
                         </th>
-                        {% comment %} <th style="width: 10%">
-                          Item 
-                        </th>
-                        <th style="width: 10%">
-                          Order 
-                        </th> {% endcomment %}
                         <th style="width: 15%">
                           Price
                         </th>
@@ -234,12 +225,6 @@
                         <td>
                           {{d.supplier.supplier_name}}
                         </td>
-                        {% comment %} <td>
-                          {{d.item.name}}
-                        </td>
-                        <td>
-                          {{d.order_id}}
-                        </td> {% endcomment %}
                         <td>
                           {{d.price}}
                         </td>
@@ -255,7 +240,7 @@
                       
                         <td class="project-actions">
      
-                          {% if request.user|is_allowed_user:"Admin, Supervisor" %} 
+                          {% if request.user|has_permission:"erp.add_approval" %}
                             {% if d.status == 'Approved' %}
                               <button class="btn btn-danger btn-sm" onclick="confirmRejectrfq({{ d.id }})">
                                   Reject
@@ -279,14 +264,12 @@
                             <script>
                               function confirmDelete(cattleId) {
                                   if (confirm("Are you sure you want to delete this Request For Quote?")) {
-                                      // If user confirms, redirect to the delete URL
                                       window.location.href = "/rfq_delete/" + cattleId;
                                   }
                               }
                             </script>
-                          {% endif %} 
+                          {% endif %}  
                         </td>
-                        
                         
                     </tr>
                     {% endfor %}

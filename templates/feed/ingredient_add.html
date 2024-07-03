@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
 
-
 {% block content %} 
 
   <div class="content-wrapper">
@@ -50,12 +49,6 @@
             {% endif %}
             
               <div class="form-group">
-                {% comment %} <label for="inputName">Feed Formulation</label>
-                <select id="inputStatus" name="feed_formulation_id" class="form-control custom-select">
-                  {% for d in data3 %}
-                  <option value="{{d.id}}">{{ d.name}}</option>
-                  {% endfor %}
-                </select> {% endcomment %}
                 <input type="hidden" name="feed_formulation_id" value="{{ current_formulation_id }}">
               </div>
               <div class="form-group">

@@ -88,9 +88,6 @@
                         {% endfor %}
                       </td>
                       <td>
-                        {% comment %} <span class="badge {% if d.cattle_pregnancy_status == 'Pregnant' %}badge-success{% elif d.cattle_pregnancy_status == 'Not Pregnant' %}badge-warning {% endif %}">
-                          {{d.cattle_pregnancy_status}}
-                        </span> {% endcomment %}
                         <span class="badge {% if d.pregnancy_status.pregnancy_status == 'Pregnant' %}badge-warning{% elif d.pregnancy_status.pregnancy_status == 'Postpartum' %}badge-success {% endif %}">
                           {{d.pregnancy_status.pregnancy_status}}
                         </span>
@@ -109,7 +106,6 @@
                           <script>
                             function confirmDelete(cattleId) {
                                 if (confirm("Are you sure you want to delete this Cattle Pregnancy?")) {
-                                    // If user confirms, redirect to the delete URL
                                     window.location.href = "/cattle_pregnancy_delete/" + cattleId;
                                 }
                             }

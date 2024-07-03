@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
 
-
 {% block content %}
 
   <div class="content-wrapper">
@@ -127,7 +126,6 @@
                         <script>
                           function confirmDelete(cattleId) {
                               if (confirm("Are you sure you want to delete this Order Request?")) {
-                                  // If user confirms, redirect to the delete URL
                                   window.location.href = "/request_order_delete/" + cattleId;
                               }
                           }
@@ -178,15 +176,15 @@
   function approveRequest(orderId) {
     $.ajax({
         type: "POST",
-        url: "/approve_request/" + orderId + "/", // Append order ID to the URL
+        url: "/approve_request/" + orderId + "/", 
         data: {
             csrfmiddlewaretoken: "{{ csrf_token }}"
         },
         success: function (response) {
-            location.reload(); // Reload the page after successful approval
+            location.reload(); 
         },
         error: function (xhr, errmsg, err) {
-            console.log(xhr.status + ": " + xhr.responseText); // Log any errors
+            console.log(xhr.status + ": " + xhr.responseText); 
         }
     });
 }
@@ -194,15 +192,15 @@
 function rejectRequest(orderId) {
     $.ajax({
         type: "POST",
-        url: "/reject_request/" + orderId + "/", // Append order ID to the URL
+        url: "/reject_request/" + orderId + "/", 
         data: {
             csrfmiddlewaretoken: "{{ csrf_token }}"
         },
         success: function (response) {
-            location.reload(); // Reload the page after successful rejection
+            location.reload(); 
         },
         error: function (xhr, errmsg, err) {
-            console.log(xhr.status + ": " + xhr.responseText); // Log any errors
+            console.log(xhr.status + ": " + xhr.responseText); 
         }
     });
 }

@@ -120,7 +120,7 @@
       </li>
 
       <li class="nav-item dropdown">
-        <a class="nav-link" data-toggle="dropdown" href="#">
+        <a class="nav-link" data-toggle="dropdown" href="">
             <i class="far fa-bell"></i>
             <span class="badge badge-warning navbar-badge">{{ total_notifications }}</span>
         </a>
@@ -130,7 +130,7 @@
     
             {% if request.user|has_permission:"erp.view_admindashboard" %}
                 {% if notifications.overdue_cattle %}
-                    <a href="#" class="dropdown-item">
+                    <a href="" class="dropdown-item">
                         <i class="fas fa-exclamation-circle mr-2"></i> 
                         <span class="notification-text">You have {{ overdue_count }} cattle overdue for vaccinations.</span>
                         <span class="float-right text-muted text-sm">Overdue</span>
@@ -141,7 +141,7 @@
             
             {% if request.user|has_permission:"erp.view_storeclerkdashboard" or request.user|has_permission:"erp.view_admindashboard" %}
                 {% if notifications.low_quantity_items %}
-                    <a href="#" class="dropdown-item">
+                    <a href="" class="dropdown-item">
                         <i class="fas fa-exclamation-triangle mr-2"></i> 
                         <span class="notification-text">You have {{ low_quantity_count }} items with low stock.</span>
                         <span class="float-right text-muted text-sm">Low Stock</span>
@@ -152,7 +152,7 @@
     
             {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
                 {% if notifications.assigned_tasks %}
-                    <a href="#" class="dropdown-item">
+                    <a href="" class="dropdown-item">
                         <i class="fas fa-tasks mr-2"></i> 
                         <span class="notification-text">You have {{ assigned_tasks_count }} assigned tasks pending.</span>
                         <span class="float-right text-muted text-sm">Pending Tasks</span>
@@ -163,7 +163,7 @@
     
             {% if request.user|has_permission:"erp.view_admindashboard" %}
                 {% if notifications.approval_required_orders %}
-                    <a href="#" class="dropdown-item">
+                    <a href="" class="dropdown-item">
                         <i class="fas fa-clipboard-check mr-2"></i> 
                         <span class="notification-text">You have {{ approval_required_orders_count }} orders pending approval.</span>
                         <span class="float-right text-muted text-sm">Pending Approval</span>
@@ -172,7 +172,7 @@
                 {% endif %}
     
                 {% if notifications.approval_required_ordersuppliers %}
-                    <a href="#" class="dropdown-item">
+                    <a href="" class="dropdown-item">
                         <i class="fas fa-truck mr-2"></i> 
                         <span class="notification-text">You have {{ approval_required_ordersuppliers_count }} supplier orders pending approval.</span>
                         <span class="float-right text-muted text-sm">Pending Approval</span>
@@ -181,7 +181,7 @@
                 {% endif %}
     
                 {% if notifications.approval_required_leave_requests %}
-                    <a href="#" class="dropdown-item">
+                    <a href="" class="dropdown-item">
                         <i class="fas fa-user-clock mr-2"></i> 
                         <span class="notification-text">You have {{ approval_required_leave_requests_count }} leave requests pending approval.</span>
                         <span class="float-right text-muted text-sm">Pending Approval</span>
@@ -190,7 +190,7 @@
                 {% endif %}
     
                 {% if notifications.approval_required_stockout_requests %}
-                    <a href="#" class="dropdown-item">
+                    <a href="" class="dropdown-item">
                         <i class="fas fa-warehouse mr-2"></i> 
                         <span class="notification-text">You have {{ approval_required_stockout_requests_count }} stock-out requests pending approval.</span>
                         <span class="float-right text-muted text-sm">Pending Approval</span>
@@ -199,7 +199,7 @@
                 {% endif %}
     
                 {% if notifications.approval_required_stockin_requests %}
-                    <a href="#" class="dropdown-item">
+                    <a href="" class="dropdown-item">
                         <i class="fas fa-boxes mr-2"></i> 
                         <span class="notification-text">You have {{ approval_required_stockin_requests_count }} stock-in requests pending approval.</span>
                         <span class="float-right text-muted text-sm">Pending Approval</span>
@@ -208,40 +208,12 @@
                 {% endif %}
             {% endif %}
         </div>
-    </li>
-    
-      {% comment %} <li class="nav-item dropdown">
-        <a class="nav-link" data-toggle="dropdown" href="">
-            <i class="far fa-bell"></i>
-            <span class="badge badge-warning navbar-badge">{{ total_notifications }}</span>
-        </a>
-        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-            <span class="dropdown-item dropdown-header">{{ total_notifications }} Notifications</span>
-            <div class="dropdown-divider"></div>
-            {% if notifications.overdue_cattle %}
-                <a href="" class="dropdown-item">
-                    <i class="fas fa-exclamation-circle mr-2"></i> 
-                    <span class="notification-text">You have {{ overdue_count }} cattle overdue for vaccinations.</span>
-                    <span class="float-right text-muted text-sm">Overdue</span>
-                </a>
-                <div class="dropdown-divider"></div>
-            {% endif %}
-            
-            {% if notifications.low_quantity_items %}
-                <a href="" class="dropdown-item">
-                    <i class="fas fa-exclamation-triangle mr-2"></i> 
-                    <span class="notification-text">You have {{ low_quantity_count }} items with low stock.</span>
-                    <span class="float-right text-muted text-sm">Low Stock</span>
-                </a>
-                <div class="dropdown-divider"></div>
-            {% endif %}
-        </div>
-      </li> {% endcomment %}
+      </li>
+
       <li class="nav-item">
-        <span><a href="../../logout"> Logout</a></span>
-        {% comment %} <a class="nav-link" data-widget="control-sidebar" data-controlsidebar-slide="true" href="" role="button">
-          <i class="fas fa-th-large"></i>
-        </a> {% endcomment %}
+        <a class="nav-link" href="../../logout">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
       </li>
     </ul>
   </nav>

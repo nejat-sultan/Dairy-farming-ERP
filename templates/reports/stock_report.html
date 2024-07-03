@@ -65,9 +65,9 @@
             </div>
 
             {% if filters_applied %} 
-            <div class="card-body p-0">
+            <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped projects">
+                    <table id="example1" class="table table-striped projects">
                         <thead>
                             <tr>
                                 <th>Item</th>
@@ -121,6 +121,66 @@
 <script>
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        function initializeDataTables(companyName, startDate, endDate) {
+            var table = $('#example1').DataTable({
+                responsive: true,
+                lengthChange: false,
+                autoWidth: false,
+                buttons: [
+                    'copy', 'excel', 'pdf', 'print'
+                ],
+                order: [],
+                dom: 'Bfrtip', 
+                buttons: [
+                    'copy',
+                    {
+                        extend: 'excel',
+                        title: function() {
+                            return companyName + ' Stock Report - ' + startDate + ' to ' + endDate;
+                        },
+                        customize: function(xlsx) {
+                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                            $('row c[r^="A"]', sheet).attr('s', '2');
+                        }
+                    },
+                    {
+                        extend: 'pdf',
+                        title: function() {
+                            return 'Stock Report'
+                        },
+                        customize: function(doc) {
+                            doc.content.splice(0, 0, {
+                                text: startDate + ' to ' + endDate + '\n' + companyName,
+                                style: 'header'
+                            });
+                        }
+                    },
+                    {
+                        extend: 'print',
+                        title: function() {
+                            return 'Stock Report';
+                        },
+                        customize: function(win) {
+                            $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
+                            $(win.document.body).prepend('<h5 style="text-align:center;">' + startDate + ' to ' + endDate + '</h5>');
+                            $(win.document.body).find('h3, h5').css('text-align', 'center');
+                        }
+                    }
+                ]
+            });
+
+            table.buttons().container().appendTo($('#example1_wrapper .col-md-6:eq(0)'));
+        }
+
+        var companyName = "{{ latest_farm.full_name }}";
+        var startDate = "{{ request.GET.start_date }}";
+        var endDate = "{{ request.GET.end_date }}";
+        initializeDataTables(companyName, startDate, endDate);
     });
 </script>
 {% endblock %}

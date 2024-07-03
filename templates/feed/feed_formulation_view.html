@@ -72,7 +72,7 @@
                       {{feed.end_age_in_weeks}}
                     </td>
 
-                      {% if request.user|has_permission:"erp.add_ingredients" %} 
+                      {% if request.user|has_permission:"erp.add_feedingredient" %} 
                       <td class="project-actions">
                           <a class="btn btn-sm" href="/ingredient_add/{{ feed.id }}" style="background-color: #007f5c;color: #fff;">
                             Add Ingredients
@@ -156,7 +156,7 @@
                     </td>
                       
                     <td class="project-actions">
-                      {% if request.user|has_permission:"erp.change_ingredients" %} 
+                      {% if request.user|has_permission:"erp.change_feedingredient" %} 
                       <a class="btn btn-info btn-sm" href="/ingredient_edit/{{d.id}}">
                           <i class="fas fa-pencil-alt">
                           </i>

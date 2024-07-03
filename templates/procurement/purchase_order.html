@@ -203,7 +203,7 @@
               url: "/approve_inventory/" + orderHasItemSupplierId + "/",
               data: {
                   csrfmiddlewaretoken: "{{ csrf_token }}",
-                  status: 'Approved'  // Send the status along with the request
+                  status: 'Approved'  
               },
               success: function(response) {
                   location.reload();
@@ -222,7 +222,7 @@
               url: "/reject_inventory/" + orderHasItemSupplierId + "/",
               data: {
                   csrfmiddlewaretoken: "{{ csrf_token }}",
-                  status: 'Rejected'  // Send the status along with the request
+                  status: 'Rejected'  
               },
               success: function(response) {
                   location.reload();

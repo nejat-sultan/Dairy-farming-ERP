@@ -87,24 +87,17 @@
   <section class="content">
 
     <div class="card card-solid">
+
+      {% for message in messages %}
+      <div class="alert alert-{{message.tags}} alert-dismissible fade show" role="alert">
+        <strong>{{message}}</strong>
+      </div>
+      {% endfor %}
+      
       <div class="card-body">
         <div class="row">
           <div class="col-12 col-sm-6">
             <h3 class="d-inline-block d-sm-none">{{cattle.cattle_name}}</h3>
-            {% comment %} <div class="col-12">
-              {% if photos %}
-                <img src="{{ photos.0.cattle_photo_url }}" alt="{{ photos.0.cattle_photo_description }}" class="img-fluid">
-                <a href="#" class="change-photo-link position-absolute" style="display: none;" data-photo-id="{{ photo.cattle_photo_id  }}" data-cattle-id="{{ cattle.farm_entity_id }}">Change Photo</a>
-              {% endif %}
-            </div>
-            <div class="col-12 product-image-thumbs d-flex justify-content-center">
-              {% for photo in photos|slice:"1:" %}
-                <div class="product-image-thumb">
-                  <img src="{{ photo.cattle_photo_url }}" alt="{{ photo.cattle_photo_description }}" class="img-fluid">
-                  <a href="#" class="change-photo-link position-absolute" style="display: none;" data-photo-id="{{ photo.cattle_photo_id  }}" data-cattle-id="{{ cattle.farm_entity_id }}">Change Photo</a>
-                </div>
-              {% endfor %}
-            </div>  {% endcomment %}
 
             <div class="col-12">
               {% if photos %}

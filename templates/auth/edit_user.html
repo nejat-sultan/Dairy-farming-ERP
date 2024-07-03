@@ -45,6 +45,10 @@
                     <input type="email" id="email" name="email" value="{{ user_profile.user.email }}" class="form-control">
                 </div>
                 <div class="form-group">
+                  <label for="password">Password</label>
+                  <input type="password" id="password" name="password" class="form-control">
+              </div>
+                <div class="form-group">
                     <label for="employee_id">Employee</label>
                     <select id="employee_id" name="employee_id" class="form-control">
                         {% for employee in employees %}

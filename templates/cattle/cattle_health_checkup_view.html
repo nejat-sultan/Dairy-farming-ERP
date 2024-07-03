@@ -75,14 +75,12 @@
                       </td>
 
                       <td class="project-actions">
-                        {% if request.user|is_allowed_user:"Admin, Vet" %} 
                           <a class="btn btn-sm" href="/checkup_medicine_add/{{ health.id }}" style="background-color: #007f5c;color: #fff;">
                             Order Medicine
                           </a>
                           <a class="btn btn-sm" href="/checkup_symptom_add/{{ health.id }}" style="background-color: #007f5c;color: #fff;">
                             Add Symptom
                           </a>
-                        {% endif %}
                       </td>
                   </tr>
               </tbody>
@@ -235,7 +233,6 @@
                           <script>
                             function confirmDelete(cattleId) {
                                 if (confirm("Are you sure you want to delete this Medicine?")) {
-                                    // If user confirms, redirect to the delete URL
                                     window.location.href = "/checkup_medicine_delete/" + cattleId;
                                 }
                             }

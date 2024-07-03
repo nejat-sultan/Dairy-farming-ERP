@@ -30,9 +30,9 @@
                 </div>
             </div>
 
-            <div class="card-body p-0">
+            <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped projects">
+                    <table id="example1" class="table table-striped projects">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -101,6 +101,74 @@
         window.location.href = window.location.pathname;
     });
 </script>
+
+<script>
+    $(document).ready(function() {
+        function getCurrentDate() {
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+            var yyyy = today.getFullYear();
+            return mm + '/' + dd + '/' + yyyy;
+        }
+
+        function initializeDataTables(companyName) {
+            var todayDate = getCurrentDate();
+            var table = $('#example1').DataTable({
+                responsive: true,
+                lengthChange: false,
+                autoWidth: false,
+                buttons: [
+                    'copy', 'excel', 'pdf', 'print'
+                ],
+                order: [],
+                dom: 'Bfrtip',
+                buttons: [
+                    'copy',
+                    {
+                        extend: 'excel',
+                        title: function() {
+                            return companyName + ' Feed Formulation Report - ' + todayDate;
+                        },
+                        customize: function(xlsx) {
+                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                            $('row c[r^="A"]', sheet).attr('s', '2');
+                        }
+                    },
+                    {
+                        extend: 'pdf',
+                        title: function() {
+                            return 'Feed Formulation Report - ' + todayDate;
+                        },
+                        customize: function(doc) {
+                            doc.content.splice(0, 0, {
+                                text: todayDate + '\n' + companyName,
+                                style: 'header'
+                            });
+                        }
+                    },
+                    {
+                        extend: 'print',
+                        title: function() {
+                            return 'Feed Formulation Report - ' + todayDate;
+                        },
+                        customize: function(win) {
+                            $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
+                            $(win.document.body).prepend('<h5 style="text-align:center;">' + todayDate + '</h5>');
+                            $(win.document.body).find('h3, h5').css('text-align', 'center');
+                        }
+                    }
+                ]
+            });
+
+            table.buttons().container().appendTo($('#example1_wrapper .col-md-6:eq(0)'));
+        }
+
+        var companyName = "{{ latest_farm.full_name }}";
+        initializeDataTables(companyName);
+    });
+</script>
+
 {% endblock %}
 
 

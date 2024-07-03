@@ -148,6 +148,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 SESSION_COOKIE_NAME = 'sessionid'
-SESSION_COOKIE_AGE = 1209600 
+SESSION_COOKIE_AGE = 1800 
 SESSION_COOKIE_SECURE = True 
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True 

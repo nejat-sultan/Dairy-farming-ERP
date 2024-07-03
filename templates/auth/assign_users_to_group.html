@@ -40,7 +40,8 @@
                                 <label for="selectGroup">Select Role</label>
                                 <select id="selectGroup" name="group" class="form-control">
                                     {% for group in groups %}
-                                        <option value="{{ group.id }}">{{ group.name }}</option>
+                                        <option value="{{ group.id }}" {% if group in user.groups.all %}selected{% endif %}> 
+                                            {{ group.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>

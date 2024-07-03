@@ -1,6 +1,7 @@
 import base64
 from collections import defaultdict
 from datetime import datetime
+from urllib.parse import urlencode
 from django.utils.timezone import now, timedelta
 import json
 import logging
@@ -282,12 +283,15 @@ def edit_user(request, user_id):
     if request.method == 'POST':
         username = request.POST.get('username')
         email = request.POST.get('email')
+        password = request.POST.get('password')
         employee_id = request.POST.get('employee_id')
         
         if username:
             user.username = username
         if email:
             user.email = email
+        if password:
+            user.password = make_password(password) 
         user.save()
 
         if employee_id:
@@ -929,7 +933,7 @@ def change_photo(request):
             cattle_photo = CattlePhoto.objects.get(cattle_photo_id=photo_id, cattle_id=cattle_id)
         except CattlePhoto.DoesNotExist:
             messages.error(request, "Photo not found.")
-            return redirect("/cattle") 
+            return redirect(reverse('cattle_view', args=[cattle_id]))
 
         if 'photo_url' in request.FILES:
             new_photo = request.FILES['photo_url']
@@ -942,13 +946,13 @@ def change_photo(request):
             cattle_photo.save()
 
             messages.success(request, "Cattle Photo Changed Successfully!")
-            return redirect("/cattle")
+            return redirect(reverse('cattle_view', args=[cattle_id]))
         else:
             messages.error(request, "No photo file provided.")
-            return redirect("/cattle") 
+            return redirect(reverse('cattle_view', args=[cattle_id]))
     else:
         messages.error(request, "Invalid request method.")
-        return redirect("/cattle")
+        return redirect(reverse('cattle_view', args=[cattle_id]))
 
 @login_required(login_url='login')
 def cattle_status(request):
@@ -3885,7 +3889,7 @@ def job_add(request):
         if cjob_min_salary:
             try:
                 cjob_min_salary = float(cjob_min_salary)
-                if cjob_min_salary <= 0:
+                if cjob_min_salary < 0:
                     errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Minimum Salary must be a number.')
@@ -3895,7 +3899,7 @@ def job_add(request):
         if cjob_max_salary:
             try:
                 cjob_max_salary = float(cjob_max_salary)
-                if cjob_max_salary <= 0:
+                if cjob_max_salary < 0:
                     errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Maximum Salary must be a number.')
@@ -3930,7 +3934,7 @@ def job_edit(request,job_id):
         if cjob_min_salary:
             try:
                 cjob_min_salary = float(cjob_min_salary)
-                if cjob_min_salary <= 0:
+                if cjob_min_salary < 0:
                     errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Minimum Salary must be a number.')
@@ -3940,7 +3944,7 @@ def job_edit(request,job_id):
         if cjob_max_salary:
             try:
                 cjob_max_salary = float(cjob_max_salary)
-                if cjob_max_salary <= 0:
+                if cjob_max_salary < 0:
                     errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Maximum Salary must be a number.')
@@ -5717,7 +5721,7 @@ def employee_add(request):
         if csalary:
             try:
                 csalary = float(csalary)
-                if csalary <= 0:
+                if csalary < 0:
                     errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Salary must be a number.')
@@ -5815,7 +5819,6 @@ def employee_edit(request, farm_entity_id):
 
     if request.method == "POST":
         person.person_title_id = request.POST.get('title')
-        # person.person_type_id = request.POST.get('type')
         employee_type = PersonType.objects.get(person_type="Employee")
         person.person_type = employee_type
         person.first_name = request.POST.get('fname')
@@ -5858,7 +5861,7 @@ def employee_edit(request, farm_entity_id):
         if employee.salary:
             try:
                 employee.salary = float(employee.salary)
-                if employee.salary <= 0:
+                if employee.salary < 0:
                     errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Salary must be a number.')
@@ -5904,6 +5907,11 @@ def employee_edit(request, farm_entity_id):
     region_data = Region.objects.all() 
     employee_data = Employee.objects.all() 
     guarantee_data = GuaranteeType.objects.all() 
+    employee_contacts = FarmEntityContact.objects.filter(farm_entity_id=farm_entity_id)
+    employee_addresses = FarmEntityAddress.objects.filter(farm_entity_id=farm_entity_id)
+    employee_experiences = EmployeeExperience.objects.filter(person_farm_entity_id=farm_entity_id)
+    employee_guarantees = Guarantee.objects.filter(person_farm_entity_id=farm_entity_id)
+    employee_jobhistories = JobHistory.objects.filter(person_farm_entity_id=farm_entity_id)
 
     context = {
         'data2': title_data,
@@ -5917,8 +5925,12 @@ def employee_edit(request, farm_entity_id):
         'data6': contact_data, 
         'data7': region_data,   
         'data8': employee_data,  
-        'data9': guarantee_data,  
-
+        'data9': guarantee_data, 
+        "contacts": employee_contacts,
+        "addresses": employee_addresses, 
+        'experiences': employee_experiences,
+        'jobhistories': employee_jobhistories,
+        'guarantees': employee_guarantees,
     }
 
     return render(request, 'employee/employee_edit.html', context)
@@ -5940,8 +5952,9 @@ def employee_delete(request, farm_entity_id):
     
     return redirect("/employee")
 
+
 @login_required(login_url='login')
-def add_contact(request):
+def add_employee_contact(request):
     if not request.user.has_perm('erp.add_farmentitycontact'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
@@ -5957,12 +5970,49 @@ def add_contact(request):
         contact.save()
 
         messages.success(request, "Employee Contact Added Successfully!")
-        return redirect("/employee")
+        return redirect('employee_edit', farm_entity_id=cemployee_id)
 
     return render(request, 'employee/employee_edit.html')
 
+def get_employee_contact(request, id):
+    contact = get_object_or_404(FarmEntityContact, id=id)
+    data = {
+        'id': contact.id,
+        'contact_type': contact.contact_type.contact_id,
+        'contact': contact.contact,
+    }
+    return JsonResponse(data)
+
 @login_required(login_url='login')
-def add_address(request):
+def edit_employee_contact(request):
+    if not request.user.has_perm('erp.change_farmentitycontact'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+
+    if request.method == 'POST':
+        contact_id = request.POST.get('contact_id')
+        contact = get_object_or_404(FarmEntityContact, id=contact_id)
+        contact_type_id = request.POST.get('contact_type')
+        contact_type = get_object_or_404(ContactType, contact_id=contact_type_id)
+        contact.contact_type = contact_type
+        contact.contact = request.POST.get('contact')
+        contact.save()
+
+        messages.success(request, 'Contact updated successfully.')
+        return redirect('employee_edit', farm_entity_id=contact.farm_entity_id)
+    return redirect('employee_edit')
+
+@login_required(login_url='login')
+def delete_employee_contact(request, id):
+    if not request.user.has_perm('erp.delete_farmentitycontact'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = FarmEntityContact.objects.get(id=id)
+    cemployee_id = d.farm_entity_id
+    d.delete()
+    messages.error(request, "Contact Deleted Successfully!")
+    return redirect('employee_edit', farm_entity_id=cemployee_id)
+
+@login_required(login_url='login')
+def add_employee_address(request):
     if not request.user.has_perm('erp.add_farmentityaddress'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
@@ -5972,8 +6022,8 @@ def add_address(request):
         czone_subcity = request.POST.get('zone_subcity')
         cworeda = request.POST.get('woreda')
         ckebele = request.POST.get('kebele')
-        chouse_no = request.POST.get('house_no')
-        cstreet = request.POST.get('street')
+        chouse_no = request.POST.get('house_number')
+        cstreet = request.POST.get('street_name')
             
         address = FarmEntityAddress(
             farm_entity_id=cemployee_id,
@@ -5988,12 +6038,60 @@ def add_address(request):
         address.save()
 
         messages.success(request, "Employee Address Added Successfully!")
-        return redirect("/employee")
+        return redirect('employee_edit', farm_entity_id=cemployee_id)
 
     return render(request, 'employee/employee_edit.html')
 
+
+def get_employee_address(request, id):
+    address = get_object_or_404(FarmEntityAddress, id=id)
+    data = {
+        'id': address.id,
+        'country': address.country,
+        'region': address.region.region_id,
+        'zone_subcity': address.zone_subcity,
+        'woreda': address.woreda,
+        'kebele': address.kebele,
+        'street_name': address.street_name,
+        'house_number': address.house_number,
+    }
+    return JsonResponse(data)
+
 @login_required(login_url='login')
-def add_experience(request):
+def edit_employee_address(request):
+    if not request.user.has_perm('erp.change_farmentityaddress'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method == 'POST':
+        address_id = request.POST.get('address_id')
+        address = get_object_or_404(FarmEntityAddress, id=address_id)
+        region_id = request.POST.get('region')
+        region = get_object_or_404(Region, region_id=region_id)
+        address.country = request.POST.get('country')
+        address.region = region
+        address.zone_subcity = request.POST.get('zone_subcity')
+        address.woreda = request.POST.get('woreda')
+        address.kebele = request.POST.get('kebele')
+        address.street_name = request.POST.get('street_name')
+        address.house_number = request.POST.get('house_number')
+        address.save()
+
+        messages.success(request, 'Address updated successfully.')
+        return redirect('employee_edit', farm_entity_id=address.farm_entity_id)
+    return redirect('employee_edit')
+
+@login_required(login_url='login')
+def delete_employee_address(request, id):
+    if not request.user.has_perm('erp.delete_farmentityaddress'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = FarmEntityAddress.objects.get(id=id)
+    cemployee_id = d.farm_entity_id
+    d.delete()
+    messages.error(request, "Address Deleted Successfully!")
+    return redirect('employee_edit', farm_entity_id=cemployee_id)
+
+
+@login_required(login_url='login')
+def add_employee_experience(request):
     if not request.user.has_perm('erp.add_employeeexperience'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
@@ -6026,7 +6124,7 @@ def add_experience(request):
         if csalary:
             try:
                 csalary = float(csalary)
-                if csalary <= 0:
+                if csalary < 0:
                     errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Salary must be a number.')
@@ -6034,8 +6132,25 @@ def add_experience(request):
             csalary = 0 
 
         if errors:
+            farm_entity = get_object_or_404(FarmEntity, pk=cemployee_id)
+            person = get_object_or_404(Person, farm_entity=farm_entity)
+            employee = get_object_or_404(Employee, person_farm_entity=person)
             context = {
                 'errors': errors,
+                'person': get_object_or_404(Person, farm_entity_id=cemployee_id), 
+                'data2': PersonTitle.objects.all(),
+                'data3': PersonType.objects.all(),
+                'data4': Job.objects.all(),
+                'data5': Department.objects.all(),
+                'data6': ContactType.objects.all(),
+                'data7': Region.objects.all(),
+                'data9': GuaranteeType.objects.all(),
+                'farm_entity_id': cemployee_id,
+                'person': person,  
+                'employee': employee,
+                'contacts': FarmEntityContact.objects.filter(farm_entity_id=cemployee_id),
+                'addresses': FarmEntityAddress.objects.filter(farm_entity_id=cemployee_id),
+                'experiences': EmployeeExperience.objects.filter(person_farm_entity_id=cemployee_id),
             }
             return render(request, 'employee/employee_edit.html', context)
             
@@ -6051,55 +6166,112 @@ def add_experience(request):
         experience.save()
 
         messages.success(request, "Employee Experience Added Successfully!")
-        return redirect("/employee")
+        return redirect('employee_edit', farm_entity_id=cemployee_id)
 
-    return render(request, 'employee/employee_edit.html')
+    return render(request, 'employee/employee_edit.html', context)
+
+def get_employee_experience(request, experience_id):
+    experience = get_object_or_404(EmployeeExperience, experience_id=experience_id)
+    data = {
+        'experience_id': experience.experience_id,
+        'company': experience.company,
+        'title': experience.title,
+        'start_date': experience.start_date,
+        'end_date': experience.end_date,
+        'salary': experience.salary,
+    }
+    return JsonResponse(data)
 
 @login_required(login_url='login')
-def add_guarantee(request):
-    if not request.user.has_perm('erp.add_guarantee'):
+def edit_employee_experience(request):
+    if not request.user.has_perm('erp.change_employeeexperience'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
-        cemployee_id = request.POST.get('employee_id')
-        cguarantee_type = request.POST.get('guarantee_type')
-        cname = request.POST.get('name')
-        csalary_evaluation = request.POST.get('salary_evaluation')
+        experience_id = request.POST.get('experience_id')
+        experience = get_object_or_404(EmployeeExperience, experience_id=experience_id)
 
-        farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
+        company = request.POST.get('company')
+        title = request.POST.get('title')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        salary = request.POST.get('salary')
 
         errors = []
-        if csalary_evaluation:
+        if start_date:
+            parsed_start_date = parse_date(start_date)
+            if not parsed_start_date:
+                errors.append('Start date must be in YYYY-MM-DD format.')
+            else:
+                start_date = parsed_start_date
+        else:
+            start_date = None 
+            
+        if end_date:
+            parsed_end_date = parse_date(end_date)
+            if not parsed_end_date:
+                errors.append('End date must be in YYYY-MM-DD format.')
+            else:
+                end_date = parsed_end_date
+        else:
+            end_date = None 
+
+        if salary:
             try:
-                csalary_evaluation = float(csalary_evaluation)
-                if csalary_evaluation <= 0:
+                salary = float(salary)
+                if salary < 0:
                     errors.append("Salary must be a positive number.")
             except ValueError:
                 errors.append('Salary must be a number.')
         else:
-            csalary_evaluation = 0 
+            salary = 0  
 
         if errors:
+            farm_entity = get_object_or_404(FarmEntity, pk=experience.person_farm_entity_id)
+            person = get_object_or_404(Person, farm_entity=farm_entity)
+            employee = get_object_or_404(Employee, person_farm_entity=person)
+            
             context = {
                 'errors': errors,
+                'data2': PersonTitle.objects.all(),
+                'data3': PersonType.objects.all(),
+                'data4': Job.objects.all(),
+                'data5': Department.objects.all(),
+                'data6': ContactType.objects.all(),
+                'data7': Region.objects.all(),
+                'data9': GuaranteeType.objects.all(),
+                'farm_entity_id': experience.person_farm_entity_id,
+                'person': person,  
+                'employee': employee,
+                'contacts': FarmEntityContact.objects.filter(farm_entity_id=experience.person_farm_entity_id),
+                'addresses': FarmEntityAddress.objects.filter(farm_entity_id=experience.person_farm_entity_id),
+                'experiences': EmployeeExperience.objects.filter(person_farm_entity_id=experience.person_farm_entity_id),
             }
             return render(request, 'employee/employee_edit.html', context)
-            
-        guarantee = Guarantee(
-            farm_entity=farm_entity,
-            person_farm_entity_id=cemployee_id,
-            guarantee_type_id=cguarantee_type,
-            name=cname,
-            salary_evaluation=csalary_evaluation,
-        )
-        guarantee.save()
 
-        messages.success(request, "Employee Guarantee Added Successfully!")
-        return redirect("/employee")
+        experience.company = company
+        experience.title = title
+        experience.start_date = start_date
+        experience.end_date = end_date
+        experience.salary = salary
+        experience.save()
 
-    return render(request, 'employee/employee_edit.html')
+        messages.success(request, 'Experience updated successfully.')
+        return redirect('employee_edit', farm_entity_id=experience.person_farm_entity_id)
+    return redirect('employee_edit')
 
 @login_required(login_url='login')
-def add_jobhistory(request):
+def delete_employee_experience(request, experience_id):
+    if not request.user.has_perm('erp.delete_employeeexperience'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = EmployeeExperience.objects.get(experience_id=experience_id)
+    cemployee_id = d.person_farm_entity_id
+    d.delete()
+    messages.error(request, "Experience Deleted Successfully!")
+    return redirect('employee_edit', farm_entity_id=cemployee_id)
+
+
+@login_required(login_url='login')
+def add_employee_jobhistory(request):
     if not request.user.has_perm('erp.add_jobhistory'):
         return HttpResponse('You are not authorised to view this page', status=403)
     if request.method == 'POST':
@@ -6141,8 +6313,24 @@ def add_jobhistory(request):
             cend_date = None 
 
         if errors:
+            farm_entity = get_object_or_404(FarmEntity, pk=jobhistory.person_farm_entity_id)
+            person = get_object_or_404(Person, farm_entity=farm_entity)
+            employee = get_object_or_404(Employee, person_farm_entity=person)
             context = {
                 'errors': errors,
+                'data2': PersonTitle.objects.all(),
+                'data3': PersonType.objects.all(),
+                'data4': Job.objects.all(),
+                'data5': Department.objects.all(),
+                'data6': ContactType.objects.all(),
+                'data7': Region.objects.all(),
+                'data9': GuaranteeType.objects.all(),
+                'farm_entity_id': jobhistory.person_farm_entity_id,
+                'person': person,  
+                'employee': employee,
+                'contacts': FarmEntityContact.objects.filter(farm_entity_id=jobhistory.person_farm_entity_id),
+                'addresses': FarmEntityAddress.objects.filter(farm_entity_id=jobhistory.person_farm_entity_id),
+                'experiences': EmployeeExperience.objects.filter(person_farm_entity_id=jobhistory.person_farm_entity_id),
             }
             return render(request, 'employee/employee_edit.html', context)
 
@@ -6158,9 +6346,246 @@ def add_jobhistory(request):
         jobhistory.save()
 
         messages.success(request, "Employee Job History Added Successfully!")
-        return redirect("/employee")
+        return redirect('employee_edit', farm_entity_id=cemployee_id)
 
     return render(request, 'employee/employee_edit.html')
+
+def get_employee_jobhistory(request, id):
+    jobhistory = get_object_or_404(JobHistory, id=id)
+    data = {
+        'id': jobhistory.id,
+        'department_id': jobhistory.department.department_id,
+        'job_id': jobhistory.job.job_id,
+        'start_date': jobhistory.start_date,
+        'end_date': jobhistory.end_date,
+        'salary': jobhistory.salary,
+        'promotion_or_demotion': jobhistory.promotion_or_demotion,
+    }
+    return JsonResponse(data)
+
+@login_required(login_url='login')
+def edit_employee_jobhistory(request):
+    if not request.user.has_perm('erp.change_jobhistory'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method == 'POST':
+        id = request.POST.get('id')
+        jobhistory = get_object_or_404(JobHistory, id=id)
+
+        job_id = request.POST.get('job_id')
+        department_id = request.POST.get('department_id')
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        salary = request.POST.get('salary')
+        promotion_or_demotion = request.POST.get('promotion_or_demotion')
+
+        errors = []
+        if salary:
+            try:
+                salary = float(salary)
+                if salary <= 0:
+                    errors.append("Salary must be a positive number.")
+            except ValueError:
+                errors.append('Salary must be a number.')
+        else:
+            salary = 0 
+
+        if start_date:
+            parsed_start_date = parse_date(start_date)
+            if not parsed_start_date:
+                errors.append('Start date must be in YYYY-MM-DD format.')
+            else:
+                start_date = parsed_start_date
+        else:
+            start_date = None 
+            
+        if end_date:
+            parsed_end_date = parse_date(end_date)
+            if not parsed_end_date:
+                errors.append('End date must be in YYYY-MM-DD format.')
+            else:
+                end_date = parsed_end_date
+        else:
+            end_date = None 
+
+        if errors:
+            farm_entity = get_object_or_404(FarmEntity, pk=jobhistory.person_farm_entity_id)
+            person = get_object_or_404(Person, farm_entity=farm_entity)
+            employee = get_object_or_404(Employee, person_farm_entity=person)
+            context = {
+                'errors': errors,
+                'data2': PersonTitle.objects.all(),
+                'data3': PersonType.objects.all(),
+                'data4': Job.objects.all(),
+                'data5': Department.objects.all(),
+                'data6': ContactType.objects.all(),
+                'data7': Region.objects.all(),
+                'data9': GuaranteeType.objects.all(),
+                'farm_entity_id': jobhistory.person_farm_entity_id,
+                'person': person,  
+                'employee': employee,
+                'contacts': FarmEntityContact.objects.filter(farm_entity_id=jobhistory.person_farm_entity_id),
+                'addresses': FarmEntityAddress.objects.filter(farm_entity_id=jobhistory.person_farm_entity_id),
+                'experiences': EmployeeExperience.objects.filter(person_farm_entity_id=jobhistory.person_farm_entity_id),
+            }
+            return render(request, 'employee/employee_edit.html', context)
+            # query_string = urlencode(context)
+            # redirect_url = f"{reverse('employee_edit', args=[jobhistory.person_farm_entity_id])}"
+            # return redirect(redirect_url)
+
+        jobhistory.job_id = job_id
+        jobhistory.department_id = department_id
+        jobhistory.start_date = start_date
+        jobhistory.end_date = end_date
+        jobhistory.salary = salary
+        jobhistory.promotion_or_demotion = promotion_or_demotion
+        jobhistory.save()
+
+        messages.success(request, 'Jobhistory updated successfully.')
+        return redirect('employee_edit', farm_entity_id=jobhistory.person_farm_entity_id)
+    return redirect('employee_edit')
+
+@login_required(login_url='login')
+def delete_employee_jobhistory(request, id):
+    if not request.user.has_perm('erp.delete_jobhistory'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = JobHistory.objects.get(id=id)
+    cemployee_id = d.person_farm_entity_id
+    d.delete()
+    messages.error(request, "Jobhistory Deleted Successfully!")
+    return redirect('employee_edit', farm_entity_id=cemployee_id)
+
+@login_required(login_url='login')
+def add_employee_guarantee(request):
+    if not request.user.has_perm('erp.add_guarantee'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method == 'POST':
+        cemployee_id = request.POST.get('employee_id')
+        cguarantee_type_id = request.POST.get('guarantee_type_id')
+        cname = request.POST.get('name')
+        csalary_evaluation = request.POST.get('salary_evaluation')
+
+        farm_entity = FarmEntity.objects.create(modified_date=timezone.now())
+
+        errors = []
+        if csalary_evaluation:
+            try:
+                csalary_evaluation = float(csalary_evaluation)
+                if csalary_evaluation <= 0:
+                    errors.append("Salary must be a positive number.")
+            except ValueError:
+                errors.append('Salary must be a number.')
+        else:
+            csalary_evaluation = 0 
+
+        if errors:
+            farm_entity = get_object_or_404(FarmEntity, pk=guarantee.person_farm_entity_id)
+            person = get_object_or_404(Person, farm_entity=farm_entity)
+            employee = get_object_or_404(Employee, person_farm_entity=person)
+            context = {
+                'errors': errors,
+                'data2': PersonTitle.objects.all(),
+                'data3': PersonType.objects.all(),
+                'data4': Job.objects.all(),
+                'data5': Department.objects.all(),
+                'data6': ContactType.objects.all(),
+                'data7': Region.objects.all(),
+                'data9': GuaranteeType.objects.all(),
+                'farm_entity_id': guarantee.person_farm_entity_id,
+                'person': person,  
+                'employee': employee,
+                'contacts': FarmEntityContact.objects.filter(farm_entity_id=guarantee.person_farm_entity_id),
+                'addresses': FarmEntityAddress.objects.filter(farm_entity_id=guarantee.person_farm_entity_id),
+                'experiences': EmployeeExperience.objects.filter(person_farm_entity_id=guarantee.person_farm_entity_id),
+            }
+            return render(request, 'employee/employee_edit.html', context)
+            
+        guarantee = Guarantee(
+            farm_entity=farm_entity,
+            person_farm_entity_id=cemployee_id,
+            guarantee_type_id=cguarantee_type_id,
+            name=cname,
+            salary_evaluation=csalary_evaluation,
+        )
+        guarantee.save()
+
+        messages.success(request, "Employee Guarantee Added Successfully!")
+        return redirect('employee_edit', farm_entity_id=cemployee_id)
+
+    return render(request, 'employee/employee_edit.html')
+
+def get_employee_guarantee(request, farm_entity_id):
+    guarantee = get_object_or_404(Guarantee, farm_entity_id=farm_entity_id)
+    data = {
+        'farm_entity_id': guarantee.farm_entity_id,
+        'name': guarantee.name,
+        'guarantee_type_id': guarantee.guarantee_type.guarantee_type_id,
+        'salary_evaluation': guarantee.salary_evaluation,
+    }
+    return JsonResponse(data)
+
+@login_required(login_url='login')
+def edit_employee_guarantee(request):
+    if not request.user.has_perm('erp.change_guarantee'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    if request.method == 'POST':
+        farm_entity_id = request.POST.get('farm_entity_id')
+        guarantee = get_object_or_404(Guarantee, farm_entity_id=farm_entity_id)
+
+        guarantee_type_id = request.POST.get('guarantee_type_id')
+        name = request.POST.get('name')
+        salary_evaluation = request.POST.get('salary_evaluation')
+
+        errors = []
+        if salary_evaluation:
+            try:
+                salary_evaluation = float(salary_evaluation)
+                if salary_evaluation <= 0:
+                    errors.append("Salary must be a positive number.")
+            except ValueError:
+                errors.append('Salary must be a number.')
+        else:
+            salary_evaluation = 0 
+
+        if errors:
+            farm_entity = get_object_or_404(FarmEntity, pk=guarantee.person_farm_entity_id)
+            person = get_object_or_404(Person, farm_entity=farm_entity)
+            employee = get_object_or_404(Employee, person_farm_entity=person)
+            context = {
+                'errors': errors,
+                'data2': PersonTitle.objects.all(),
+                'data3': PersonType.objects.all(),
+                'data4': Job.objects.all(),
+                'data5': Department.objects.all(),
+                'data6': ContactType.objects.all(),
+                'data7': Region.objects.all(),
+                'data9': GuaranteeType.objects.all(),
+                'farm_entity_id': guarantee.person_farm_entity_id,
+                'person': person,  
+                'employee': employee,
+                'contacts': FarmEntityContact.objects.filter(farm_entity_id=guarantee.person_farm_entity_id),
+                'addresses': FarmEntityAddress.objects.filter(farm_entity_id=guarantee.person_farm_entity_id),
+                'experiences': EmployeeExperience.objects.filter(person_farm_entity_id=guarantee.person_farm_entity_id),
+            }
+            return render(request, 'employee/employee_edit.html', context)
+          
+        guarantee.guarantee_type_id = guarantee_type_id
+        guarantee.name = name
+        guarantee.salary_evaluation = salary_evaluation
+        guarantee.save()
+
+        messages.success(request, 'Guarantee updated successfully.')
+        return redirect('employee_edit', farm_entity_id=guarantee.person_farm_entity_id)
+    return redirect('employee_edit')
+
+@login_required(login_url='login')
+def delete_employee_guarantee(request, farm_entity_id):
+    if not request.user.has_perm('erp.delete_guarantee'):
+        return HttpResponse('You are not authorised to view this page', status=403)
+    d = Guarantee.objects.get(farm_entity_id=farm_entity_id)
+    cemployee_id = d.person_farm_entity_id
+    d.delete()
+    messages.error(request, "Guarantee Deleted Successfully!")
+    return redirect('employee_edit', farm_entity_id=cemployee_id)
 
 @login_required(login_url='login')
 def leave(request):

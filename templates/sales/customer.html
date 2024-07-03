@@ -71,37 +71,6 @@
               <tbody>
                 {% for d in data1 %}
                   <tr>
-                      {% comment %} <td>
-                        {{d.customer_id}}
-                      </td>
-                      <td>
-                        {{ d.person_farm_entity.first_name }}
-                      </td>
-                      <td>
-                        {{ d.person_farm_entity.middle_name }}
-                      </td> {% endcomment %}
-                      {% comment %} <td>
-                        {% if d.phone_contacts %}
-                            {{ d.phone_contacts.0.contact }}
-                        {% endif %} 
-                        {% if d.phone_contacts2 %}
-                          {{ d.phone_contacts2.0.contact }}
-                        {% endif %}
-                    </td>
-                  
-                    <td>
-                        {% if d.email_contacts %}
-                            {{ d.email_contacts.0.contact }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% for address in address_data %}
-                            {% if address.farm_entity_id == d.person_farm_entity.farm_entity_id %}
-                            {{ address.country }} {{ address.region.region }}
-                            {% endif %}
-                        {% endfor %}
-                    </td> {% endcomment %}
-
                     <td>{{ d.customer.customer_id }}</td>
                     <td>{{ d.customer.person_farm_entity.first_name }}</td>
                     <td>{{ d.customer.person_farm_entity.middle_name }}</td>
@@ -132,7 +101,6 @@
                           <script>
                             function confirmDelete(cattleId) {
                                 if (confirm("Are you sure you want to delete this Customer?")) {
-                                    // If user confirms, redirect to the delete URL
                                     window.location.href = "/customer_delete/" + cattleId;
                                 }
                             }
