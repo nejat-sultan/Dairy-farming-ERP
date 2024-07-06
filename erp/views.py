@@ -1,4 +1,5 @@
 import base64
+from calendar import monthrange
 from collections import defaultdict
 from datetime import datetime
 from urllib.parse import urlencode
@@ -95,24 +96,6 @@ def farm(request):
     context = {'latest_farm': latest_farm, 'farm_contacts': farm_contacts, 'data1': region_data}
 
     return render(request, 'company/farm.html', context)
-
-# def farm_context_processor(request):
-#     latest_farm = get_latest_farm()
-#     overdue_cattle = get_overdue_vaccines()
-#     low_quantity_items = get_low_quantity_items()
-#     notifications = {
-#         'overdue_cattle': overdue_cattle,
-#         'low_quantity_items': low_quantity_items,
-#     }
-#     total_notifications = len(overdue_cattle) + len(low_quantity_items)
-
-#     return {
-#         'latest_farm': latest_farm,
-#         'notifications': notifications,
-#         'total_notifications': total_notifications,
-#         'overdue_count': len(overdue_cattle),
-#         'low_quantity_count': len(low_quantity_items),
-#     }
 
 def get_assigned_tasks(employee):
     assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status=None).order_by('-due_time')
@@ -494,6 +477,12 @@ def change_password(request):
     
     return render(request, 'auth/change_password.html')
 
+def get_procurement_value2(queryset, start_date, end_date):
+    approved_orders_current_year = Order.objects.filter(request_approved_date__range=[start_date, end_date])
+    return queryset.filter(order__order__in=approved_orders_current_year).annotate(
+        quantity_float=Cast('quantity', FloatField())
+    ).aggregate(total_value=Sum(F('quantity_float') * F('price')))['total_value'] or 0
+
 @login_required(login_url='login')
 def index(request):
 #milk production report
@@ -552,15 +541,12 @@ def index(request):
     }
     chart_data_json2 = json.dumps(chart_data2)
 
-    #vaccination report
+#vaccination report
     total_cattle_count = Cattle.objects.count()
-
     # Get vaccinated cattle count
     vaccinated_cattle_count = CattleHasVaccine.objects.values('cattle').distinct().count()
-
     # Calculate non-vaccinated cattle count
     non_vaccinated_cattle_count = total_cattle_count - vaccinated_cattle_count
-
     # Prepare the data for the chart
     chart_data3 = {
         'labels': ['Vaccinated', 'Non-Vaccinated'],
@@ -573,6 +559,61 @@ def index(request):
     }
     chart_data_json3 = json.dumps(chart_data3)
     
+#monthly income/Expense report
+    current_year = datetime.now().year
+    current_year_incomes = {}
+    current_year_expenses = {}
+    # Calculate monthly incomes
+    for month in range(1, 13):  # Loop through each month of the year
+        first_day = datetime(current_year, month, 1)
+        last_day = datetime(current_year, month, 1) + timedelta(days=31)
+        last_day = min(last_day, datetime(current_year, month, 1) + timedelta(days=31))
+
+        current_year_incomes[month] = {
+            'sales_income': SalesOrder.objects.filter(
+                payment_status='Fully Paid',
+                order_date__month=month,
+                order_date__year=current_year
+            ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0,
+
+            'other_income': OtherIncomeExpense.objects.filter(
+                transaction_date__range=[first_day, last_day],
+                transaction_type='Income',
+                transaction_status='Paid'
+            ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+        }
+    # Calculate monthly expenses
+    for month in range(1, 13):  
+        first_day = datetime(current_year, month, 1)
+        last_day = datetime(current_year, month, 1) + timedelta(days=31)
+        last_day = min(last_day, datetime(current_year, month, 1) + timedelta(days=31))
+
+        current_year_expenses[month] = {
+            'procurement_expense': get_procurement_value2(
+                OrderHasItemSupplier.objects.filter(inventory_status='Approved'),
+                start_date=first_day,
+                end_date=last_day
+            ),
+
+            'stockin_expense': DirectlyAddedItem.objects.filter(
+                added_date__month=month,
+                added_date__year=current_year,
+                approval_status='Approved'
+            ).aggregate(total_value=Sum('total_price'))['total_value'] or 0,
+
+            'other_expense': OtherIncomeExpense.objects.filter(
+                transaction_date__range=[first_day, last_day],
+                transaction_type='Expense',
+                transaction_status='Paid'
+            ).aggregate(total_value=Sum('amount'))['total_value'] or 0
+        }
+    months = [datetime.strptime(str(month), "%m").strftime("%B") for month in range(1, 13)]
+    incomes_data = [sum(current_year_incomes[month].values()) for month in range(1, 13)]
+    expenses_data = [sum(current_year_expenses[month].values()) for month in range(1, 13)]
+
+
+
+
 
     dash1 = Dashboard()
     dash1.amount =  OrderHasItemSupplier.objects.filter(status='approved').count()
@@ -641,10 +682,13 @@ def index(request):
     print("Cattle Photos Dictionary:", cattle_photos)  
 
     context = {
-        # 'plot_img_base64': plot_img_base64,
         'chart_data_json': chart_data_json,
         'chart_data_json2': chart_data_json2,
         'chart_data_json3': chart_data_json3,
+        'months': months,
+        'incomes_data': incomes_data,
+        'expenses_data': expenses_data,
+        'current_year': current_year,
         'dash1': dash1, 
         'dash2': dash2, 
         'dash3': dash3, 
@@ -6593,7 +6637,7 @@ def leave(request):
         return HttpResponse('You are not authorised to view this page', status=403)
     
     user = request.user
-    if not request.user.has_perm('erp.add_employeeleave'):
+    if request.user.has_perm('erp.view_admindashboard'):
         data = EmployeeLeave.objects.all()
     else:
         user_profile = get_object_or_404(UserProfile, user=user)

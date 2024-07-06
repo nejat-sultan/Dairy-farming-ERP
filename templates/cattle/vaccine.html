@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load custom_filters %}
 
 {% block content %}
 
@@ -80,14 +80,18 @@
                       </td>
 
                       <td class="project-actions">
+                        {% if request.user|has_permission:"erp.change_vaccine" %}
                           <a class="btn btn-info btn-sm" href="/vaccine_edit/{{d.vaccine_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
                           </a>
+                        {% endif %}
+                        {% if request.user|has_permission:"erp.delete_vaccine" %}
                           <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.vaccine_id }}')">
                             <i class="fas fa-trash">
                             </i>
                           </a>
+                        {% endif %}
 
                           <script>
                             function confirmDelete(cattleId) {

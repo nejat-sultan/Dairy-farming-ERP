@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% load custom_filters %}
 
 {% block content %}
 
@@ -74,19 +74,22 @@
                       </td>
 
                       <td class="project-actions">
+                        {% if request.user|has_permission:"erp.change_cattlebreed" %}
                           <a class="btn btn-info btn-sm" href="/cattle_breed_edit/{{d.cattle_breed_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
                           </a>
+                        {% endif %}
+                        {% if request.user|has_permission:"erp.delete_cattlebreed" %}
                           <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.cattle_breed_id }}')">
                             <i class="fas fa-trash">
                             </i>
                           </a>
+                        {% endif %}
 
                           <script>
                             function confirmDelete(cattleId) {
                                 if (confirm("Are you sure you want to delete this Cattle Breed?")) {
-                                    // If user confirms, redirect to the delete URL
                                     window.location.href = "/cattle_breed_delete/" + cattleId;
                                 }
                             }

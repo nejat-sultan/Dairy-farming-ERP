@@ -94,14 +94,18 @@
                       </td>
 
                       <td class="project-actions">
+                        {% if request.user|has_permission:"erp.change_cattlepregnancy" %}
                           <a class="btn btn-info btn-sm" href="/cattle_pregnancy_edit/{{d.cattle_pregnancy_id}}">
                               <i class="fas fa-pencil-alt">
                               </i>
                           </a>
+                        {% endif %}
+                        {% if request.user|has_permission:"erp.delete_cattlepregnancy" %}
                           <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.cattle_pregnancy_id }}')">
                             <i class="fas fa-trash">
                             </i>
                           </a>
+                        {% endif %}
 
                           <script>
                             function confirmDelete(cattleId) {

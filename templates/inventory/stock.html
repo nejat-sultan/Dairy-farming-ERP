@@ -88,10 +88,13 @@
                           <i class="fas fa-pencil-alt">
                           </i>
                         </a>
+                        {% endif %}
+                        {% if request.user|has_permission:"erp.delete_stock" %} 
                         <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.stock_id }}')">
                           <i class="fas fa-trash">
                           </i>
                         </a>
+                        {% endif %}
 
                         <script>
                           function confirmDelete(cattleId) {
@@ -100,7 +103,7 @@
                               }
                           }
                         </script>
-                        {% endif %}
+                    
                       </td>
                   </tr>
                   {% endfor %}

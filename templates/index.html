@@ -177,8 +177,7 @@
         {% endif %}
 
         <div class="row">
-          
-          {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_dataentryclerkdashboard" %}
+          {% if request.user|has_permission:"erp.view_dataentryclerkdashboard" %}
           <div class="col-lg-4 col-md-12">
             <a href="../../supplier" style="text-decoration: none; color: inherit;">
               <div class="info-box mb-3 bg-warning">
@@ -225,9 +224,6 @@
                 <ul class="products-list product-list-in-card pl-2 pr-2">
                 {% for d in cattle %}
                   <li class="item">
-                    {% comment %} <div class="product-img">
-                      <img src="{{ photos.0.cattle_photo_url }}" alt="{{ photos.0.cattle_photo_description }}" class="img-size-50">
-                    </div>  {% endcomment %}
                     <a href="cattle_view/{{ d.farm_entity_id }}" style="text-decoration: none; color: inherit;">
                       <div class="product-img">
                         {% if cattle_photos.d.farm_entity_id %}
@@ -255,6 +251,25 @@
               </div>
        
             </div>
+          </div>
+          {% endif %}
+
+          {% if request.user|has_permission:"erp.view_admindashboard" %}
+          <div class="col-lg-4 col-md-12">
+            <h3 class="card-title">Vaccinated Vs Non-Vaccinated Cattles</h3>
+            <br><br>
+            <div><canvas id="vaccinationChart"></canvas></div>
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('vaccinationChart').getContext('2d');
+                const chartData = JSON.parse('{{ chart_data_json3|escapejs }}');
+    
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: chartData
+                });
+            });
+            </script>
           </div>
           {% endif %}
 
@@ -371,7 +386,7 @@
             </div>
             {% endif %}
 
-            {% if request.user|has_permission:"erp.view_admindashboard" %}
+            {% comment %} {% if request.user|has_permission:"erp.view_admindashboard" %}
             <div class="card">
               <div class="card-header border-transparent">
                 <h3 class="card-title">Recent Health Checks</h3>
@@ -416,7 +431,7 @@
                 <a href="cattle_health_checkup" class="btn btn-sm btn-secondary float-right">View All Checkups</a>
               </div>
             </div>
-            {% endif %}
+            {% endif %} {% endcomment %}
 
             {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
             <div class="card">
@@ -519,54 +534,70 @@
 
         {% if request.user|has_permission:"erp.view_admindashboard" %}
         <div class="row">
-          <div class="col-md-6">
+          <div class="col-md-12">
             <div class="card">
-              <div class="card-header">
-                <h3 class="card-title">Recent Pregnancy Status</h3>
-
-                <div class="card-tools">
-                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                    <i class="fas fa-minus"></i>
-                  </button>
-                </div>
+              <div class="card-header border-transparent">
+                <h3 class="card-title">Profit and Loss for Year {{ current_year }}</h3>
               </div>
-           
-              <div class="card-body p-0">
-                <ul class="products-list product-list-in-card pl-0 pr-2">
-                {% for d in cattlepregnancy %}
-                  <li class="item">
-                    <div class="product-info">
-                      <a href="#" class="product-title">{{d.cattle.cattle_name}}
-                        <span class="badge badge-warning float-right">{{d.pregnancy_status.pregnancy_status}}</span></a>
-                      <span class="product-description">
-                        {{d.cattle_pregnancy_type}}
-                      </span>
-                    </div>
-                  </li>
-                {% endfor %}
-                </ul>
-              </div>  
-           
-              <div class="card-footer text-center">
-                <a href="cattle_pregnancy" class="uppercase">View All</a>
-              </div>
-            </div>
-          </div>
 
-          <div class="col-md-6">
-            <div><canvas id="vaccinationChart"></canvas></div>
-            <script>
-              document.addEventListener('DOMContentLoaded', function() {
-                const ctx = document.getElementById('vaccinationChart').getContext('2d');
-                const chartData = JSON.parse('{{ chart_data_json3|escapejs }}');
-    
-                new Chart(ctx, {
-                    type: 'pie',
-                    data: chartData
+              <div><canvas id="incomeExpenseChart"></canvas></div>
+              <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var months = {{ months|safe }};
+                    var incomesData = {{ incomes_data|safe }};
+                    var expensesData = {{ expenses_data|safe }};
+
+                    var ctx = document.getElementById('incomeExpenseChart').getContext('2d');
+                    var myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: months,
+                            datasets: [{
+                                label: 'Income',
+                                data: incomesData,
+                                backgroundColor: 'rgba(0, 127, 92, 0.2)',
+                                borderColor: 'rgba(0, 127, 92, 1)',
+                                borderWidth: 1
+                            }, {
+                                label: 'Expense',
+                                data: expensesData,
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Amount ($)'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Months'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Income and Expense Comparison'
+                                }
+                            }
+                        }
+                    });
                 });
-            });
-            </script>
-          </div>
+              </script>
+            </div>
+          </div> 
         </div>
         {% endif %}
 

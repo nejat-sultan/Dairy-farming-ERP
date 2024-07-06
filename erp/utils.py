@@ -34,7 +34,7 @@ def get_overdue_vaccines():
     return overdue_cattle
 
 def get_low_quantity_items():
-    low_quantity_items = Stock.objects.annotate(
+    low_quantity_items = Stock.objects.exclude(item__name='Milk').annotate(
         quantity_float=ExpressionWrapper(
             F('quantity'),
             output_field=FloatField()

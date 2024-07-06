@@ -253,13 +253,18 @@
                                   Reject
                               </button>
                             {% endif %}
+                          {% endif %} 
                       
+                            {% if request.user|has_permission:"erp.change_orderhasitemsupplier" %}
                             <a class="btn btn-info btn-sm" href="/rfq_edit/{{d.id}}">
                                 <i class="fas fa-pencil-alt"></i>
                             </a>
+                            {% endif %}
+                            {% if request.user|has_permission:"erp.delete_orderhasitemsupplier" %}
                             <a class="btn btn-danger btn-sm" href="#" onclick="confirmDelete('{{ d.id }}')">
                                 <i class="fas fa-trash"></i>
                             </a>
+                            {% endif %}
                     
                             <script>
                               function confirmDelete(cattleId) {
@@ -268,7 +273,7 @@
                                   }
                               }
                             </script>
-                          {% endif %}  
+                           
                         </td>
                         
                     </tr>
