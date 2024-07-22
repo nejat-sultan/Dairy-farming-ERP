@@ -21,11 +21,11 @@ def paginate_data(request, queryset, items_per_page):
 def get_overdue_vaccines():
     overdue_cattle = []
     all_cattle = Cattle.objects.all()
-    one_week_ago = timezone.now() - timedelta(days=7)
+    three_months_ago = timezone.now() - timedelta(days=90)
 
     for cattle in all_cattle:
         last_vaccination = CattleHasVaccine.objects.filter(cattle=cattle).order_by('-cattle_given_time').first()
-        if not last_vaccination or (last_vaccination.cattle_given_time and last_vaccination.cattle_given_time < one_week_ago):
+        if not last_vaccination or (last_vaccination.cattle_given_time and last_vaccination.cattle_given_time < three_months_ago):
             overdue_cattle.append({
                 'name': cattle.cattle_name,
                 'last_vaccination': last_vaccination.cattle_given_time if last_vaccination else 'Never'

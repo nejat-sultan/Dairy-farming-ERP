@@ -176,6 +176,82 @@
         <br><br>
         {% endif %}
 
+        {% if request.user|has_permission:"erp.view_admindashboard" %}
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header border-transparent">
+                <h3 class="card-title">Profit and Loss for Year {{ current_year }}</h3>
+              </div>
+
+              <div><canvas id="incomeExpenseChart"></canvas></div>
+              <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    var months = {{ months|safe }};
+                    var incomesData = {{ incomes_data|safe }};
+                    var expensesData = {{ expenses_data|safe }};
+                    var profitData = {{ profit_data|safe }};
+
+                    var ctx = document.getElementById('incomeExpenseChart').getContext('2d');
+                    var myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: months,
+                            datasets: [{
+                                label: 'Income',
+                                data: incomesData,
+                                backgroundColor: 'rgba(0, 127, 92, 0.2)',
+                                borderColor: 'rgba(0, 127, 92, 1)',
+                                borderWidth: 1
+                            }, {
+                                label: 'Expense',
+                                data: expensesData,
+                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                borderColor: 'rgba(255, 99, 132, 1)',
+                                borderWidth: 1
+                            }, {
+                              label: 'Profit',
+                              data: profitData,
+                              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                              borderColor: 'rgba(54, 162, 235, 1)',
+                              borderWidth: 1
+                          }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Amount ($)'
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Months'
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Income and Expense Comparison'
+                                }
+                            }
+                        }
+                    });
+                });
+              </script>
+            </div>
+          </div> 
+        </div>
+        {% endif %}
+
         <div class="row">
           {% if request.user|has_permission:"erp.view_dataentryclerkdashboard" %}
           <div class="col-lg-4 col-md-12">
@@ -532,74 +608,7 @@
           {% endif %}
         </div>
 
-        {% if request.user|has_permission:"erp.view_admindashboard" %}
-        <div class="row">
-          <div class="col-md-12">
-            <div class="card">
-              <div class="card-header border-transparent">
-                <h3 class="card-title">Profit and Loss for Year {{ current_year }}</h3>
-              </div>
 
-              <div><canvas id="incomeExpenseChart"></canvas></div>
-              <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    var months = {{ months|safe }};
-                    var incomesData = {{ incomes_data|safe }};
-                    var expensesData = {{ expenses_data|safe }};
-
-                    var ctx = document.getElementById('incomeExpenseChart').getContext('2d');
-                    var myChart = new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: months,
-                            datasets: [{
-                                label: 'Income',
-                                data: incomesData,
-                                backgroundColor: 'rgba(0, 127, 92, 0.2)',
-                                borderColor: 'rgba(0, 127, 92, 1)',
-                                borderWidth: 1
-                            }, {
-                                label: 'Expense',
-                                data: expensesData,
-                                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                                borderColor: 'rgba(255, 99, 132, 1)',
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    title: {
-                                        display: true,
-                                        text: 'Amount ($)'
-                                    }
-                                },
-                                x: {
-                                    title: {
-                                        display: true,
-                                        text: 'Months'
-                                    }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: true,
-                                    position: 'top'
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Income and Expense Comparison'
-                                }
-                            }
-                        }
-                    });
-                });
-              </script>
-            </div>
-          </div> 
-        </div>
-        {% endif %}
 
         {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
         <div class="card">
@@ -689,11 +698,8 @@
     {% endif %}
 
     {% if request.user|has_permission:"erp.view_admindashboard" %}
-      {% if pending_orders or pending_leave_requests or pending_stockout_requests or pending_ordersuppliers %}
+      {% if pending_orders or pending_leave_requests or pending_stockout_requests or pending_stockin_requests or pending_ordersuppliers %}
           <div id="approval-notifications" style="display:none;">
-              {% comment %} {% for leave_request in pending_leave_requests %}
-                  {{ leave_request.leave_id }} - Due Time: {{ leave_request.start_date }}<br>
-              {% endfor %} {% endcomment %}
               {% if pending_leave_requests %}
               There is Pending <Strong>Leave request</Strong>
               {% endif %}
