@@ -47,12 +47,27 @@
               {% endif %}
               
                 <div class="form-group">
+                  <label for="inputName">Cattle</label>
+                  {% comment %} <input type="text" id="inputName" name="cattle_id" value="{{d.cattle_id}}" class="form-control"> {% endcomment %}
+                  <select id="inputStatus" name="cattle_id" class="form-control custom-select">
+                    {% for d in cattles %} 
+                      <option value="{{d.farm_entity_id}}" {% if d.farm_entity_id == cattle.cattle_id %} selected {% endif %}>
+                        {{ d.cattle_name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
                   <label for="inputName">Amount in Liter</label>
                   <input type="text" id="inputName" name="amount_in_liter" value="{{d.amount_in_liter}}" class="form-control" required>
                 </div>
                 <div class="form-group">
                   <label for="inputName">Milk Time</label>
                   <input type="datetime-local" id="inputName" name="milk_time" value="{{ d.milk_time|date:'Y-m-d' }}T{{ d.milk_time|time:'H:i' }}" class="form-control" required>
+                </div>
+                <div class="form-group">
+                  <label for="inputName">Duration</label>
+                  <input type="text" id="inputName" name="duration_in_min" value="{{d.duration_in_min}}" class="form-control">
                 </div>
                 <div class="form-group">
                   <label for="inputName">Fat Content</label>
@@ -65,21 +80,6 @@
                 <div class="form-group">
                   <label for="inputName">Somatic Cell Count</label>
                   <input type="text" id="inputName" name="somatic_cell_count" value="{{d.somatic_cell_count}}" class="form-control">
-                </div>
-                <div class="form-group">
-                  <label for="inputName">Duration</label>
-                  <input type="text" id="inputName" name="duration_in_min" value="{{d.duration_in_min}}" class="form-control">
-                </div>
-                <div class="form-group">
-                  <label for="inputName">Cattle</label>
-                  {% comment %} <input type="text" id="inputName" name="cattle_id" value="{{d.cattle_id}}" class="form-control"> {% endcomment %}
-                  <select id="inputStatus" name="cattle_id" class="form-control custom-select">
-                    {% for d in cattles %} 
-                      <option value="{{d.farm_entity_id}}" {% if d.farm_entity_id == cattle.cattle_id %} selected {% endif %}>
-                        {{ d.cattle_name }}
-                      </option>
-                    {% endfor %}
-                  </select>
                 </div>
               </div>
             </div>

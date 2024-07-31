@@ -3,6 +3,7 @@ from django.utils import timezone
 from .models import Cattle, CattleHasVaccine, DirectlyAddedItem, EmployeeLeave, Order, OrderHasItemSupplier, Stock, Stockout, TaskAssignment
 from django.db.models import ExpressionWrapper, FloatField, F
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Q
 
 def paginate_data(request, queryset, items_per_page):
     paginator = Paginator(queryset, items_per_page)
@@ -17,21 +18,34 @@ def paginate_data(request, queryset, items_per_page):
 
     return paginated_data
 
+def get_vaccination_notifications():
+    notifications  = []
+    now = timezone.now()
+    one_week_later = now + timedelta(days=7)
 
-def get_overdue_vaccines():
-    overdue_cattle = []
-    all_cattle = Cattle.objects.all()
-    three_months_ago = timezone.now() - timedelta(days=90)
+    upcoming_vaccinations = CattleHasVaccine.objects.filter(cattle_given_time__range=(now, one_week_later),given_status='Pending').order_by('cattle_given_time')
+    for vaccination in upcoming_vaccinations:
+        cattle = vaccination.cattle
+        notifications.append({
+            'name': cattle.cattle_name,
+            'scheduled_time': vaccination.cattle_given_time,
+            'vaccine_name': vaccination.vaccine.vaccine_name,  
+            'cattle_id': cattle.farm_entity_id,
+            'status': 'upcoming'
+        })
 
-    for cattle in all_cattle:
-        last_vaccination = CattleHasVaccine.objects.filter(cattle=cattle).order_by('-cattle_given_time').first()
-        if not last_vaccination or (last_vaccination.cattle_given_time and last_vaccination.cattle_given_time < three_months_ago):
-            overdue_cattle.append({
-                'name': cattle.cattle_name,
-                'last_vaccination': last_vaccination.cattle_given_time if last_vaccination else 'Never'
-            })
+    overdue_vaccinations = CattleHasVaccine.objects.filter(cattle_given_time__lt=now,given_status='Pending').order_by('cattle_given_time')
+    for vaccination in overdue_vaccinations:
+        cattle = vaccination.cattle
+        notifications.append({
+            'name': cattle.cattle_name,
+            'scheduled_time': vaccination.cattle_given_time,
+            'vaccine_name': vaccination.vaccine.vaccine_name,
+            'cattle_id': cattle.farm_entity_id,
+            'status': 'overdue'
+        })
 
-    return overdue_cattle
+    return notifications
 
 def get_low_quantity_items():
     low_quantity_items = Stock.objects.exclude(item__name='Milk').annotate(
@@ -45,6 +59,14 @@ def get_low_quantity_items():
 def get_assigned_tasks(employee):
     assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status=None).order_by('-due_time')
     return assigned_tasks
+
+def get_completed_tasks():
+    completed_tasks = TaskAssignment.objects.filter(Q(status='Completed') | Q(status='Reassigned'),approval_status=None)
+    return completed_tasks
+
+def get_rejected_tasks(employee):
+    rejected_tasks = TaskAssignment.objects.filter(assigned_to=employee,approval_status='Rejected')
+    return rejected_tasks
 
 def get_approval_required_orders():
     approval_required_orders = Order.objects.filter(request_approved='Pending')

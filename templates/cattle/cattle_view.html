@@ -192,15 +192,16 @@
           <nav class="w-100">
             <div class="nav nav-tabs" id="product-tab" role="tablist">
               {% if productions %}
-              <a style="color: #007f5c;" class="nav-item nav-link {% if productions %}active{% endif %}" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">Last Milk Production</a>
+              <a style="color: #007f5c;" class="nav-item nav-link active" id="product-desc-tab" data-toggle="tab" href="#product-desc" role="tab" aria-controls="product-desc" aria-selected="true">Last Milk Production</a>
               {% endif %}
               <a style="color: #007f5c;" class="nav-item nav-link {% if not productions %}active{% endif %}" id="product-comments-tab" data-toggle="tab" href="#product-comments" role="tab" aria-controls="product-comments" aria-selected="{% if not productions %}true{% else %}false{% endif %}">Vaccination</a>
               <a style="color: #007f5c;" class="nav-item nav-link" id="health-tab" data-toggle="tab" href="#health" role="tab" aria-controls="health" aria-selected="false">Health</a>
               <a style="color: #007f5c;" class="nav-item nav-link" id="feed-tab" data-toggle="tab" href="#feed" role="tab" aria-controls="feed" aria-selected="false">Feed</a>
+              <a style="color: #007f5c;" class="nav-item nav-link" id="recommendation-tab" data-toggle="tab" href="#recommendation" role="tab" aria-controls="recommendation" aria-selected="false">Recommended Feed Formula</a>
             </div>
           </nav>
           <div class="tab-content p-3 w-100" id="nav-tabContent">
-            <div class="tab-pane fade show active overflow-auto" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab"> 
+              <div class="tab-pane fade {% if productions %}show active{% endif %}" id="product-desc" role="tabpanel" aria-labelledby="product-desc-tab">
               {% if productions %}
               <h4 class="mt-0">Latest Milk Productions</h4>
               <div class="table-responsive">
@@ -231,7 +232,7 @@
               </div>
               {% endif %}
             </div>
-            <div class="tab-pane fade overflow-auto" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab"> 
+              <div class="tab-pane fade {% if not productions %}show active{% endif %}" id="product-comments" role="tabpanel" aria-labelledby="product-comments-tab">
               {% if vaccinations %}
                 <h4 class="mt-0">Last 5 Vaccinations</h4>
                 <div class="table-responsive">
@@ -313,6 +314,31 @@
                           <td>{{ feed.feed_formulation.name }}</td>
                           <td>{{ feed.feed_time }}</td>
                           <td>{{ feed.consumption_status }}</td>
+                        </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              {% endif %}
+            </div>
+            <div class="tab-pane fade overflow-auto" id="recommendation" role="tabpanel" aria-labelledby="recommendation-tab"> 
+              {% if feed_formulations %}
+                <h4 class="mt-0">Last 5 Feed Formulation Recommendations</h4>
+                <div class="table-responsive">
+                  <table class="table table-bordered">
+                    <thead>
+                      <tr>
+                        <th>Feed Formulation</th>
+                        <th>Start Age(Weeks)</th>
+                        <th>End Age(Weeks)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for feed in feed_formulations %}
+                        <tr>
+                          <td>{{ feed.name }}</td>
+                          <td>{{ feed.start_age_in_weeks }}</td>
+                          <td>{{ feed.end_age_in_weeks }}</td>
                         </tr>
                       {% endfor %}
                     </tbody>

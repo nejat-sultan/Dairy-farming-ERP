@@ -1,6 +1,6 @@
 from django.urls import path
 
-from testproject import settings
+from dairyfarmingerp import settings
 from django.conf.urls.static import static
 from . import views
 
@@ -187,6 +187,7 @@ urlpatterns = [
     path('feed_formulation_add', views.feed_formulation_add),
     path('feed_formulation_edit/<str:id>', views.feed_formulation_edit, name='feed_formulation_edit'),
     path('feed_formulation_delete/<str:id>', views.feed_formulation_delete),
+    path('get_feed_formulations/<int:cattle_id>/', views.get_feed_formulations, name='get_feed_formulations'),
 
     path('ingredient_add/<int:id>/', views.ingredient_add, name='ingredient_add'),
     path('ingredient_edit/<str:id>', views.ingredient_edit, name='ingredient_edit'),

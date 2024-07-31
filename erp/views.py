@@ -20,7 +20,7 @@ from django.utils import timezone
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
-from testproject import settings
+from dairyfarmingerp import settings
 from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, CurrentMilkPrice, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, Farm, FarmContacts, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, OtherIncomeExpense, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
@@ -38,7 +38,7 @@ from django.db.models.functions import Cast
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth import update_session_auth_hash
-from .utils import get_approval_required_leave_requests, get_approval_required_orders, get_approval_required_ordersuppliers, get_approval_required_stockin_requests, get_approval_required_stockout_requests, get_assigned_tasks, get_low_quantity_items, get_overdue_vaccines, paginate_data 
+from .utils import get_approval_required_leave_requests, get_approval_required_orders, get_approval_required_ordersuppliers, get_approval_required_stockin_requests, get_approval_required_stockout_requests, get_assigned_tasks, get_completed_tasks, get_low_quantity_items, get_vaccination_notifications, paginate_data 
 
 def get_latest_farm():
     return Farm.objects.last()
@@ -103,15 +103,20 @@ def get_assigned_tasks(employee):
     assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status=None).order_by('-due_time')
     return assigned_tasks
 
+def get_rejected_tasks(employee):
+    rejected_tasks = TaskAssignment.objects.filter(assigned_to=employee,approval_status='Rejected')
+    return rejected_tasks
+
 def farm_context_processor(request):
     latest_farm = get_latest_farm()
-    overdue_cattle = get_overdue_vaccines()
+    vaccination_notifications = get_vaccination_notifications()
     low_quantity_items = get_low_quantity_items()
     approval_required_orders = get_approval_required_orders()
     approval_required_ordersuppliers = get_approval_required_ordersuppliers()
     approval_required_leave_requests = get_approval_required_leave_requests()
     approval_required_stockout_requests = get_approval_required_stockout_requests()
     approval_required_stockin_requests = get_approval_required_stockin_requests()
+    completed_tasks = get_completed_tasks()
 
     if request.user.is_authenticated:
         try:
@@ -123,22 +128,34 @@ def farm_context_processor(request):
     else:
         assigned_tasks = []
 
+    if request.user.is_authenticated:
+        try:
+            user_profile = UserProfile.objects.get(user=request.user)
+            employee = user_profile.employee
+            rejected_tasks = get_rejected_tasks(employee)
+        except UserProfile.DoesNotExist:
+            rejected_tasks = []
+    else:
+        rejected_tasks = []
+
     notifications = {}
     total_notifications = 0
 
     if request.user.has_perm('erp.view_admindashboard'):
-        notifications['overdue_cattle'] = overdue_cattle
+        notifications['vaccination_notifications'] = vaccination_notifications
         notifications['approval_required_orders'] = approval_required_orders
         notifications['approval_required_ordersuppliers'] = approval_required_ordersuppliers
         notifications['approval_required_leave_requests'] = approval_required_leave_requests
         notifications['approval_required_stockout_requests'] = approval_required_stockout_requests
         notifications['approval_required_stockin_requests'] = approval_required_stockin_requests
-        total_notifications += (len(overdue_cattle) +
+        notifications['completed_tasks'] = completed_tasks
+        total_notifications += (len(vaccination_notifications) +
                                 len(approval_required_orders) +
                                 len(approval_required_ordersuppliers) +
                                 len(approval_required_leave_requests) +
                                 len(approval_required_stockout_requests) +
-                                len(approval_required_stockin_requests))
+                                len(approval_required_stockin_requests) +
+                                len(completed_tasks))
 
     if request.user.has_perm('erp.view_storeclerkdashboard') or request.user.has_perm('erp.view_admindashboard'):
         notifications['low_quantity_items'] = low_quantity_items
@@ -146,20 +163,24 @@ def farm_context_processor(request):
 
     if request.user.has_perm('erp.view_laboremployeedashboard'):
         notifications['assigned_tasks'] = assigned_tasks
-        total_notifications += len(assigned_tasks)
+        notifications['rejected_tasks'] = rejected_tasks
+        total_notifications += len(assigned_tasks) + len(rejected_tasks)
+        
 
     return {
         'latest_farm': latest_farm,
         'notifications': notifications,
         'total_notifications': total_notifications,
-        'overdue_count': len(overdue_cattle) if 'overdue_cattle' in notifications else 0,
+        'vaccination_notification_count': len(vaccination_notifications) if 'vaccination_notifications' in notifications else 0,
         'low_quantity_count': len(low_quantity_items) if 'low_quantity_items' in notifications else 0,
         'approval_required_orders_count': len(approval_required_orders) if 'approval_required_orders' in notifications else 0,
         'approval_required_ordersuppliers_count': len(approval_required_ordersuppliers) if 'approval_required_ordersuppliers' in notifications else 0,
         'approval_required_leave_requests_count': len(approval_required_leave_requests) if 'approval_required_leave_requests' in notifications else 0,
         'approval_required_stockout_requests_count': len(approval_required_stockout_requests) if 'approval_required_stockout_requests' in notifications else 0,
         'approval_required_stockin_requests_count': len(approval_required_stockin_requests) if 'approval_required_stockin_requests' in notifications else 0,
+        'completed_tasks_count': len(completed_tasks) if 'completed_tasks' in notifications else 0,
         'assigned_tasks_count': len(assigned_tasks) if 'assigned_tasks' in notifications else 0,
+        'rejected_tasks_count': len(rejected_tasks) if 'rejected_tasks' in notifications else 0,
     }
 
 
@@ -435,6 +456,17 @@ def profile(request):
         person = Person.objects.get(pk=employee.person_farm_entity_id)
         farm_entity = person.farm_entity
 
+        if 'profile_pic' in request.FILES:
+            profile_pic = request.FILES['profile_pic']
+            fs = FileSystemStorage(location=settings.MEDIA_ROOT + '/profile_pics')
+            filename = fs.save(profile_pic.name, profile_pic)
+            profile_pic_url = settings.MEDIA_URL + 'profile_pics/' + filename
+                
+            employee.profile_pic_path = profile_pic_url
+            employee.save()
+                
+            messages.success(request, 'Profile picture updated successfully!')
+
         experience = EmployeeExperience.objects.filter(person_farm_entity=employee)
         contact = FarmEntityContact.objects.filter(farm_entity=farm_entity)
         address = FarmEntityAddress.objects.filter(farm_entity=farm_entity)
@@ -500,7 +532,7 @@ def get_procurement_value2(queryset, start_date, end_date):
 def index(request):
 #milk production report
     end_date = now()
-    start_date = end_date - timedelta(days=14)
+    start_date = end_date - timedelta(days=30)
     # Query MilkProduction data for the last week
     milk_data = MilkProduction.objects.filter(milk_time__range=(start_date, end_date)).order_by('milk_time')
     # Process the data into a DataFrame
@@ -677,7 +709,7 @@ def index(request):
     formulations = FeedFormulation.objects.all()[:10]
     ingredients = FeedIngredient.objects.select_related('item', 'item_measurement').all()
 
-    overdue_cattle = get_overdue_vaccines()
+    vaccination_notifications = get_vaccination_notifications()
     low_quantity_items = get_low_quantity_items()
     user_profile = UserProfile.objects.get(user=request.user)
     employee = user_profile.employee
@@ -687,6 +719,8 @@ def index(request):
     pending_leave_requests = get_approval_required_leave_requests()
     pending_stockout_requests = get_approval_required_stockout_requests()
     pending_stockin_requests = get_approval_required_stockin_requests()
+    completed_tasks = get_completed_tasks()
+    rejected_tasks = get_rejected_tasks(employee)
  
     cattle_photos = {}
     for cow in cattle:
@@ -717,9 +751,10 @@ def index(request):
         "data1":data,'orderdatas': orderdatas,'item_data': item_data,
         'cattle': cattle,'cattle_photos': cattle_photos,'breeds': breeds, 
         'employeedatas':employeedatas,'healthdatas':healthdatas,'cattlepregnancy':cattlepregnancy,'leave':leave,'task':task,   'formulations': formulations,'ingredients': ingredients,
-        'overdue_cattle': overdue_cattle,'low_quantity_items': low_quantity_items, 'assigned_tasks': assigned_tasks,'pending_orders': pending_orders,
+        'low_quantity_items': low_quantity_items, 'assigned_tasks': assigned_tasks,'pending_orders': pending_orders,
         'pending_leave_requests': pending_leave_requests,'pending_stockout_requests': pending_stockout_requests,'pending_stockin_requests': pending_stockin_requests,
-        'pending_ordersuppliers': pending_ordersuppliers,
+        'pending_ordersuppliers': pending_ordersuppliers, 'completed_tasks':completed_tasks, 'rejected_tasks':rejected_tasks, 
+        'vaccination_notifications': vaccination_notifications,
     }
     return render(request, 'index.html',context)
 
@@ -750,7 +785,13 @@ def cattle_view(request, farm_entity_id):
     symptoms = HealthCheckupSymptoms.objects.filter(cattle_health_checkup__in=healths).order_by('-modified_date')[:5]
     medicines = CattleHealthCheckupHasMedicine.objects.filter(cattle_health_checkup__in=healths).order_by('-modified_date')[:5]
     feeds = CattleHasFeed.objects.filter(cattle_farm_entity=cattle).order_by('-feed_time')[:5]
-    
+
+    cattle = Cattle.objects.get(farm_entity_id=farm_entity_id)
+    age_in_weeks = (timezone.now() - cattle.cattle_date_of_birth).days // 7
+    feed_formulations = FeedFormulation.objects.filter(
+        start_age_in_weeks__lte=age_in_weeks, 
+        end_age_in_weeks__gte=age_in_weeks
+        ).order_by('-modified_date')[:5]
     
     context = {
         'cattle': cattle,
@@ -763,6 +804,7 @@ def cattle_view(request, farm_entity_id):
         'symptoms': symptoms,
         'medicines': medicines,
         'feeds': feeds,
+        'feed_formulations': feed_formulations,
     }
 
     return render(request, 'cattle/cattle_view.html', context)
@@ -1253,7 +1295,7 @@ def cattle_pregnancy_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data1': Cattle.objects.all(),
+                'data1': Cattle.objects.filter(cattle_gender="Female"),
                 'data2': PregnancyStatus.objects.all(),
             }
             return render(request, 'cattle/cattle_pregnancy_add.html', context)
@@ -1313,7 +1355,7 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
                 'errors': errors,
                 "d": d, 
                 "cattle": edit, 
-                "cattles": Cattle.objects.all(),
+                "cattles": Cattle.objects.filter(cattle_gender="Female"),
             }
             return render(request, 'cattle/cattle_pregnancy_edit.html', context)
         
@@ -1412,12 +1454,15 @@ def cattle_has_vaccine(request):
     if not request.user.has_perm('erp.view_cattlehasvaccine'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    # overdue_cattle = get_overdue_vaccines()
+    vaccination_notifications = get_vaccination_notifications()
     data = CattleHasVaccine.objects.all()
     cattle = Cattle.objects.all()
     vaccine = Vaccine.objects.all()
 
     paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data, 'cattle': cattle, 'vaccine': vaccine,}
+    context = {"data1":paginated_data, 'cattle': cattle, 'vaccine': vaccine, 'vaccination_notifications':vaccination_notifications}
 
     return render(request, 'cattle/cattle_has_vaccine.html', context)
 
@@ -1430,6 +1475,7 @@ def cattle_has_vaccine_add(request):
         cvaccine_name=request.POST.get('vaccine_name')
         cgiven_time=request.POST.get('given_time')
         ccattle_id=request.POST.get('cattle_id')
+        cgiven_status=request.POST.get('given_status')
 
         errors = []
         if cgiven_time:
@@ -1448,7 +1494,7 @@ def cattle_has_vaccine_add(request):
             }
             return render(request, 'cattle/cattle_add.html', context)
 
-        query = CattleHasVaccine(vaccine_id=cvaccine_name, cattle_given_time=cgiven_time, cattle_id=ccattle_id)
+        query = CattleHasVaccine(vaccine_id=cvaccine_name, cattle_given_time=cgiven_time, cattle_id=ccattle_id, given_status=cgiven_status)
         query.save()
         messages.success(request, "Cattle Vaccination Added Successfully!")
         return redirect("/cattle_has_vaccine")
@@ -1473,6 +1519,7 @@ def cattle_has_vaccine_edit(request,id):
         cvaccine_name=request.POST.get('vaccine_name')
         cgiven_time=request.POST.get('given_time')
         ccattle_id=request.POST.get('cattle_id')
+        cgiven_status=request.POST.get('given_status')
 
         errors = []
         if cgiven_time:
@@ -1496,6 +1543,7 @@ def cattle_has_vaccine_edit(request,id):
         edit.vaccine_id = cvaccine_name
         edit.cattle_given_time = cgiven_time
         edit.cattle_id = ccattle_id
+        edit.given_status = cgiven_status
         
         edit.save()
         messages.success(request, "Cattle Vaccination Updated Successfully!")
@@ -1914,7 +1962,7 @@ def milk_production_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data2': Cattle.objects.all(),
+                'data2': Cattle.objects.filter(cattle_gender="Female"),
             }
             return render(request, 'cattle/milk_production_add.html', context)
 
@@ -1941,7 +1989,7 @@ def milk_production_add(request):
                 errors.append("Current milk price is not set. Please set the current milk price.")
                 context = {
                     'errors': errors,
-                    'data2': Cattle.objects.all(),
+                    'data2': Cattle.objects.filter(cattle_gender="Female"),
                 }
                 return render(request, 'cattle/milk_production_add.html', context)
 
@@ -1972,7 +2020,7 @@ def milk_production_add(request):
                 errors.append(f"Error updating stock: {str(e)}")
                 context = {
                     'errors': errors,
-                    'data2': Cattle.objects.all(),
+                    'data2': Cattle.objects.filter(cattle_gender="Female"),
                 }
                 return render(request, 'cattle/milk_production_add.html', context)
 
@@ -1986,7 +2034,7 @@ def milk_production_add(request):
 
         context = {
             'errors': errors,
-            'data2': Cattle.objects.all(),
+            'data2': Cattle.objects.filter(cattle_gender="Female"),
         }
         return render(request, 'cattle/milk_production_add.html', context)
 
@@ -2069,7 +2117,7 @@ def milk_production_edit(request, milk_production_id):
             cduration_in_min = 0 
             
         if errors:
-            cattles = Cattle.objects.all()
+            cattles = Cattle.objects.filter(cattle_gender="Female")
             context = {
                 'cattle': edit,
                 'errors': errors,
@@ -2098,7 +2146,7 @@ def milk_production_edit(request, milk_production_id):
             errors.append(f"Error: {str(e)}")
             context = {
                 'errors': errors,
-                'cattles': Cattle.objects.all(),
+                'cattles': Cattle.objects.filter(cattle_gender="Female"),
                 "d": edit,
             }
             return render(request, 'cattle/milk_production_edit.html', context)
@@ -2106,7 +2154,7 @@ def milk_production_edit(request, milk_production_id):
             errors.append(f"Error: {str(e)}")
             context = {
                 'errors': errors,
-                'cattles': Cattle.objects.all(),
+                'cattles': Cattle.objects.filter(cattle_gender="Female"),
                 "d": edit,  
             }
             return render(request, 'cattle/milk_production_edit.html', context)
@@ -2118,7 +2166,7 @@ def milk_production_edit(request, milk_production_id):
             context = {
                 'errors': errors,
                 "d": edit,  
-                "cattles": Cattle.objects.all()
+                "cattles": Cattle.objects.filter(cattle_gender="Female")
             }
             return render(request, 'cattle/milk_production_edit.html', context)
 
@@ -2161,7 +2209,7 @@ def milk_production_edit(request, milk_production_id):
             errors.append(f"Error updating stock: {str(e)}")
             context = {
                 'errors': errors,
-                'cattles': Cattle.objects.all(),
+                'cattles': Cattle.objects.filter(cattle_gender="Female"),
                 "d": edit,  
             }
             return render(request, 'cattle/milk_production_edit.html', context)
@@ -2486,6 +2534,24 @@ def cattle_has_feed(request):
     context = {"data1":paginated_data, "cattle_data":cattle_data, "shift_data":shift_data, "formulation_data":formulation_data,}
 
     return render(request, 'feed/cattle_has_feed.html', context)
+
+
+def get_feed_formulations(request, cattle_id):
+    try:
+        cattle = Cattle.objects.get(farm_entity_id=cattle_id)
+        age_in_weeks = (timezone.now() - cattle.cattle_date_of_birth).days // 7
+        print(f"Age in weeks: {age_in_weeks}")
+        
+        feed_formulations = FeedFormulation.objects.filter(
+            start_age_in_weeks__lte=age_in_weeks, 
+            end_age_in_weeks__gte=age_in_weeks
+        ).values('id', 'name')
+        
+        return JsonResponse(list(feed_formulations), safe=False)
+    except Cattle.DoesNotExist:
+        return JsonResponse({'error': 'Cattle not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 @login_required(login_url='login')
 def cattle_has_feed_add(request):
@@ -5109,9 +5175,10 @@ def stock(request):
     if not request.user.has_perm('erp.view_stock'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
+    low_quantity_items = get_low_quantity_items()
     data = Stock.objects.all().order_by('-modified_date')
     paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":paginated_data, 'low_quantity_items':low_quantity_items}
 
     return render(request, 'inventory/stock.html', context)
 
@@ -7303,6 +7370,7 @@ def milk_production_report(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     cattle_id = request.GET.get('cattle')
+    amount_in_liter = request.GET.get('amount_in_liter')
 
     milk_production_data = MilkProduction.objects.all()
 
@@ -7312,15 +7380,28 @@ def milk_production_report(request):
         milk_production_data = milk_production_data.filter(milk_time__lte=end_date)
     if cattle_id:
         milk_production_data = milk_production_data.filter(cattle_id=cattle_id)
-
+    if amount_in_liter:
+        try:
+            if '-' in amount_in_liter:
+                min_amount, max_amount = map(float, amount_in_liter.split('-'))
+                milk_production_data = milk_production_data.filter(amount_in_liter__gte=min_amount, amount_in_liter__lte=max_amount)
+            else:
+                exact_amount = float(amount_in_liter)
+                milk_production_data = milk_production_data.filter(amount_in_liter=exact_amount)
+        except ValueError:
+            messages.error(request, 'Invalid amount in liters. Please use a number or range format like "5-10".')
+            return redirect("/milk_production_report")
+            
     # cattle_list = Cattle.objects.filter(milkproduction__isnull=False).distinct()
     cattle_list = Cattle.objects.filter(cattle_gender="Female")
+    total_amount = milk_production_data.aggregate(total=Sum('amount_in_liter'))['total'] or 0
     paginated_data = paginate_data(request, milk_production_data, 10) 
 
     context = {
         'milk_production_data': paginated_data,
         'cattle_list': cattle_list,
-        'filters_applied': bool(start_date or end_date or cattle_id),
+        'total_amount': total_amount,
+        'filters_applied': bool(start_date or end_date or cattle_id or amount_in_liter),
     }
 
     return render(request, 'reports/milk_production_report.html', context)

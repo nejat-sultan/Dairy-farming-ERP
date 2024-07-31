@@ -31,21 +31,26 @@
             </div>
 
             <div class="card-body">
+                {% for message in messages %}
+                <div class="alert alert-{{message.tags}} alert-dismissible fade show" role="alert">
+                  <strong>{{message}}</strong>
+                </div>
+                {% endfor %}
                 <form method="get" id="milk-production-form">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="start_date">Start Date:</label>
+                                <label for="start_date">Start Date(Milk Time):</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="end_date">End Date:</label>
+                                <label for="end_date">End Date(Milk Time):</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="cattle">Cattle:</label>
                                 <select class="form-control" id="cattle" name="cattle">
@@ -56,6 +61,12 @@
                                     </option>
                                     {% endfor %}
                                 </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="amount_in_liter">Amount (Liters) Range:</label>
+                                <input type="text" class="form-control" id="amount_in_liter" name="amount_in_liter" placeholder="e.g. 5-10" value="{{ request.GET.amount_in_liter }}">
                             </div>
                         </div>
                     </div>
@@ -91,6 +102,10 @@
                                 <td>{{ entry.duration_in_min }}</td>
                             </tr>
                             {% endfor %}
+                            <tr>
+                                <td><strong>Total Milk Production</strong></td>
+                                <td><strong>{{ total_amount }} Liters</strong></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -127,6 +142,12 @@
 <script>
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
+    });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').setAttribute('max', today);
+        document.getElementById('end_date').setAttribute('max', today);
     });
 </script>
 

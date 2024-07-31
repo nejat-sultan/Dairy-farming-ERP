@@ -98,7 +98,7 @@
 
     <ul class="navbar-nav ml-auto">
       <!-- Navbar Search -->
-      <li class="nav-item">
+      {% comment %} <li class="nav-item">
         <a class="nav-link" data-widget="navbar-search" href="" role="button">
           <i class="fas fa-search"></i>
         </a>
@@ -117,7 +117,7 @@
             </div>
           </form>
         </div>
-      </li>
+      </li> {% endcomment %}
 
       <li class="nav-item dropdown">
         <a class="nav-link" data-toggle="dropdown" href="">
@@ -129,11 +129,11 @@
             <div class="dropdown-divider"></div>
     
             {% if request.user|has_permission:"erp.view_admindashboard" %}
-                {% if notifications.overdue_cattle %}
+                {% if notifications.vaccination_notifications %}
                     <a href="../../cattle_has_vaccine" class="dropdown-item">
                         <i class="fas fa-exclamation-circle mr-2"></i> 
-                        <span class="notification-text">You have {{ overdue_count }} cattle overdue for vaccinations.</span>
-                        <span class="float-right text-muted text-sm">Overdue</span>
+                        <span class="notification-text">You have {{ vaccination_notification_count }} cattles scheduled for vaccination.</span>
+                        <span class="float-right text-muted text-sm">Vaccine Schedule</span>
                     </a>
                     <div class="dropdown-divider"></div>
                 {% endif %}
@@ -156,6 +156,15 @@
                         <i class="fas fa-tasks mr-2"></i> 
                         <span class="notification-text">You have {{ assigned_tasks_count }} assigned tasks pending.</span>
                         <span class="float-right text-muted text-sm">Pending Tasks</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                {% endif %}
+
+                {% if notifications.rejected_tasks %}
+                    <a href="../../assign_task" class="dropdown-item">
+                        <i class="fas fa-tasks mr-2"></i> 
+                        <span class="notification-text">You have {{ rejected_tasks_count }} rejected tasks.</span>
+                        <span class="float-right text-muted text-sm">Rejected Tasks</span>
                     </a>
                     <div class="dropdown-divider"></div>
                 {% endif %}
@@ -203,6 +212,15 @@
                         <i class="fas fa-boxes mr-2"></i> 
                         <span class="notification-text">You have {{ approval_required_stockin_requests_count }} stock-in requests pending approval.</span>
                         <span class="float-right text-muted text-sm">Pending Approval</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                {% endif %}
+
+                {% if notifications.completed_tasks %}
+                    <a href="../../assign_task" class="dropdown-item">
+                        <i class="fas fa-clipboard-check mr-2"></i> 
+                        <span class="notification-text">You have {{ completed_tasks_count }} completed tasks.</span>
+                        <span class="float-right text-muted text-sm">Completed Tasks</span>
                     </a>
                     <div class="dropdown-divider"></div>
                 {% endif %}

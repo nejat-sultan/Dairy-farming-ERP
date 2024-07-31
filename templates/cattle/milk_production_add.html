@@ -46,7 +46,15 @@
                 </ul>
               </div>
             {% endif %}
-            
+              <div class="form-group">
+                <label for="inputName">Cattle</label>
+                {% comment %} <input type="text" id="inputName" name="cattle_id" class="form-control"> {% endcomment %}
+                <select id="inputStatus" name="cattle_id" class="form-control custom-select">
+                  {% for d in data2 %}
+                  <option value="{{d.farm_entity_id}}">{{ d.cattle_name}}</option>
+                  {% endfor %}
+                </select>
+              </div>
               <div class="form-group">
                 <label for="inputName">Amount in Liter</label>
                 <input type="text" id="inputName" name="amount_in_liter" class="form-control" required>
@@ -54,6 +62,10 @@
               <div class="form-group">
                 <label for="inputName">Milk Time</label>
                 <input type="datetime-local" id="inputName" name="milk_time" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="inputName">Duration</label>
+                <input type="text" id="inputName" name="duration_in_min" class="form-control">
               </div>
               <div class="form-group">
                 <label for="inputName">Fat Content</label>
@@ -66,19 +78,6 @@
               <div class="form-group">
                 <label for="inputName">Somatic Cell Count</label>
                 <input type="text" id="inputName" name="somatic_cell_count" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="inputName">Duration</label>
-                <input type="text" id="inputName" name="duration_in_min" class="form-control">
-              </div>
-              <div class="form-group">
-                <label for="inputName">Cattle</label>
-                {% comment %} <input type="text" id="inputName" name="cattle_id" class="form-control"> {% endcomment %}
-                <select id="inputStatus" name="cattle_id" class="form-control custom-select">
-                  {% for d in data2 %}
-                  <option value="{{d.farm_entity_id}}">{{ d.cattle_name}}</option>
-                  {% endfor %}
-                </select>
               </div>
             </div>
           </div>

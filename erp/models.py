@@ -111,6 +111,7 @@ class Employee(models.Model):
     modified_date = models.DateTimeField(null=True)
     contract_type = models.CharField(max_length=30, null=True)
     contract_period_in_month = models.IntegerField(null=True)
+    profile_pic_path = models.CharField(max_length=1000, null=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='employees')
 
@@ -271,6 +272,8 @@ class CattleHasVaccine(models.Model):
     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
     vaccine = models.ForeignKey(Vaccine, on_delete=models.CASCADE)
     cattle_given_time = models.DateTimeField(null=True)
+    given_status = models.CharField(max_length=45)
+    modified_date = models.DateTimeField(null=True)
     
     class Meta:
         db_table = 'cattle_has_vaccine'
@@ -494,8 +497,8 @@ class Stockout(models.Model):
 class FeedFormulation(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, null=True)
-    start_age_in_weeks = models.CharField(max_length=45, null=True)
-    end_age_in_weeks = models.CharField(max_length=45, null=True)
+    start_age_in_weeks = models.FloatField(null=True)
+    end_age_in_weeks = models.FloatField(null=True)
     modified_date = models.CharField(max_length=45, null=True)
 
     class Meta:

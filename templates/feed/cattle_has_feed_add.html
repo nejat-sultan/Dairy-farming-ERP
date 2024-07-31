@@ -50,7 +50,8 @@
             
               <div class="form-group">
                 <label for="inputName">Cattle</label>
-                <select id="inputStatus" name="cattle_farm_entity_id" class="form-control custom-select">
+                <select id="inputCattle" name="cattle_farm_entity_id" class="form-control custom-select" required>
+                  <option value="">Select Cattle</option>
                   {% for d in data1 %}
                   <option value="{{d.farm_entity_id}}">{{ d.cattle_name}}</option>
                   {% endfor %}
@@ -58,10 +59,11 @@
               </div>
               <div class="form-group">
                 <label for="inputName">Feed Formulation</label>
-                <select id="inputStatus" name="feed_formulation_id" class="form-control custom-select">
-                  {% for d in data3 %}
+                <select id="inputFeedFormulation" name="feed_formulation_id" class="form-control custom-select" required>
+                  <option value="">Select Feed Formulation</option>
+                  {% comment %} {% for d in data3 %}
                   <option value="{{d.id}}">{{ d.name}}</option>
-                  {% endfor %}
+                  {% endfor %} {% endcomment %}
                 </select>
               </div>
               
@@ -79,7 +81,7 @@
               </div>
               <div class="form-group">
                 <label for="inputName">Consumption Status</label>
-                <input type="text" id="inputName" name="consumption_status" class="form-control" required>
+                <input type="text" id="inputName" name="consumption_status" class="form-control">
               </div>
             </div>
           </div>
@@ -96,6 +98,47 @@
     </section>
 
   </div>
+
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const cattleSelect = document.getElementById('inputCattle');
+      const feedFormulationSelect = document.getElementById('inputFeedFormulation');
+  
+      function fetchFeedFormulations(cattleId) {
+          if (!cattleId) {
+              feedFormulationSelect.innerHTML = '<option value="">Select Feed Formulation</option>';
+              return;
+          }
+  
+          fetch(`/get_feed_formulations/${cattleId}/`)
+              .then(response => response.json())
+              .then(data => {
+                  feedFormulationSelect.innerHTML = '<option value="">Select Feed Formulation</option>';
+                  data.forEach(function(formulation) {
+                      const option = document.createElement('option');
+                      option.value = formulation.id;
+                      option.textContent = formulation.name;
+                      feedFormulationSelect.appendChild(option);
+                  });
+              })
+              .catch(error => {
+                  console.error('Error fetching feed formulations:', error);
+                  feedFormulationSelect.innerHTML = '<option value="">Error loading feed formulations</option>';
+              });
+      }
+  
+      cattleSelect.addEventListener('change', function() {
+          fetchFeedFormulations(this.value);
+      });
+  
+      // Initial fetch on page load if a cattle is already selected
+      fetchFeedFormulations(cattleSelect.value);
+  });
+  
+
+    
+    </script>
   
   {% endblock %}
 

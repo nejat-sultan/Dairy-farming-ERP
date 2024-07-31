@@ -60,8 +60,9 @@
          
           <div class="clearfix hidden-md-up"></div>
 
+          {% if request.user|has_permission:"erp.view_admindashboard"%}
           <div class="col-12 col-sm-6 col-md-3">
-            <a href="../../sales-order" style="text-decoration: none; color: inherit;">
+            <a href="../../sales_order" style="text-decoration: none; color: inherit;">
               <div class="info-box mb-3">
                 <span class="info-box-icon bg-success elevation-1"><i class="fas fa-lightbulb"></i></span>
                 <div class="info-box-content">
@@ -71,6 +72,7 @@
               </div>
             </a>
           </div>
+          {% endif %}
        
           {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_dataentryclerkdashboard" %}
           <div class="col-12 col-sm-6 col-md-3">
@@ -176,7 +178,7 @@
         <br><br>
         {% endif %}
 
-        {% if request.user|has_permission:"erp.view_admindashboard" %}
+        {% if request.user|has_permission:"erp.view_admindashboard" and request.user|is_allowed_user:"Admin" %}
         <div class="row">
           <div class="col-md-12">
             <div class="card">
@@ -668,10 +670,14 @@
 
     <div id="notifications" style="display:none;">
     {% if request.user|has_permission:"erp.view_admindashboard" %}
-      {% if overdue_cattle %}
+      {% if vaccination_notifications %}
         <div id="overdue-cattle-notification">
-            {% for cattle in overdue_cattle %}
-                {{ cattle.name }} - Last Vaccination: {{ cattle.last_vaccination }}<br>
+            {% for notification in vaccination_notifications %}
+              {% if notification.status == 'upcoming' %}
+                  <strong>{{ notification.name }}</strong> is scheduled for <strong>{{ notification.vaccine_name }}</strong> on <strong>{{ notification.scheduled_time|date:"Y-m-d H:i" }}</strong>.<br>
+              {% elif notification.status == 'overdue' %}
+                  <strong>{{ notification.name }}</strong> was scheduled for <strong>{{ notification.vaccine_name }}</strong> on <strong>{{ notification.scheduled_time|date:"Y-m-d H:i" }}(Overdue)</strong>.<br>
+              {% endif %}
             {% endfor %}
         </div>
       {% endif %}
@@ -681,24 +687,31 @@
       {% if low_quantity_items %}
         <div id="low-quantity-items-notification">
           {% for item in low_quantity_items %}
-              {{ item.item.name }} - Quantity: {{ item.quantity }}<br>
+              {{ item.item.name }} is low on stock wiith quantity: {{ item.quantity }}<br>
           {% endfor %}
         </div>
       {% endif %}
     {% endif %}
 
     {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
-      {% if assigned_tasks %}
+      {% if assigned_tasks or rejected_tasks %}
         <div id="task-assignment-notifications" style="display:none;">
+          {% if assigned_tasks %}
             {% for task_assignment in assigned_tasks %}
                   {{ task_assignment.task.task_name }} - Due Time: {{ task_assignment.due_time }}<br>
               {% endfor %}
+          {% endif %}
+          {% if rejected_tasks %}
+            {% for task_assignment in rejected_tasks %}
+                The task <Strong>{{ task_assignment.task.task_name }}</Strong> is rejected.<br>
+              {% endfor %}
+          {% endif %}
         </div>
       {% endif %}
     {% endif %}
 
     {% if request.user|has_permission:"erp.view_admindashboard" %}
-      {% if pending_orders or pending_leave_requests or pending_stockout_requests or pending_stockin_requests or pending_ordersuppliers %}
+      {% if pending_orders or pending_leave_requests or pending_stockout_requests or pending_stockin_requests or pending_ordersuppliers or completed_tasks %}
           <div id="approval-notifications" style="display:none;">
               {% if pending_leave_requests %}
               There is Pending <Strong>Leave request</Strong>
@@ -714,6 +727,9 @@
               {% endif %}
               {% if pending_stockin_requests %}
               There is Pending <Strong>Stockin request</Strong>
+              {% endif %}
+              {% if completed_tasks %}
+              There is a <Strong>Completed task</Strong> to review
               {% endif %}
           </div>
       {% endif %}
@@ -739,7 +755,7 @@
       $(document).ready(function() {
         var overdueCattleNotification = $('#overdue-cattle-notification').html();
         if (overdueCattleNotification) {
-            toastr.warning(overdueCattleNotification, '<span class="toast-title">Alert</span>', {
+            toastr.warning(overdueCattleNotification, '<span class="toast-title">Reminder</span>', {
                 timeOut: 5000,
                 extendedTimeOut: 3000,
                 closeButton: true,

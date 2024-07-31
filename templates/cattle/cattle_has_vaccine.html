@@ -8,12 +8,12 @@
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <h1>Cattle Vaccination</h1>
+            <h1>Cattle Scheduled Vaccination</h1>
           </div>
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="">Home</a></li>
-              <li class="breadcrumb-item active">Cattle Vaccination</li>
+              <li class="breadcrumb-item active">Cattle Scheduled Vaccination</li>
             </ol>
           </div>
         </div>
@@ -24,7 +24,7 @@
 
       <div class="card">
         <div class="card-header">
-          <h3 class="card-title">Manage Cattle Vaccination</h3>
+          <h3 class="card-title">Manage Cattle Vaccination Schedule</h3>
 
           <div class="card-tools">
             {% if request.user|has_permission:"erp.add_cattlehasvaccine" %}
@@ -53,22 +53,25 @@
                       <th style="width: 15%">
                           Id
                       </th> 
-                      <th style="width: 20%">
+                      <th style="width: 15%">
                         Vaccine
                       </th>
-                      <th style="width: 25%">
-                        Vaccination Time
-                      </th>
                       <th style="width: 20%">
+                        Scheduled Time
+                      </th>
+                      <th style="width: 15%">
                         Cattle
                       </th>
-
+                      <th style="width: 15%">
+                        Given Status
+                      </th>
+                    
                       <th style="width: 20%"> Actions </th>
                   </tr>
               </thead>
               <tbody>
-                {% for d in data1 %}
-                  <tr>
+                {% for d in data1 %} 
+                  <tr class="{% for vaccined in vaccination_notifications %}{% if vaccined.name == d.cattle.cattle_name %}table-warning{% endif %}{% endfor %}">
                       <td>
                         {{d.id}}
                       </td>
@@ -89,6 +92,9 @@
                             {{ cattle.cattle_name }}
                           {% endif %}
                         {% endfor %}
+                      </td>
+                      <td>
+                        {{d.given_status}}
                       </td>
 
                       <td class="project-actions">
@@ -139,12 +145,7 @@
     </section>
   </div>
 
-  <style>
-    .status-highlight {
-      background-color: #f0ad4e; 
-      font-weight: bold;
-  }
-  </style>
+
 
   {% endblock %}
   

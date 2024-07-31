@@ -65,7 +65,7 @@
               </thead>
               <tbody>
                 {% for d in data1 %}
-                  <tr>
+                  <tr  class="{% for low_item in low_quantity_items %}{% if low_item.stock_id == d.stock_id %}table-warning{% endif %}{% endfor %}">
                       <td>
                         {{d.stock_id}}
                       </td>
