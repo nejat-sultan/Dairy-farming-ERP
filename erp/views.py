@@ -7441,6 +7441,7 @@ def stock_report(request):
         return redirect(request.META.get('HTTP_REFERER', '/'))
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+    item_type_id = request.GET.get('item_type')
     item_id = request.GET.get('item')
 
     stock_data = Stock.objects.all()
@@ -7449,16 +7450,20 @@ def stock_report(request):
         stock_data = stock_data.filter(modified_date__gte=start_date)
     if end_date:
         stock_data = stock_data.filter(modified_date__lte=end_date)
+    if item_type_id:
+        stock_data = stock_data.filter(type_id=item_type_id)
     if item_id:
         stock_data = stock_data.filter(item_id=item_id)
 
     # item_list = Item.objects.filter(stock__isnull=False).distinct()
+    item_type_list = ItemType.objects.all()
     item_list = Item.objects.all()
     paginated_data = paginate_data(request, stock_data, 10) 
 
     context = {
+        'item_type_list': item_type_list,
         'item_list': item_list,
-        'filters_applied': bool(start_date or end_date or item_id),
+        'filters_applied': bool(start_date or end_date or item_id or item_type_id),
         'stock_data': paginated_data,
     }
 
@@ -7471,6 +7476,11 @@ def sales_report(request):
         return redirect(request.META.get('HTTP_REFERER', '/'))
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+    item_type_id = request.GET.get('item_type')
+    item_id = request.GET.get('item')
+    unit_price = request.GET.get('unit_price')
+    payment_status = request.GET.get('payment_status')
+    customer_id = request.GET.get('customer')
 
     sales_data = SalesOrder.objects.all()
 
@@ -7478,12 +7488,40 @@ def sales_report(request):
         sales_data = sales_data.filter(order_date__gte=start_date)
     if end_date:
         sales_data = sales_data.filter(order_date__lte=end_date)
+    if item_type_id:
+        sales_data = sales_data.filter(item_type=item_type_id)
+    if item_id:
+        sales_data = sales_data.filter(item_name=item_id)
+    if payment_status:
+        sales_data = sales_data.filter(payment_status=payment_status)
+    if customer_id:
+        sales_data = sales_data.filter(customer_id=customer_id)
+    if unit_price:
+        try:
+            if '-' in unit_price:
+                min_amount, max_amount = map(float, unit_price.split('-'))
+                sales_data = sales_data.filter(unit_price__gte=min_amount, unit_price__lte=max_amount)
+            else:
+                exact_amount = float(unit_price)
+                sales_data = sales_data.filter(unit_price=exact_amount)
+        except ValueError:
+            messages.error(request, 'Invalid Price. Please use a number or range format like "50-100".')
+            return redirect("/sales_report")
 
     paginated_data = paginate_data(request, sales_data, 10) 
 
+    item_type_list = ItemType.objects.all()
+    item_list = Item.objects.all()
+    customer_list = Customer.objects.all()
+    payment_status_list = SalesOrder.objects.values('payment_status').distinct()
+
     context = {
+        'item_list': item_list,
+        'item_type_list': item_type_list,
+        'customer_list': customer_list,
+        'payment_status_list': payment_status_list,
         'sales_data': paginated_data,
-        'filters_applied': bool(start_date or end_date),
+        'filters_applied': bool(start_date or end_date or item_id or item_type_id or unit_price or payment_status or customer_id),
     }
 
     return render(request, 'reports/sales_report.html', context)
@@ -7495,36 +7533,97 @@ def procurement_report(request):
         return redirect(request.META.get('HTTP_REFERER', '/'))
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+    item_type_id = request.GET.get('item_type')
+    item_id = request.GET.get('item')
+    price = request.GET.get('price')
+    status = request.GET.get('status')
+    supplier_id = request.GET.get('supplier')
 
-    procurement_data = OrderHasItemSupplier.objects.filter(status="Approved")
+    # procurement_data = OrderHasItemSupplier.objects.filter(status="Approved")
+    procurement_data = OrderHasItemSupplier.objects.all()
 
     if start_date:
         procurement_data = procurement_data.filter(modified_date__gte=start_date)
     if end_date:
         procurement_data = procurement_data.filter(modified_date__lte=end_date)
+    if item_type_id:
+        procurement_data = procurement_data.filter(order__type_id=item_type_id)
+    if item_id:
+        procurement_data = procurement_data.filter(item_id=item_id)
+    if status:
+        procurement_data = procurement_data.filter(status=status)
+    if supplier_id:
+        procurement_data = procurement_data.filter(supplier_id=supplier_id)
+    if price:
+        try:
+            if '-' in price:
+                min_amount, max_amount = map(float, price.split('-'))
+                procurement_data = procurement_data.filter(price__gte=min_amount, price__lte=max_amount)
+            else:
+                exact_amount = float(price)
+                procurement_data = procurement_data.filter(price=exact_amount)
+        except ValueError:
+            messages.error(request, 'Invalid Price. Please use a number or range format like "50-100".')
+            return redirect("/procurement_report")
 
     paginated_data = paginate_data(request, procurement_data, 10) 
 
+    item_type_list = ItemType.objects.all()
+    item_list = Item.objects.all()
+    supplier_list = Supplier.objects.all()
+    status_list = OrderHasItemSupplier.objects.values('status').distinct()
+
     context = {
+        'item_list': item_list,
+        'item_type_list': item_type_list,
+        'supplier_list': supplier_list,
+        'status_list': status_list,
         'procurement_data': paginated_data,
-        'filters_applied': bool(start_date or end_date),
+        'filters_applied': bool(start_date or end_date or item_id or item_type_id or price or status or supplier_id),
     }
 
     return render(request, 'reports/procurement_report.html', context)
 
 @login_required(login_url='login')
-def feed_formulation_report(request):
+def feed_report(request):
     if not request.user.has_perm('erp.view_reports'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    formulation_data = FeedFormulation.objects.all()
-    paginated_data = paginate_data(request, formulation_data, 10) 
+    
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    cattle_id = request.GET.get('cattle')
+    shift_id = request.GET.get('shift')
+    formulation_id = request.GET.get('formulation')
+
+    feed_data = CattleHasFeed.objects.all()
+
+    if start_date:
+        feed_data = feed_data.filter(feed_time__gte=start_date)
+    if end_date:
+        feed_data = feed_data.filter(feed_time__lte=end_date)
+    if cattle_id:
+        feed_data = feed_data.filter(cattle_farm_entity_id=cattle_id)
+    if shift_id:
+        feed_data = feed_data.filter(shift_id=shift_id)
+    if formulation_id:
+        feed_data = feed_data.filter(feed_formulation_id=formulation_id)
+
+    paginated_data = paginate_data(request, feed_data, 10) 
+
+    cattle_list = Cattle.objects.all()
+    shift_list = Shift.objects.all()
+    formulation_list = FeedFormulation.objects.all()
 
     context = {
-        'formulation_data': paginated_data,
+        'feed_data': paginated_data,
+        'cattle_list': cattle_list,
+        'shift_list': shift_list,
+        'formulation_list': formulation_list,
+        'filters_applied': bool(start_date or end_date or cattle_id or shift_id or formulation_id),
     }
 
-    return render(request, 'reports/feed_formulation_report.html', context)
+    return render(request, 'reports/feed_report.html', context)
 
 @login_required(login_url='login')
 def pregnancy_report(request):
@@ -7533,7 +7632,9 @@ def pregnancy_report(request):
         return redirect(request.META.get('HTTP_REFERER', '/'))
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
+    cattle_id = request.GET.get('cattle')
     pregnancy_status_id = request.GET.get('pregnancystatus')
+    type_id = request.GET.get('type')
 
     pregnancy_status_data = CattlePregnancy.objects.all()
 
@@ -7541,17 +7642,24 @@ def pregnancy_report(request):
         pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_date__gte=start_date)
     if end_date:
         pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_date__lte=end_date)
+    if cattle_id:
+        pregnancy_status_data = pregnancy_status_data.filter(cattle_id=cattle_id)
     if pregnancy_status_id:
         pregnancy_status_data = pregnancy_status_data.filter(pregnancy_status_id=pregnancy_status_id)
+    if type_id:
+        pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_type=type_id)
 
-    # status_list = PregnancyStatus.objects.filter(cattlepregnancy__isnull=False).distinct()
     status_list = PregnancyStatus.objects.all()
+    cattle_list = Cattle.objects.all()
+    type_list = CattlePregnancy.objects.values('cattle_pregnancy_type').distinct()
     paginated_data = paginate_data(request, pregnancy_status_data, 10) 
 
     context = {
         'pregnancy_status_data': paginated_data,
+        'cattle_list': cattle_list,
+        'type_list': type_list,
         'status_list':status_list,
-        'filters_applied': bool(start_date or end_date or pregnancy_status_id),
+        'filters_applied': bool(start_date or end_date or pregnancy_status_id or cattle_id or type_id),
     }
 
     return render(request, 'reports/pregnancy_report.html', context)
@@ -7564,6 +7672,11 @@ def employee_report(request):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
     employee_id = request.GET.get('employee')
+    gender = request.GET.get('gender')
+    department_id = request.GET.get('department')
+    salary = request.GET.get('salary') 
+    contract_type = request.GET.get('contract_type')
+    job_id = request.GET.get('job')
 
     employee_data = Employee.objects.all()
 
@@ -7573,12 +7686,40 @@ def employee_report(request):
         employee_data = employee_data.filter(hire_date__lte=end_date)
     if employee_id:
         employee_data = employee_data.filter(person_farm_entity_id=employee_id)
+    if gender:
+        employee_data = employee_data.filter(person_farm_entity__gender=gender)
+    if department_id:
+        employee_data = employee_data.filter(department_id=department_id)
+    if salary:
+        try:
+            if '-' in salary:
+                min_amount, max_amount = map(float, salary.split('-'))
+                employee_data = employee_data.filter(salary__gte=min_amount, salary__lte=max_amount)
+            else:
+                exact_amount = float(salary)
+                employee_data = employee_data.filter(salary=exact_amount)
+        except ValueError:
+            messages.error(request, 'Invalid Salary. Please use a number or range format like "5000-10000".')
+            return redirect("/employee_report")
+    if contract_type:
+        employee_data = employee_data.filter(contract_type=contract_type)
+    if job_id:
+        employee_data = employee_data.filter(job_id=job_id)
 
     paginated_data = paginate_data(request, employee_data, 10) 
 
+    department_list = Department.objects.all()
+    job_list = Job.objects.all()
+    person_list = Person.objects.values('gender').distinct()
+    contract_type_list = Employee.objects.values('contract_type').distinct()
+
     context = {
         'employee_data': paginated_data,
-        'filters_applied': bool(start_date or end_date or employee_id),
+        'department_list': department_list,
+        'job_list': job_list,
+        'person_list': person_list,
+        'contract_type_list': contract_type_list,
+        'filters_applied': bool(start_date or end_date or employee_id or gender or department_id or salary or contract_type or job_id),
     }
 
     return render(request, 'reports/employee_report.html', context)

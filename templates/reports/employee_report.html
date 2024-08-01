@@ -33,19 +33,19 @@
             <div class="card-body">
                 <form method="get" id="employee-form">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="start_date">Start Date:</label>
+                                <label for="start_date">Start Date(Hire Date):</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="end_date">End Date:</label>
+                                <label for="end_date">End Date(Hire Date):</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="cattle">Employee:</label>
                                 <select class="form-control" id="employee" name="employee">
@@ -54,6 +54,66 @@
                                     <option value="{{ employee.person_farm_entity_id }}" {% if request.GET.employee == employee.person_farm_entity_id|stringformat:"s" %}selected{% endif %}>
                                         {{ employee.person_farm_entity.first_name }}
                                     </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="gender">Gender:</label>
+                                <select class="form-control" id="gender" name="gender">
+                                    <option value="">All</option>
+                                    {% for gender in person_list %}
+                                    <option value="{{ gender.gender }}" {% if request.GET.gender == gender.gender|stringformat:"s" %}selected{% endif %}>
+                                        {{ gender.gender }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="department">Department:</label>
+                                <select class="form-control" id="department" name="department">
+                                    <option value="">All</option>
+                                    {% for department in department_list %}
+                                        <option value="{{ department.department_id }}" {% if request.GET.department == department.department_id|stringformat:"s" %}selected{% endif %}>
+                                            {{ department.department_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="salary">Salary Range:</label>
+                                <input type="text" class="form-control" id="salary" name="salary" placeholder="e.g. 5000-10000" value="{{ request.GET.salary }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="contract_type">Contract Type:</label>
+                                <select class="form-control" id="contract_type" name="contract_type">
+                                    <option value="">All</option>
+                                    {% for contract_type in contract_type_list %}
+                                    <option value="{{ contract_type.contract_type }}" {% if request.GET.contract_type == contract_type.contract_type %}selected{% endif %}>
+                                        {{ contract_type.contract_type }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="job">Job:</label>
+                                <select class="form-control" id="job" name="job">
+                                    <option value="">All</option>
+                                    {% for job in job_list %}
+                                        <option value="{{ job.job_id }}" {% if request.GET.job == job.job_id|stringformat:"s" %}selected{% endif %}>
+                                            {{ job.job_title }}
+                                        </option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -75,6 +135,7 @@
                                 <th>Hire Date</th>
                                 <th>Salary</th>
                                 <th>Department</th>
+                                <th>Contract Type</th>
                                 <th>Job</th>
                             </tr>
                         </thead>
@@ -86,6 +147,7 @@
                                 <td>{{ entry.hire_date }}</td>
                                 <td>{{ entry.salary }}</td>
                                 <td>{{ entry.department.department_name }}</td>
+                                <td>{{ entry.contract_type }}</td>
                                 <td>{{ entry.job.job_title }}</td>
                             </tr>
                             {% endfor %}
@@ -125,6 +187,12 @@
 <script>
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
+    });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').setAttribute('max', today);
+        document.getElementById('end_date').setAttribute('max', today);
     });
 </script>
 

@@ -33,19 +33,78 @@
             <div class="card-body">
                 <form method="get" id="stock-form">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="start_date">Start Date:</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="end_date">End Date:</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
                             </div>
                         </div>
-                     
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="item">Item:</label>
+                                <select class="form-control" id="item" name="item">
+                                    <option value="">All</option>
+                                    {% for item in item_list %}
+                                    <option value="{{ item.item_id }}" {% if request.GET.item == item.item_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ item.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="item_type">Item Type:</label>
+                                <select class="form-control" id="item_type" name="item_type">
+                                    <option value="">All</option>
+                                    {% for item_type in item_type_list %}
+                                    <option value="{{ item_type.item_type_id }}" {% if request.GET.item_type == item_type.item_type_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ item_type.item_type }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="price">Price Range:</label>
+                                <input type="text" class="form-control" id="price" name="price" placeholder="e.g. 50-100" value="{{ request.GET.price }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="status">Purchase Order Status:</label>
+                                <select class="form-control" id="status" name="status">
+                                    <option value="">All</option>
+                                    {% for status in status_list %}
+                                    <option value="{{ status.status }}" {% if request.GET.status == status.status %}selected{% endif %}>
+                                        {{ status.status }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="supplier">Supplier:</label>
+                                <select class="form-control" id="supplier" name="supplier">
+                                    <option value="">All</option>
+                                    {% for supplier in supplier_list %}
+                                    <option value="{{ supplier.farm_entity_id }}" {% if request.GET.supplier == supplier.farm_entity_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ supplier.supplier_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <button type="submit" class="btn" style="background-color: #007f5c;color: #fff;">Apply Filters</button>
                     <button type="button" class="btn btn-secondary" id="clear-filters">Clear Filters</button>
@@ -59,20 +118,24 @@
                         <thead>
                             <tr>
                                 <th>Order ID</th>
+                                <th>Item Type</th>
                                 <th>Item</th>
                                 <th>Supplier</th>
                                 <th>Quantity</th>
                                 <th>Price</th>
+                                <th>Purchase Order Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for entry in procurement_data %}
                             <tr>
                                 <td>{{ entry.order_id }}</td>
+                                <td>{{ entry.order.type.item_type }}</td>
                                 <td>{{ entry.item.name }}</td>
                                 <td>{{ entry.supplier.supplier_name }}</td>
                                 <td>{{ entry.quantity }}</td>
                                 <td>{{ entry.price }}</td>
+                                <td>{{ entry.status }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -118,6 +181,12 @@
 <script>
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
+    });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').setAttribute('max', today);
+        document.getElementById('end_date').setAttribute('max', today);
     });
 </script>
 

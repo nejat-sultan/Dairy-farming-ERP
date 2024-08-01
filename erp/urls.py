@@ -314,7 +314,7 @@ urlpatterns = [
     path('stock_report/', views.stock_report),
     path('sales_report/', views.sales_report),
     path('procurement_report/', views.procurement_report),
-    path('feed_formulation_report/', views.feed_formulation_report),
+    path('feed_report/', views.feed_report),
     path('pregnancy_report/', views.pregnancy_report),
     path('employee_report/', views.employee_report),
     path('employee_with_task_report/', views.employee_with_task_report),

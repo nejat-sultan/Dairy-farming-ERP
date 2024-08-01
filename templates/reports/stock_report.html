@@ -33,19 +33,19 @@
             <div class="card-body">
                 <form method="get" id="stock-form">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="start_date">Start Date:</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="end_date">End Date:</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="item">Item:</label>
                                 <select class="form-control" id="item" name="item">
@@ -53,6 +53,19 @@
                                     {% for item in item_list %}
                                     <option value="{{ item.item_id }}" {% if request.GET.item == item.item_id|stringformat:"s" %}selected{% endif %}>
                                         {{ item.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="item_type">Item Type:</label>
+                                <select class="form-control" id="item_type" name="item_type">
+                                    <option value="">All</option>
+                                    {% for item_type in item_type_list %}
+                                    <option value="{{ item_type.item_type_id }}" {% if request.GET.item_type == item_type.item_type_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ item_type.item_type }}
                                     </option>
                                     {% endfor %}
                                 </select>
@@ -121,6 +134,12 @@
 <script>
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
+    });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').setAttribute('max', today);
+        document.getElementById('end_date').setAttribute('max', today);
     });
 </script>
 

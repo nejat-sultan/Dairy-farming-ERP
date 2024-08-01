@@ -33,27 +33,53 @@
             <div class="card-body">
                 <form method="get" id="employee-form">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="start_date">Start Date:</label>
+                                <label for="start_date">Start Date(Pregnancy Date):</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="end_date">End Date:</label>
+                                <label for="end_date">End Date(Pregnancy Date):</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <div class="form-group">
-                                <label for="cattle">Pregnancy Status:</label>
+                                <label for="cattle">Cattle:</label>
+                                <select class="form-control" id="cattle" name="cattle">
+                                    <option value="">All</option>
+                                    {% for cattle in cattle_list %}
+                                    <option value="{{ cattle.farm_entity_id }}" {% if request.GET.cattle == cattle.farm_entity_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ cattle.cattle_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="pregnancystatus">Pregnancy Status:</label>
                                 <select class="form-control" id="pregnancystatus" name="pregnancystatus">
                                     <option value="">All</option>
                                     {% for status in status_list %}
-                                        <option value="{{ status.pregnancy_status_id }}" {% if status.pregnancy_status_id == request.GET.pregnancy_status %}selected{% endif %}>
+                                        <option value="{{ status.pregnancy_status_id }}" {% if request.GET.pregnancystatus == status.pregnancy_status_id|stringformat:"s" %}selected{% endif %}>
                                             {{ status.pregnancy_status }}
                                         </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="type">Pregnancy Type:</label>
+                                <select class="form-control" id="type" name="type">
+                                    <option value="">All</option>
+                                    {% for type in type_list %}
+                                    <option value="{{ type.cattle_pregnancy_type }}" {% if request.GET.type == type.cattle_pregnancy_type %}selected{% endif %}>
+                                        {{ type.cattle_pregnancy_type }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -121,6 +147,12 @@
 <script>
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
+    });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').setAttribute('max', today);
+        document.getElementById('end_date').setAttribute('max', today);
     });
 </script>
 

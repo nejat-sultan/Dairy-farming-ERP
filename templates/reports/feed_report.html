@@ -7,12 +7,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Sales Report</h1>
+                    <h1>Cattle Feed Report</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="">Home</a></li>
-                        <li class="breadcrumb-item active">Sales Report</li>
+                        <li class="breadcrumb-item active">Feed Report</li>
                     </ol>
                 </div>
             </div>
@@ -22,7 +22,7 @@
     <section class="content">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Sales</h3>
+                <h3 class="card-title">Cattle Feed </h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                         <i class="fas fa-minus"></i>
@@ -31,81 +31,61 @@
             </div>
 
             <div class="card-body">
-                <form method="get" id="stock-form">
+                <form method="get" id="feed-form">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="start_date">Start Date(Sales Date):</label>
+                                <label for="start_date">Start Date(Feed Time):</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="end_date">End Date(Sales Date):</label>
+                                <label for="end_date">End Date(Feed Time):</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
-                                <label for="item">Item:</label>
-                                <select class="form-control" id="item" name="item">
+                                <label for="cattle">Cattle:</label>
+                                <select class="form-control" id="cattle" name="cattle">
                                     <option value="">All</option>
-                                    {% for item in item_list %}
-                                    <option value="{{ item.name }}" {% if request.GET.item == item.name %}selected{% endif %}>
-                                        {{ item.name }}
+                                    {% for cattle in cattle_list %}
+                                    <option value="{{ cattle.farm_entity_id }}" {% if request.GET.cattle == cattle.farm_entity_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ cattle.cattle_name }}
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <div class="form-group">
-                                <label for="item_type">Item Type:</label>
-                                <select class="form-control" id="item_type" name="item_type">
+                                <label for="shift">Shift:</label>
+                                <select class="form-control" id="shift" name="shift">
                                     <option value="">All</option>
-                                    {% for item_type in item_type_list %}
-                                    <option value="{{ item_type.item_type }}" {% if request.GET.item_type == item_type.item_type %}selected{% endif %}>
-                                        {{ item_type.item_type }}
+                                    {% for shift in shift_list %}
+                                    <option value="{{ shift.id }}" {% if request.GET.shift == shift.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ shift.shift_name }}
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <div class="form-group">
-                                <label for="unit_price">Price Range:</label>
-                                <input type="text" class="form-control" id="unit_price" name="unit_price" placeholder="e.g. 50-100" value="{{ request.GET.unit_price }}">
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="payment_status">Payment Status:</label>
-                                <select class="form-control" id="payment_status" name="payment_status">
+                                <label for="formulation">Formula:</label>
+                                <select class="form-control" id="formulation" name="formulation">
                                     <option value="">All</option>
-                                    {% for payment_status in payment_status_list %}
-                                    <option value="{{ payment_status.payment_status }}" {% if request.GET.payment_status == payment_status.payment_status %}selected{% endif %}>
-                                        {{ payment_status.payment_status }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="customer">Customer:</label>
-                                <select class="form-control" id="customer" name="customer">
-                                    <option value="">All</option>
-                                    {% for customer in customer_list %}
-                                    <option value="{{ customer.customer_id }}" {% if request.GET.customer == customer.customer_id|stringformat:"s" %}selected{% endif %}>
-                                        {{ customer.person_farm_entity.first_name }} {{ customer.person_farm_entity.middle_name }}
+                                    {% for formulation in formulation_list %}
+                                    <option value="{{ formulation.id }}" {% if request.GET.formulation == formulation.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ formulation.name }}
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
                     </div>
+                    
                     <button type="submit" class="btn" style="background-color: #007f5c;color: #fff;">Apply Filters</button>
                     <button type="button" class="btn btn-secondary" id="clear-filters">Clear Filters</button>
                 </form>
@@ -117,25 +97,22 @@
                     <table id="example1" class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>Order Date</th>
-                                <th>Item Type</th>
-                                <th>Item</th>
-                                <th>Quantity</th>
-                                <th>Customer</th>
-                                <th>Unit Price</th>
-                                <th>Payment Status</th>
+                                <th>Cattle</th>
+                                <th>Feed Time</th>
+                                <th>Feed Formulation</th>
+                                <th>Shift</th>
+                                <th>Consumption Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for entry in sales_data %}
+                            {% for entry in feed_data %}
                             <tr>
-                                <td>{{ entry.order_date }}</td>
-                                <td>{{ entry.stock.type.item_type }}</td>
-                                <td>{{ entry.stock.item.name }}</td>
-                                <td>{{ entry.quantity }}</td>
-                                <td>{{ entry.customer.person_farm_entity.first_name}} {{ entry.customer.person_farm_entity.middle_name}}</td>
-                                <td>{{ entry.unit_price }}</td>
-                                <td>{{ entry.payment_status }}</td>
+                                <td>{{ entry.cattle_farm_entity.cattle_name }}</td>
+                                <td>{{ entry.feed_time }}</td>
+                                <td>{{ entry.feed_formulation.name }}</td>
+                                <td>{{ entry.shift.shift_name }}</td>
+                                <td>{{ entry.consumption_status }}</td>
+                                
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -147,16 +124,16 @@
 
         <div class="pagination">
             <span class="step-links">
-                {% if sales_data.has_previous %}
-                    <a href="?page={{ sales_data.previous_page_number }}">Previous</a>
+                {% if feed_data.has_previous %}
+                    <a href="?page={{ feed_data.previous_page_number }}">Previous</a>
                 {% endif %}
 
                 <span class="current">
-                    Page {{ sales_data.number }} of {{ sales_data.paginator.num_pages }}.
+                    Page {{ feed_data.number }} of {{ feed_data.paginator.num_pages }}.
                 </span>
 
-                {% if sales_data.has_next %}
-                    <a href="?page={{ sales_data.next_page_number }}">Next</a>
+                {% if feed_data.has_next %}
+                    <a href="?page={{ feed_data.next_page_number }}">Next</a>
                 {% endif %}
             </span>
         </div>
@@ -192,7 +169,16 @@
 
 <script>
     $(document).ready(function() {
-        function initializeDataTables(companyName, startDate, endDate) {
+        function getCurrentDate() {
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+            var yyyy = today.getFullYear();
+            return mm + '/' + dd + '/' + yyyy;
+        }
+
+        function initializeDataTables(companyName) {
+            var todayDate = getCurrentDate();
             var table = $('#example1').DataTable({
                 responsive: true,
                 lengthChange: false,
@@ -201,13 +187,13 @@
                     'copy', 'excel', 'pdf', 'print'
                 ],
                 order: [],
-                dom: 'Bfrtip', 
+                dom: 'Bfrtip',
                 buttons: [
                     'copy',
                     {
                         extend: 'excel',
                         title: function() {
-                            return companyName + ' Sales Report - ' + startDate + ' to ' + endDate;
+                            return companyName + ' Cattle Feed Report - ' + todayDate;
                         },
                         customize: function(xlsx) {
                             var sheet = xlsx.xl.worksheets['sheet1.xml'];
@@ -217,11 +203,11 @@
                     {
                         extend: 'pdf',
                         title: function() {
-                            return 'Sales Report'
+                            return 'Cattle Feed Report - ' + todayDate;
                         },
                         customize: function(doc) {
                             doc.content.splice(0, 0, {
-                                text: startDate + ' to ' + endDate + '\n' + companyName,
+                                text: todayDate + '\n' + companyName,
                                 style: 'header'
                             });
                         }
@@ -229,11 +215,11 @@
                     {
                         extend: 'print',
                         title: function() {
-                            return 'Sales Report';
+                            return 'Cattle Feed Report - ' + todayDate;
                         },
                         customize: function(win) {
                             $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
-                            $(win.document.body).prepend('<h5 style="text-align:center;">' + startDate + ' to ' + endDate + '</h5>');
+                            $(win.document.body).prepend('<h5 style="text-align:center;">' + todayDate + '</h5>');
                             $(win.document.body).find('h3, h5').css('text-align', 'center');
                         }
                     }
@@ -244,9 +230,7 @@
         }
 
         var companyName = "{{ latest_farm.full_name }}";
-        var startDate = "{{ request.GET.start_date }}";
-        var endDate = "{{ request.GET.end_date }}";
-        initializeDataTables(companyName, startDate, endDate);
+        initializeDataTables(companyName);
     });
 </script>
 
