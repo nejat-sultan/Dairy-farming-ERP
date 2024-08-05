@@ -62,22 +62,6 @@
             {% comment %} {% endif %} {% endcomment %}
         </div>
 
-        <div class="pagination">
-            <span class="step-links">
-                {% if task_data.has_previous %}
-                    <a href="?page={{ task_data.previous_page_number }}">Previous</a>
-                {% endif %}
-    
-                <span class="current">
-                    Page {{ task_data.number }} of {{ task_data.paginator.num_pages }}.
-                </span>
-    
-                {% if task_data.has_next %}
-                    <a href="?page={{ task_data.next_page_number }}">Next</a>
-                {% endif %}
-            </span>
-        </div>
-
         <br>
         <div class="row">
             <div class="col-12">

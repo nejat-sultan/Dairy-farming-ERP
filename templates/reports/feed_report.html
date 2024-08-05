@@ -122,22 +122,6 @@
             {% endif %}
         </div>
 
-        <div class="pagination">
-            <span class="step-links">
-                {% if feed_data.has_previous %}
-                    <a href="?page={{ feed_data.previous_page_number }}">Previous</a>
-                {% endif %}
-
-                <span class="current">
-                    Page {{ feed_data.number }} of {{ feed_data.paginator.num_pages }}.
-                </span>
-
-                {% if feed_data.has_next %}
-                    <a href="?page={{ feed_data.next_page_number }}">Next</a>
-                {% endif %}
-            </span>
-        </div>
-
         <br>
         <div class="row">
             <div class="col-12">
@@ -169,16 +153,7 @@
 
 <script>
     $(document).ready(function() {
-        function getCurrentDate() {
-            var today = new Date();
-            var dd = String(today.getDate()).padStart(2, '0');
-            var mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
-            var yyyy = today.getFullYear();
-            return mm + '/' + dd + '/' + yyyy;
-        }
-
-        function initializeDataTables(companyName) {
-            var todayDate = getCurrentDate();
+        function initializeDataTables(companyName, startDate, endDate) {
             var table = $('#example1').DataTable({
                 responsive: true,
                 lengthChange: false,
@@ -187,13 +162,13 @@
                     'copy', 'excel', 'pdf', 'print'
                 ],
                 order: [],
-                dom: 'Bfrtip',
+                dom: 'Bfrtip', 
                 buttons: [
                     'copy',
                     {
                         extend: 'excel',
                         title: function() {
-                            return companyName + ' Cattle Feed Report - ' + todayDate;
+                            return companyName + ' Feed Report - ' + startDate + ' to ' + endDate;
                         },
                         customize: function(xlsx) {
                             var sheet = xlsx.xl.worksheets['sheet1.xml'];
@@ -203,11 +178,11 @@
                     {
                         extend: 'pdf',
                         title: function() {
-                            return 'Cattle Feed Report - ' + todayDate;
+                            return 'Feed Report'
                         },
                         customize: function(doc) {
                             doc.content.splice(0, 0, {
-                                text: todayDate + '\n' + companyName,
+                                text: startDate + ' to ' + endDate + '\n' + companyName,
                                 style: 'header'
                             });
                         }
@@ -215,11 +190,11 @@
                     {
                         extend: 'print',
                         title: function() {
-                            return 'Cattle Feed Report - ' + todayDate;
+                            return 'Feed Report';
                         },
                         customize: function(win) {
                             $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
-                            $(win.document.body).prepend('<h5 style="text-align:center;">' + todayDate + '</h5>');
+                            $(win.document.body).prepend('<h5 style="text-align:center;">' + startDate + ' to ' + endDate + '</h5>');
                             $(win.document.body).find('h3, h5').css('text-align', 'center');
                         }
                     }
@@ -230,7 +205,9 @@
         }
 
         var companyName = "{{ latest_farm.full_name }}";
-        initializeDataTables(companyName);
+        var startDate = "{{ request.GET.start_date }}";
+        var endDate = "{{ request.GET.end_date }}";
+        initializeDataTables(companyName, startDate, endDate);
     });
 </script>
 

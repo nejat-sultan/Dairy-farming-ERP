@@ -7,12 +7,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Pregnancy Report</h1>
+                    <h1>Cattle Vaccination Report</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="">Home</a></li>
-                        <li class="breadcrumb-item active">Pregnancy Report</li>
+                        <li class="breadcrumb-item active">Vaccination Report</li>
                     </ol>
                 </div>
             </div>
@@ -22,7 +22,7 @@
     <section class="content">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Cattle Pregnancy Report </h3>
+                <h3 class="card-title">Cattle Vaccination </h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                         <i class="fas fa-minus"></i>
@@ -31,17 +31,17 @@
             </div>
 
             <div class="card-body">
-                <form method="get" id="employee-form">
+                <form method="get" id="vaccination-form">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="start_date">Start Date(Pregnancy Date):</label>
+                                <label for="start_date">Start Date(Scheduled Date):</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="end_date">End Date(Pregnancy Date):</label>
+                                <label for="end_date">End Date(Scheduled Date):</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
                             </div>
                         </div>
@@ -60,31 +60,32 @@
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
-                                <label for="pregnancystatus">Pregnancy Status:</label>
-                                <select class="form-control" id="pregnancystatus" name="pregnancystatus">
+                                <label for="vaccine">Vaccine:</label>
+                                <select class="form-control" id="vaccine" name="vaccine">
                                     <option value="">All</option>
-                                    {% for status in status_list %}
-                                        <option value="{{ status.pregnancy_status_id }}" {% if request.GET.pregnancystatus == status.pregnancy_status_id|stringformat:"s" %}selected{% endif %}>
-                                            {{ status.pregnancy_status }}
-                                        </option>
+                                    {% for vaccine in vaccine_list %}
+                                    <option value="{{ vaccine.vaccine_id }}" {% if request.GET.vaccine == vaccine.vaccine_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ vaccine.vaccine_name }}
+                                    </option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
-                                <label for="type">Pregnancy Type:</label>
-                                <select class="form-control" id="type" name="type">
+                                <label for="status">Given Status:</label>
+                                <select class="form-control" id="status" name="status">
                                     <option value="">All</option>
-                                    {% for type in type_list %}
-                                    <option value="{{ type.cattle_pregnancy_type }}" {% if request.GET.type == type.cattle_pregnancy_type %}selected{% endif %}>
-                                        {{ type.cattle_pregnancy_type }}
+                                    {% for status in status_list %}
+                                    <option value="{{ status.given_status }}" {% if request.GET.status == status.given_status|stringformat:"s" %}selected{% endif %}>
+                                        {{ status.given_status }}
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
                     </div>
+                    
                     <button type="submit" class="btn" style="background-color: #007f5c;color: #fff;">Apply Filters</button>
                     <button type="button" class="btn btn-secondary" id="clear-filters">Clear Filters</button>
                 </form>
@@ -96,26 +97,27 @@
                     <table id="example1" class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>Catle</th>
-                                <th>Pregnancy Type</th>
-                                <th>Pregnancy Date</th>
-                                <th>Pregnancy Status</th>
+                                <th>Cattle</th>
+                                <th>Scheduled Date</th>
+                                <th>Vaccine</th>
+                                <th>Given Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for entry in pregnancy_status_data %}
+                            {% for entry in vaccination_data %}
                             <tr>
-                                <td>{{ entry.cattle.cattle_name }}</td> 
-                                <td>{{ entry.cattle_pregnancy_type }}</td>
-                                <td>{{ entry.cattle_pregnancy_date }}</td>
-                                <td>{{ entry.pregnancy_status.pregnancy_status }}</td>
+                                <td>{{ entry.cattle.cattle_name }}</td>
+                                <td>{{ entry.cattle_given_time }}</td>
+                                <td>{{ entry.vaccine.vaccine_name }}</td>
+                                <td>{{ entry.given_status }}</td>
+                                
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-            {% endif %} 
+            {% endif %}
         </div>
 
         <br>
@@ -123,21 +125,23 @@
             <div class="col-12">
               <a href="../../reports" class="btn btn-secondary">Back</a>
             </div>
-          </div>
+        </div>
 
     </section>
 </div>
+
+<style>
+    .status-highlight {
+        background-color: #f0ad4e;
+        font-weight: bold;
+    }
+</style>
 
 <script>
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
     });
 
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('start_date').setAttribute('max', today);
-        document.getElementById('end_date').setAttribute('max', today);
-    });
 </script>
 
 <script>
@@ -157,7 +161,7 @@
                     {
                         extend: 'excel',
                         title: function() {
-                            return companyName + ' Pregnancy Status Report - ' + startDate + ' to ' + endDate;
+                            return companyName + ' Vaccination Report - ' + startDate + ' to ' + endDate;
                         },
                         customize: function(xlsx) {
                             var sheet = xlsx.xl.worksheets['sheet1.xml'];
@@ -167,7 +171,7 @@
                     {
                         extend: 'pdf',
                         title: function() {
-                            return 'Pregnancy Status Report'
+                            return 'Vaccination Report'
                         },
                         customize: function(doc) {
                             doc.content.splice(0, 0, {
@@ -179,7 +183,7 @@
                     {
                         extend: 'print',
                         title: function() {
-                            return 'Pregnancy Status Report';
+                            return 'Vaccination Report';
                         },
                         customize: function(win) {
                             $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
@@ -199,4 +203,7 @@
         initializeDataTables(companyName, startDate, endDate);
     });
 </script>
+
 {% endblock %}
+
+

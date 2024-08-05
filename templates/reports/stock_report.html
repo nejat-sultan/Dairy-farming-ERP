@@ -105,22 +105,6 @@
             {% endif %} 
         </div>
 
-        <div class="pagination">
-            <span class="step-links">
-                {% if stock_data.has_previous %}
-                    <a href="?page={{ stock_data.previous_page_number }}">Previous</a>
-                {% endif %}
-
-                <span class="current">
-                    Page {{ stock_data.number }} of {{ stock_data.paginator.num_pages }}.
-                </span>
-
-                {% if stock_data.has_next %}
-                    <a href="?page={{ stock_data.next_page_number }}">Next</a>
-                {% endif %}
-            </span>
-        </div>
-
         <br>
         <div class="row">
             <div class="col-12">

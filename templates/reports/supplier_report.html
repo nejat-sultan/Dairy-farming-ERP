@@ -7,12 +7,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Total Milk Production Report</h1>
+                    <h1>Supplier Report</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="">Home</a></li>
-                        <li class="breadcrumb-item active">Total Milk Production Report</li>
+                        <li class="breadcrumb-item active">Supplier Report</li>
                     </ol>
                 </div>
             </div>
@@ -22,7 +22,7 @@
     <section class="content">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Total Milk Production</h3>
+                <h3 class="card-title">Suppliers List</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                         <i class="fas fa-minus"></i>
@@ -31,52 +31,37 @@
             </div>
 
             <div class="card-body">
-                <form method="get" id="milk-production-form">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="start_date">Start Date:</label>
-                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="end_date">End Date:</label>
-                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
-                            </div>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn" style="background-color: #007f5c;color: #fff;">Apply Filters</button>
-                    <button type="button" class="btn btn-secondary" id="clear-filters">Clear Filters</button>
-                </form>
-            </div>
-
-            {% if filters_applied %} 
-            <div class="card-body">
                 <div class="table-responsive">
                     <table id="example1" class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Amount(Liters)</th>
+                                <th>Supplier Name</th>
+                                <th>Supplier Type</th>
+                                <th>Contact</th>
+                                <th>Address</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for entry in total_milk_production_data %}
+                            {% for entry in supplier_data %}
                             <tr>
-                                <td>{{ entry.milk_time }}</td>
-                                <td>{{ entry.amount_in_liter }}</td>
+                                <td>{{ entry.supplier_name }}</td>
+                                <td>{{ entry.supplier_type.supplier_type }}</td>
+                                <td>
+                                    {% for contact in supplier.farm_entity.farmentitycontact_set.all %}
+                                        {{ contact.contact }} ({{ contact.contact_type.contact_type }})<br>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for address in supplier.farm_entity.farmentityaddress_set.all %}
+                                        {{ address.country }}, {{ address.region.region_name }}, {{ address.zone_subcity }}, {{ address.woreda }}, {{ address.kebele }}, {{ address.house_number }}, {{ address.street_name }}<br>
+                                    {% endfor %}
+                                </td>
                             </tr>
                             {% endfor %}
-                            <tr>
-                                <td><strong>Total Milk Production</strong></td>
-                                <td><strong>{{ total_amount }} Liters</strong></td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-            {% endif %}
         </div>
 
         <br>
@@ -84,7 +69,7 @@
             <div class="col-12">
               <a href="../../reports" class="btn btn-secondary">Back</a>
             </div>
-        </div>
+          </div>
 
     </section>
 </div>
@@ -93,11 +78,20 @@
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
     });
-</script> 
+</script>
 
 <script>
     $(document).ready(function() {
-        function initializeDataTables(companyName, startDate, endDate) {
+        function getCurrentDate() {
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); 
+            var yyyy = today.getFullYear();
+            return mm + '/' + dd + '/' + yyyy;
+        }
+
+        function initializeDataTables(companyName) {
+            var todayDate = getCurrentDate();
             var table = $('#example1').DataTable({
                 responsive: true,
                 lengthChange: false,
@@ -112,7 +106,7 @@
                     {
                         extend: 'excel',
                         title: function() {
-                            return companyName + ' Total Milk Production Report - ' + startDate + ' to ' + endDate;
+                            return companyName + ' Suppliers List Report - ' + todayDate;
                         },
                         customize: function(xlsx) {
                             var sheet = xlsx.xl.worksheets['sheet1.xml'];
@@ -122,11 +116,11 @@
                     {
                         extend: 'pdf',
                         title: function() {
-                            return 'Total Milk Production Report'
+                            return 'Suppliers List Report - ' + todayDate;
                         },
                         customize: function(doc) {
                             doc.content.splice(0, 0, {
-                                text: startDate + ' to ' + endDate + '\n' + companyName,
+                                text: todayDate + '\n' + companyName,
                                 style: 'header'
                             });
                         }
@@ -134,11 +128,11 @@
                     {
                         extend: 'print',
                         title: function() {
-                            return 'Total Milk Production Report';
+                            return 'Suppliers List Report - ' + todayDate;
                         },
                         customize: function(win) {
                             $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
-                            $(win.document.body).prepend('<h5 style="text-align:center;">' + startDate + ' to ' + endDate + '</h5>');
+                            $(win.document.body).prepend('<h5 style="text-align:center;">' + todayDate + '</h5>');
                             $(win.document.body).find('h3, h5').css('text-align', 'center');
                         }
                     }
@@ -149,9 +143,7 @@
         }
 
         var companyName = "{{ latest_farm.full_name }}";
-        var startDate = "{{ request.GET.start_date }}";
-        var endDate = "{{ request.GET.end_date }}";
-        initializeDataTables(companyName, startDate, endDate);
+        initializeDataTables(companyName);
     });
 </script>
 

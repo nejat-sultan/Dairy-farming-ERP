@@ -47,12 +47,12 @@
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="cattle">Employee:</label>
+                                <label for="employee">Employee:</label>
                                 <select class="form-control" id="employee" name="employee">
                                     <option value="">All</option>
-                                    {% for employee in employee_data %}
+                                    {% for employee in employees_list %}
                                     <option value="{{ employee.person_farm_entity_id }}" {% if request.GET.employee == employee.person_farm_entity_id|stringformat:"s" %}selected{% endif %}>
-                                        {{ employee.person_farm_entity.first_name }}
+                                        {{ employee.person_farm_entity.first_name }} {{ employee.person_farm_entity.middle_name }}
                                     </option>
                                     {% endfor %}
                                 </select>
@@ -156,22 +156,6 @@
                 </div>
             </div>
             {% endif %} 
-        </div>
-
-        <div class="pagination">
-            <span class="step-links">
-                {% if employee_data.has_previous %}
-                    <a href="?page={{ employee_data.previous_page_number }}">Previous</a>
-                {% endif %}
-    
-                <span class="current">
-                    Page {{ employee_data.number }} of {{ employee_data.paginator.num_pages }}.
-                </span>
-    
-                {% if employee_data.has_next %}
-                    <a href="?page={{ employee_data.next_page_number }}">Next</a>
-                {% endif %}
-            </span>
         </div>
 
         <br>

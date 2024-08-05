@@ -689,6 +689,10 @@ def index(request):
     dash7.amount = Customer.objects.all().count()
     dash7.description = 'Customers'
 
+    dash8 = Dashboard()
+    dash8.amount = Cattle.objects.all().count()
+    dash8.description = 'Cattles'
+
     data = OrderHasItem.objects.all()[:10]
     orderdatas = Order.objects.all()
     item_data = Item.objects.all()
@@ -745,6 +749,7 @@ def index(request):
         'dash5': dash5, 
         'dash6': dash6, 
         'dash7': dash7,
+        'dash8': dash8,
 
         'stocks':stocks,
 
@@ -764,8 +769,7 @@ def cattle(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Cattle.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data":paginated_data}
+    context = {"data":data}
 
     return render(request, 'cattle/cattle.html', context)
 
@@ -1127,8 +1131,7 @@ def cattle_breed(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = CattleBreed.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'cattle/cattle_breed.html', context)
 
@@ -1253,8 +1256,7 @@ def cattle_pregnancy(request):
     data = CattlePregnancy.objects.filter(pregnancy_status=pregnant_status)
     cattle = Cattle.objects.all()
 
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data, 'cattle': cattle,}
+    context = {"data1":data, 'cattle': cattle,}
 
     return render(request, 'cattle/cattle_pregnancy.html', context)
 
@@ -1461,8 +1463,7 @@ def cattle_has_vaccine(request):
     cattle = Cattle.objects.all()
     vaccine = Vaccine.objects.all()
 
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data, 'cattle': cattle, 'vaccine': vaccine, 'vaccination_notifications':vaccination_notifications}
+    context = {"data1":data, 'cattle': cattle, 'vaccine': vaccine, 'vaccination_notifications':vaccination_notifications}
 
     return render(request, 'cattle/cattle_has_vaccine.html', context)
 
@@ -1476,6 +1477,7 @@ def cattle_has_vaccine_add(request):
         cgiven_time=request.POST.get('given_time')
         ccattle_id=request.POST.get('cattle_id')
         cgiven_status=request.POST.get('given_status')
+        cdate = datetime.now().date()
 
         errors = []
         if cgiven_time:
@@ -1494,7 +1496,7 @@ def cattle_has_vaccine_add(request):
             }
             return render(request, 'cattle/cattle_add.html', context)
 
-        query = CattleHasVaccine(vaccine_id=cvaccine_name, cattle_given_time=cgiven_time, cattle_id=ccattle_id, given_status=cgiven_status)
+        query = CattleHasVaccine(vaccine_id=cvaccine_name, cattle_given_time=cgiven_time, cattle_id=ccattle_id, given_status=cgiven_status, modified_date=cdate )
         query.save()
         messages.success(request, "Cattle Vaccination Added Successfully!")
         return redirect("/cattle_has_vaccine")
@@ -1520,6 +1522,7 @@ def cattle_has_vaccine_edit(request,id):
         cgiven_time=request.POST.get('given_time')
         ccattle_id=request.POST.get('cattle_id')
         cgiven_status=request.POST.get('given_status')
+        cdate = datetime.now().date()
 
         errors = []
         if cgiven_time:
@@ -1544,6 +1547,7 @@ def cattle_has_vaccine_edit(request,id):
         edit.cattle_given_time = cgiven_time
         edit.cattle_id = ccattle_id
         edit.given_status = cgiven_status
+        edit.modified_date = cdate
         
         edit.save()
         messages.success(request, "Cattle Vaccination Updated Successfully!")
@@ -1639,9 +1643,7 @@ def cattle_health_checkup(request):
     person = Person.objects.all()
     employee = Employee.objects.all()
 
-    paginated_data = paginate_data(request, data, 10) 
-
-    context = {"data1":paginated_data, 'cattle': cattle, 'person': person, 'employee': employee,}
+    context = {"data1":data, 'cattle': cattle, 'person': person, 'employee': employee,}
 
     return render(request, 'cattle/cattle_health_checkup.html', context)
 
@@ -1883,9 +1885,7 @@ def milk_production(request):
     data = MilkProduction.objects.all()
     cattle = Cattle.objects.all()
 
-    paginated_data = paginate_data(request, data, 10) 
-
-    context = {"data1":paginated_data, 'cattle': cattle,}
+    context = {"data1":data, 'cattle': cattle,}
 
     return render(request, 'cattle/milk_production.html', context)
 
@@ -2333,8 +2333,7 @@ def feed_formulation(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = FeedFormulation.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'feed/feed_formulation.html', context)
 
@@ -2526,12 +2525,11 @@ def cattle_has_feed(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = CattleHasFeed.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
 
     cattle_data = Cattle.objects.all()
     shift_data = Shift.objects.all()
     formulation_data = FeedFormulation.objects.all()
-    context = {"data1":paginated_data, "cattle_data":cattle_data, "shift_data":shift_data, "formulation_data":formulation_data,}
+    context = {"data1":data, "cattle_data":cattle_data, "shift_data":shift_data, "formulation_data":formulation_data,}
 
     return render(request, 'feed/cattle_has_feed.html', context)
 
@@ -2944,11 +2942,9 @@ def customer(request):
             'email_contact': email_contact,
             'address': address_dict.get(customer.person_farm_entity.farm_entity_id),
         })
-    
-    paginated_data = paginate_data(request, customer_contact_info, 10)
 
     context = {
-        "data1": paginated_data,
+        "data1": customer_contact_info,
     }
 
     return render(request, 'sales/customer.html', context)
@@ -3242,9 +3238,8 @@ def sales_order(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = SalesOrder.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
     context = {
-        "data1":paginated_data,
+        "data1":data,
     }
 
     return render(request, 'sales/sales_order.html', context)
@@ -3614,9 +3609,8 @@ def shift(request):
     if not request.user.has_perm('erp.view_shift'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    data = Shift.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    data = Shift.objects.all().order_by('-modified_date') 
+    context = {"data1":data}
 
     return render(request, 'employee/shift.html', context)
 
@@ -3797,13 +3791,11 @@ def assign_task(request):
         assigned_person = user_profile.employee
         data = TaskAssignment.objects.filter(assigned_to=assigned_person)
 
-    paginated_data = paginate_data(request, data, 10) 
-
     task_data = Task.objects.all()
     shift_data = Shift.objects.all()
     employee_data = Employee.objects.all()
 
-    context = {"data1":paginated_data,'task_data': task_data,'shift_data': shift_data, 'employee_data': employee_data}
+    context = {"data1":data,'task_data': task_data,'shift_data': shift_data, 'employee_data': employee_data}
 
     return render(request, 'employee/assign_task.html', context)
 
@@ -3817,6 +3809,8 @@ def assign_task_add(request):
         cshift_id=request.POST.get('shift_id')
         cassigned_to_id=request.POST.get('assigned_to_id')
         cdue_time=request.POST.get('due_time')
+        status='pending'
+        approval_status='pending'
 
         errors = []
         if cdue_time:
@@ -3837,7 +3831,7 @@ def assign_task_add(request):
             }
             return render(request, 'employee/assign_task_add.html', context)
 
-        query = TaskAssignment.objects.create(task_id=ctask_id, shift_id=cshift_id, assigned_to_id=cassigned_to_id, due_time=cdue_time)
+        query = TaskAssignment.objects.create(task_id=ctask_id, shift_id=cshift_id, assigned_to_id=cassigned_to_id, due_time=cdue_time, status=status, approval_status=approval_status)
         query.save()
         messages.success(request, "Task Assignment Added Successfully!")
         return redirect("/assign_task")
@@ -4286,7 +4280,6 @@ def supplier(request):
         Prefetch('farm_entity__farmentitycontact_set', queryset=phone_contacts2, to_attr='phone_contacts2'),
         Prefetch('farm_entity__farmentitycontact_set', queryset=email_contacts, to_attr='email_contacts')
     )
-    paginated_data = paginate_data(request, suppliers_with_contacts, 10)
     
     type_data = SupplierType.objects.all()
 
@@ -4299,7 +4292,7 @@ def supplier(request):
 
     address_data = list(address_dict.values())
     context = {
-        "data1": paginated_data,
+        "data1": suppliers_with_contacts,
         'type_data': type_data,
         'address_data': address_data,
     }
@@ -4530,9 +4523,8 @@ def request_order(request):
     orderdatas = Order.objects.all()
     item_data = Item.objects.all()
     measurement_data = ItemMeasurement.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
 
-    context = {"data1":paginated_data,'orderdatas': orderdatas,'item_data': item_data, 'measurement_data': measurement_data}
+    context = {"data1":data,'orderdatas': orderdatas,'item_data': item_data, 'measurement_data': measurement_data}
 
     return render(request, 'procurement/request_order.html', context)
 
@@ -4954,10 +4946,8 @@ def purchase_order(request):
     item_data = Item.objects.all()
     supplier_data = Supplier.objects.all()
     inventory_data = Order.objects.all()
-
-    paginated_data = paginate_data(request, approved_supp, 10) 
     
-    context = {"approved_supp": paginated_data, 'item_data': item_data, 'supplier_data': supplier_data, 'inventory_data': inventory_data}
+    context = {"approved_supp": approved_supp, 'item_data': item_data, 'supplier_data': supplier_data, 'inventory_data': inventory_data}
 
     return render(request, 'procurement/purchase_order.html', context)
 
@@ -5177,8 +5167,7 @@ def stock(request):
         return redirect(request.META.get('HTTP_REFERER', '/'))
     low_quantity_items = get_low_quantity_items()
     data = Stock.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data, 'low_quantity_items':low_quantity_items}
+    context = {"data1":data, 'low_quantity_items':low_quantity_items}
 
     return render(request, 'inventory/stock.html', context)
 
@@ -5272,8 +5261,7 @@ def stock_in(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = DirectlyAddedItem.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'inventory/stock_in.html', context)
 
@@ -5481,8 +5469,7 @@ def stock_out(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Stockout.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'inventory/stock_out.html', context)
 
@@ -5746,8 +5733,7 @@ def department(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Department.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'employee/department.html', context)
 
@@ -5808,8 +5794,7 @@ def employee(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Employee.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'employee/employee.html', context)
 
@@ -6792,8 +6777,7 @@ def leave(request):
         requester_person = user_profile.employee
         data = EmployeeLeave.objects.filter(person_farm_entity_id=requester_person)
 
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'employee/leave.html', context)
 
@@ -6905,8 +6889,7 @@ def transaction(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = OtherIncomeExpense.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data":paginated_data}
+    context = {"data":data}
 
     return render(request, 'finance/transaction.html', context)
 
@@ -7395,10 +7378,9 @@ def milk_production_report(request):
     # cattle_list = Cattle.objects.filter(milkproduction__isnull=False).distinct()
     cattle_list = Cattle.objects.filter(cattle_gender="Female")
     total_amount = milk_production_data.aggregate(total=Sum('amount_in_liter'))['total'] or 0
-    paginated_data = paginate_data(request, milk_production_data, 10) 
 
     context = {
-        'milk_production_data': paginated_data,
+        'milk_production_data': milk_production_data,
         'cattle_list': cattle_list,
         'total_amount': total_amount,
         'filters_applied': bool(start_date or end_date or cattle_id or amount_in_liter),
@@ -7423,10 +7405,8 @@ def total_milk_production_report(request):
 
     total_amount = total_milk_production_data.aggregate(total=Sum('amount_in_liter'))['total'] or 0
 
-    paginated_data = paginate_data(request, total_milk_production_data, 10) 
-
     context = {
-        'total_milk_production_data': paginated_data,
+        'total_milk_production_data': total_milk_production_data,
         'total_amount': total_amount,
         'filters_applied': bool(start_date or end_date),
     }
@@ -7458,73 +7438,15 @@ def stock_report(request):
     # item_list = Item.objects.filter(stock__isnull=False).distinct()
     item_type_list = ItemType.objects.all()
     item_list = Item.objects.all()
-    paginated_data = paginate_data(request, stock_data, 10) 
 
     context = {
         'item_type_list': item_type_list,
         'item_list': item_list,
         'filters_applied': bool(start_date or end_date or item_id or item_type_id),
-        'stock_data': paginated_data,
+        'stock_data': stock_data,
     }
 
     return render(request, 'reports/stock_report.html', context)
-
-@login_required(login_url='login')
-def sales_report(request):
-    if not request.user.has_perm('erp.view_reports'):
-        messages.error(request, 'You are not authorised to view the page.')
-        return redirect(request.META.get('HTTP_REFERER', '/'))
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    item_type_id = request.GET.get('item_type')
-    item_id = request.GET.get('item')
-    unit_price = request.GET.get('unit_price')
-    payment_status = request.GET.get('payment_status')
-    customer_id = request.GET.get('customer')
-
-    sales_data = SalesOrder.objects.all()
-
-    if start_date:
-        sales_data = sales_data.filter(order_date__gte=start_date)
-    if end_date:
-        sales_data = sales_data.filter(order_date__lte=end_date)
-    if item_type_id:
-        sales_data = sales_data.filter(item_type=item_type_id)
-    if item_id:
-        sales_data = sales_data.filter(item_name=item_id)
-    if payment_status:
-        sales_data = sales_data.filter(payment_status=payment_status)
-    if customer_id:
-        sales_data = sales_data.filter(customer_id=customer_id)
-    if unit_price:
-        try:
-            if '-' in unit_price:
-                min_amount, max_amount = map(float, unit_price.split('-'))
-                sales_data = sales_data.filter(unit_price__gte=min_amount, unit_price__lte=max_amount)
-            else:
-                exact_amount = float(unit_price)
-                sales_data = sales_data.filter(unit_price=exact_amount)
-        except ValueError:
-            messages.error(request, 'Invalid Price. Please use a number or range format like "50-100".')
-            return redirect("/sales_report")
-
-    paginated_data = paginate_data(request, sales_data, 10) 
-
-    item_type_list = ItemType.objects.all()
-    item_list = Item.objects.all()
-    customer_list = Customer.objects.all()
-    payment_status_list = SalesOrder.objects.values('payment_status').distinct()
-
-    context = {
-        'item_list': item_list,
-        'item_type_list': item_type_list,
-        'customer_list': customer_list,
-        'payment_status_list': payment_status_list,
-        'sales_data': paginated_data,
-        'filters_applied': bool(start_date or end_date or item_id or item_type_id or unit_price or payment_status or customer_id),
-    }
-
-    return render(request, 'reports/sales_report.html', context)
 
 @login_required(login_url='login')
 def procurement_report(request):
@@ -7566,8 +7488,6 @@ def procurement_report(request):
             messages.error(request, 'Invalid Price. Please use a number or range format like "50-100".')
             return redirect("/procurement_report")
 
-    paginated_data = paginate_data(request, procurement_data, 10) 
-
     item_type_list = ItemType.objects.all()
     item_list = Item.objects.all()
     supplier_list = Supplier.objects.all()
@@ -7578,91 +7498,87 @@ def procurement_report(request):
         'item_type_list': item_type_list,
         'supplier_list': supplier_list,
         'status_list': status_list,
-        'procurement_data': paginated_data,
+        'procurement_data': procurement_data,
         'filters_applied': bool(start_date or end_date or item_id or item_type_id or price or status or supplier_id),
     }
 
     return render(request, 'reports/procurement_report.html', context)
 
 @login_required(login_url='login')
-def feed_report(request):
+def supplier_report(request):
     if not request.user.has_perm('erp.view_reports'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    cattle_id = request.GET.get('cattle')
-    shift_id = request.GET.get('shift')
-    formulation_id = request.GET.get('formulation')
-
-    feed_data = CattleHasFeed.objects.all()
-
-    if start_date:
-        feed_data = feed_data.filter(feed_time__gte=start_date)
-    if end_date:
-        feed_data = feed_data.filter(feed_time__lte=end_date)
-    if cattle_id:
-        feed_data = feed_data.filter(cattle_farm_entity_id=cattle_id)
-    if shift_id:
-        feed_data = feed_data.filter(shift_id=shift_id)
-    if formulation_id:
-        feed_data = feed_data.filter(feed_formulation_id=formulation_id)
-
-    paginated_data = paginate_data(request, feed_data, 10) 
-
-    cattle_list = Cattle.objects.all()
-    shift_list = Shift.objects.all()
-    formulation_list = FeedFormulation.objects.all()
+    # supplier_data = Supplier.objects.all()
+    supplier_data = Supplier.objects.select_related(
+        'farm_entity', 
+        'supplier_type',
+    ).prefetch_related(
+        'farm_entity__farmentitycontact_set',
+        'farm_entity__farmentityaddress_set',
+    ).all()
 
     context = {
-        'feed_data': paginated_data,
-        'cattle_list': cattle_list,
-        'shift_list': shift_list,
-        'formulation_list': formulation_list,
-        'filters_applied': bool(start_date or end_date or cattle_id or shift_id or formulation_id),
+        'supplier_data': supplier_data,
     }
 
-    return render(request, 'reports/feed_report.html', context)
+    return render(request, 'reports/supplier_report.html', context)
+
 
 @login_required(login_url='login')
-def pregnancy_report(request):
+def sales_report(request):
     if not request.user.has_perm('erp.view_reports'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
-    cattle_id = request.GET.get('cattle')
-    pregnancy_status_id = request.GET.get('pregnancystatus')
-    type_id = request.GET.get('type')
+    item_type_id = request.GET.get('item_type')
+    item_id = request.GET.get('item')
+    unit_price = request.GET.get('unit_price')
+    payment_status = request.GET.get('payment_status')
+    customer_id = request.GET.get('customer')
 
-    pregnancy_status_data = CattlePregnancy.objects.all()
+    sales_data = SalesOrder.objects.all()
 
     if start_date:
-        pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_date__gte=start_date)
+        sales_data = sales_data.filter(order_date__gte=start_date)
     if end_date:
-        pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_date__lte=end_date)
-    if cattle_id:
-        pregnancy_status_data = pregnancy_status_data.filter(cattle_id=cattle_id)
-    if pregnancy_status_id:
-        pregnancy_status_data = pregnancy_status_data.filter(pregnancy_status_id=pregnancy_status_id)
-    if type_id:
-        pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_type=type_id)
+        sales_data = sales_data.filter(order_date__lte=end_date)
+    if item_type_id:
+        sales_data = sales_data.filter(item_type=item_type_id)
+    if item_id:
+        sales_data = sales_data.filter(item_name=item_id)
+    if payment_status:
+        sales_data = sales_data.filter(payment_status=payment_status)
+    if customer_id:
+        sales_data = sales_data.filter(customer_id=customer_id)
+    if unit_price:
+        try:
+            if '-' in unit_price:
+                min_amount, max_amount = map(float, unit_price.split('-'))
+                sales_data = sales_data.filter(unit_price__gte=min_amount, unit_price__lte=max_amount)
+            else:
+                exact_amount = float(unit_price)
+                sales_data = sales_data.filter(unit_price=exact_amount)
+        except ValueError:
+            messages.error(request, 'Invalid Price. Please use a number or range format like "50-100".')
+            return redirect("/sales_report")
 
-    status_list = PregnancyStatus.objects.all()
-    cattle_list = Cattle.objects.all()
-    type_list = CattlePregnancy.objects.values('cattle_pregnancy_type').distinct()
-    paginated_data = paginate_data(request, pregnancy_status_data, 10) 
+    item_type_list = ItemType.objects.all()
+    item_list = Item.objects.all()
+    customer_list = Customer.objects.all()
+    payment_status_list = SalesOrder.objects.values('payment_status').distinct()
 
     context = {
-        'pregnancy_status_data': paginated_data,
-        'cattle_list': cattle_list,
-        'type_list': type_list,
-        'status_list':status_list,
-        'filters_applied': bool(start_date or end_date or pregnancy_status_id or cattle_id or type_id),
+        'item_list': item_list,
+        'item_type_list': item_type_list,
+        'customer_list': customer_list,
+        'payment_status_list': payment_status_list,
+        'sales_data': sales_data,
+        'filters_applied': bool(start_date or end_date or item_id or item_type_id or unit_price or payment_status or customer_id),
     }
 
-    return render(request, 'reports/pregnancy_report.html', context)
+    return render(request, 'reports/sales_report.html', context)
 
 @login_required(login_url='login')
 def employee_report(request):
@@ -7706,15 +7622,15 @@ def employee_report(request):
     if job_id:
         employee_data = employee_data.filter(job_id=job_id)
 
-    paginated_data = paginate_data(request, employee_data, 10) 
-
+    employees_list = Employee.objects.all()
     department_list = Department.objects.all()
     job_list = Job.objects.all()
-    person_list = Person.objects.values('gender').distinct()
+    person_list = Person.objects.exclude(gender__isnull=True).values('gender').distinct()
     contract_type_list = Employee.objects.values('contract_type').distinct()
 
     context = {
-        'employee_data': paginated_data,
+        'employee_data': employee_data,
+        'employees_list': employees_list,
         'department_list': department_list,
         'job_list': job_list,
         'person_list': person_list,
@@ -7726,16 +7642,305 @@ def employee_report(request):
 
 
 @login_required(login_url='login')
+def task_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    assigned_to_id = request.GET.get('assigned_to')
+    task_id = request.GET.get('task')
+    status_id = request.GET.get('status')
+    approval_status_id = request.GET.get('approval_status') 
+
+    task_data = TaskAssignment.objects.all()
+
+    if start_date:
+        task_data = task_data.filter(due_time__gte=start_date)
+    if end_date:
+        task_data = task_data.filter(due_time__lte=end_date)
+    if assigned_to_id:
+        task_data = task_data.filter(assigned_to_id=assigned_to_id)
+    if task_id:
+        task_data = task_data.filter(task_id=task_id)
+    if status_id:
+        task_data = task_data.filter(status=status_id)
+    if approval_status_id:
+        task_data = task_data.filter(approval_status=approval_status_id)
+
+    employee_list = Employee.objects.all()
+    task_list = Task.objects.all()
+    status_list = TaskAssignment.objects.values('status').distinct()
+    approval_status_list = TaskAssignment.objects.values('approval_status').distinct()
+
+    context = {
+        'task_data': task_data,
+        'employee_list': employee_list,
+        'task_list': task_list,
+        'status_list': status_list,
+        'approval_status_list': approval_status_list,
+        'filters_applied': bool(start_date or end_date or assigned_to_id or task_id or status_id or approval_status_id ),
+    }
+
+    return render(request, 'reports/task_report.html', context)
+
+
+@login_required(login_url='login')
 def employee_with_task_report(request):
     if not request.user.has_perm('erp.view_reports'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     today = timezone.now().date()
     task_data = TaskAssignment.objects.filter(due_time__date=today)
-    paginated_data = paginate_data(request, task_data, 10) 
 
     context = {
-        'task_data': paginated_data,
+        'task_data': task_data,
     }
 
     return render(request, 'reports/employee_with_task_report.html', context)
+
+@login_required(login_url='login')
+def leave_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    requested_by_id = request.GET.get('requested_by')
+    approval_status = request.GET.get('approval_status')
+
+    leave_data = EmployeeLeave.objects.all()
+
+    if start_date:
+        leave_data = leave_data.filter(start_date__gte=start_date)
+    if end_date:
+        leave_data = leave_data.filter(end_date__lte=end_date)
+    if requested_by_id:
+        leave_data = leave_data.filter(person_farm_entity_id=requested_by_id)
+    if approval_status:
+        leave_data = leave_data.filter(approval_status=approval_status)
+
+    employee_list = Employee.objects.all()
+    approval_status_list = EmployeeLeave.objects.values('approval_status').distinct()
+
+    context = {
+        'leave_data': leave_data,
+        'employee_list': employee_list,
+        'approval_status_list': approval_status_list,
+        'filters_applied': bool(start_date or end_date or requested_by_id or approval_status ),
+    }
+
+    return render(request, 'reports/leave_report.html', context)
+
+
+@login_required(login_url='login')
+def cattle_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    cattle_id = request.GET.get('cattle')
+    gender = request.GET.get('gender')
+    breed_id = request.GET.get('breed')
+    estimated_price = request.GET.get('estimated_price') 
+    status_id = request.GET.get('status')
+    acquired_status = request.GET.get('acquired_status')
+
+    cattle_data = Cattle.objects.all()
+
+    if start_date:
+        cattle_data = cattle_data.filter(acquired_date__gte=start_date)
+    if end_date:
+        cattle_data = cattle_data.filter(acquired_date__lte=end_date)
+    if cattle_id:
+        cattle_data = cattle_data.filter(farm_entity_id=cattle_id)
+    if gender:
+        cattle_data = cattle_data.filter(cattle_gender=gender)
+    if breed_id:
+        cattle_data = cattle_data.filter(cattle_breed_id=breed_id)
+    if estimated_price:
+        try:
+            if '-' in estimated_price:
+                min_amount, max_amount = map(float, estimated_price.split('-'))
+                cattle_data = cattle_data.filter(estimated_price__gte=min_amount, estimated_price__lte=max_amount)
+            else:
+                exact_amount = float(estimated_price)
+                cattle_data = cattle_data.filter(estimated_price=exact_amount)
+        except ValueError:
+            messages.error(request, 'Invalid Estimated Price. Please use a number or range format like "50000-100000".')
+            return redirect("/cattle_report")
+    if status_id:
+        cattle_data = cattle_data.filter(cattle_status_id=status_id)
+    if acquired_status:
+        cattle_data = cattle_data.filter(acquired_status=acquired_status)
+
+    # paginated_data = paginate_data(request, cattle_data, 10) 
+
+    cattles_list = Cattle.objects.all()
+    cattle_list = Cattle.objects.values('cattle_gender').distinct()
+    breed_list = CattleBreed.objects.all()
+    status_list = CattleStatus.objects.all()
+    acquiredstatus_list = Cattle.objects.values('acquired_status').distinct()
+
+    context = {
+        'cattle_data': cattle_data,
+        'cattles_list': cattles_list,
+        'cattle_list': cattle_list,
+        'breed_list': breed_list,
+        'status_list': status_list,
+        'acquiredstatus_list': acquiredstatus_list,
+        'filters_applied': bool(start_date or end_date or cattle_id or gender or breed_id or estimated_price or status_id or acquired_status),
+    }
+
+    return render(request, 'reports/cattle_report.html', context)
+
+@login_required(login_url='login')
+def feed_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    cattle_id = request.GET.get('cattle')
+    shift_id = request.GET.get('shift')
+    formulation_id = request.GET.get('formulation')
+
+    feed_data = CattleHasFeed.objects.all()
+
+    if start_date:
+        feed_data = feed_data.filter(feed_time__gte=start_date)
+    if end_date:
+        feed_data = feed_data.filter(feed_time__lte=end_date)
+    if cattle_id:
+        feed_data = feed_data.filter(cattle_farm_entity_id=cattle_id)
+    if shift_id:
+        feed_data = feed_data.filter(shift_id=shift_id)
+    if formulation_id:
+        feed_data = feed_data.filter(feed_formulation_id=formulation_id)
+
+    cattle_list = Cattle.objects.all()
+    shift_list = Shift.objects.all()
+    formulation_list = FeedFormulation.objects.all()
+
+    context = {
+        'feed_data': feed_data,
+        'cattle_list': cattle_list,
+        'shift_list': shift_list,
+        'formulation_list': formulation_list,
+        'filters_applied': bool(start_date or end_date or cattle_id or shift_id or formulation_id),
+    }
+
+    return render(request, 'reports/feed_report.html', context)
+
+@login_required(login_url='login')
+def health_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    cattle_id = request.GET.get('cattle')
+    findings = request.GET.get('findings')
+    checked_by = request.GET.get('checked_by')
+
+    health_data = CattleHealthCheckup.objects.all()
+
+    if cattle_id:
+        health_data = health_data.filter(cattle_id=cattle_id)
+    if findings:
+        health_data = health_data.filter(findings=findings)
+    if checked_by:
+        health_data = health_data.filter(checked_by=checked_by)
+
+    cattle_list = Cattle.objects.all()
+    findings_list = CattleHealthCheckup.objects.all()
+    vaterinarian_list = CattleHealthCheckup.objects.values('checked_by').distinct()
+
+    context = {
+        'health_data': health_data,
+        'cattle_list': cattle_list,
+        'findings_list': findings_list,
+        'vaterinarian_list': vaterinarian_list,
+        'filters_applied': bool(cattle_id or findings or checked_by),
+    }
+
+    return render(request, 'reports/health_report.html', context)
+
+@login_required(login_url='login')
+def vaccination_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    cattle_id = request.GET.get('cattle')
+    vaccine_id = request.GET.get('vaccine')
+    status = request.GET.get('status')
+
+    vaccination_data = CattleHasVaccine.objects.all()
+
+    if start_date:
+        vaccination_data = vaccination_data.filter(cattle_given_time__gte=start_date)
+    if end_date:
+        vaccination_data = vaccination_data.filter(cattle_given_time__lte=end_date)
+    if cattle_id:
+        vaccination_data = vaccination_data.filter(cattle_id=cattle_id)
+    if vaccine_id:
+        vaccination_data = vaccination_data.filter(vaccine_id=vaccine_id)
+    if status:
+        vaccination_data = vaccination_data.filter(given_status=status)
+
+    cattle_list = Cattle.objects.all()
+    status_list = CattleHasVaccine.objects.values('given_status').distinct()
+    vaccine_list = Vaccine.objects.all()
+
+    context = {
+        'vaccination_data': vaccination_data,
+        'cattle_list': cattle_list,
+        'status_list': status_list,
+        'vaccine_list': vaccine_list,
+        'filters_applied': bool(start_date or end_date or cattle_id or vaccine_id or status),
+    }
+
+    return render(request, 'reports/vaccination_report.html', context)
+
+@login_required(login_url='login')
+def pregnancy_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    cattle_id = request.GET.get('cattle')
+    pregnancy_status_id = request.GET.get('pregnancystatus')
+    type_id = request.GET.get('type')
+
+    pregnancy_status_data = CattlePregnancy.objects.all()
+
+    if start_date:
+        pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_date__gte=start_date)
+    if end_date:
+        pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_date__lte=end_date)
+    if cattle_id:
+        pregnancy_status_data = pregnancy_status_data.filter(cattle_id=cattle_id)
+    if pregnancy_status_id:
+        pregnancy_status_data = pregnancy_status_data.filter(pregnancy_status_id=pregnancy_status_id)
+    if type_id:
+        pregnancy_status_data = pregnancy_status_data.filter(cattle_pregnancy_type=type_id)
+
+    status_list = PregnancyStatus.objects.all()
+    cattle_list = Cattle.objects.all()
+    type_list = CattlePregnancy.objects.values('cattle_pregnancy_type').distinct()
+
+    context = {
+        'pregnancy_status_data': pregnancy_status_data,
+        'cattle_list': cattle_list,
+        'type_list': type_list,
+        'status_list':status_list,
+        'filters_applied': bool(start_date or end_date or pregnancy_status_id or cattle_id or type_id),
+    }
+
+    return render(request, 'reports/pregnancy_report.html', context)
+

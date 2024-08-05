@@ -78,7 +78,7 @@
                 </div>
                 <div class="form-group">
                   <label for="inputDescription">Date of Birth</label>
-                  <input type="date" id="inputName" name="dob" value="{{ person.date_of_birth|date:'Y-m-d' }}" class="form-control">
+                  <input type="date" id="dob" name="dob" value="{{ person.date_of_birth|date:'Y-m-d' }}" class="form-control">
                 </div>
                 <div class="form-group">
                   <label for="inputName">Marital Status</label>
@@ -141,7 +141,7 @@
                   </div>
                   <div class="form-group">
                       <label for="inputName">Hire Date</label>
-                      <input type="date" id="inputName" name="hire_date" value="{{ employee.hire_date|date:'Y-m-d' }}"  class="form-control">
+                      <input type="date" id="hire_date" name="hire_date" value="{{ employee.hire_date|date:'Y-m-d' }}"  class="form-control">
                   </div>
                   <div class="form-group">
                       <label for="inputName">National Id</label>
@@ -951,6 +951,22 @@
   
   </div>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+      const today = new Date().toISOString().split('T')[0]; 
+      document.getElementById('dob').setAttribute('max', today);
+      document.getElementById('hire_date').setAttribute('max', today); 
+      document.getElementById('experienceStartdate').setAttribute('max', today);
+      document.getElementById('experienceEnddate').setAttribute('max', today);
+      document.getElementById('editExperienceStartdate').setAttribute('max', today);
+      document.getElementById('editExperienceEnddate').setAttribute('max', today);
+      document.getElementById('jobhistoryStartdate').setAttribute('max', today);
+      document.getElementById('jobhistoryEnddate').setAttribute('max', today);
+      document.getElementById('editJobhistoryStartdate').setAttribute('max', today);
+      document.getElementById('editJobhistoryEnddate').setAttribute('max', today);
+    });
+  </script>
+
 <script>
   document.getElementById('showContactTableBtn').addEventListener('click', function() {
       document.getElementById('contactTableSection').style.display = 'block';
@@ -1071,7 +1087,5 @@
   });
 
   </script>
-
-  
 
   {% endblock %}

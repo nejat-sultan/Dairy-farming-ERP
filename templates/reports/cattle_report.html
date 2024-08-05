@@ -7,12 +7,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Pregnancy Report</h1>
+                    <h1>Cattle Report</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="">Home</a></li>
-                        <li class="breadcrumb-item active">Pregnancy Report</li>
+                        <li class="breadcrumb-item active">Cattle Report</li>
                     </ol>
                 </div>
             </div>
@@ -22,7 +22,7 @@
     <section class="content">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Cattle Pregnancy Report </h3>
+                <h3 class="card-title">Cattle</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                         <i class="fas fa-minus"></i>
@@ -31,26 +31,26 @@
             </div>
 
             <div class="card-body">
-                <form method="get" id="employee-form">
+                <form method="get" id="Cattle-form">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="start_date">Start Date(Pregnancy Date):</label>
+                                <label for="start_date">Start Date(Acquired Date):</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="end_date">End Date(Pregnancy Date):</label>
+                                <label for="end_date">End Date(Acquired Date):</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label for="cattle">Cattle:</label>
                                 <select class="form-control" id="cattle" name="cattle">
                                     <option value="">All</option>
-                                    {% for cattle in cattle_list %}
+                                    {% for cattle in cattles_list %}
                                     <option value="{{ cattle.farm_entity_id }}" {% if request.GET.cattle == cattle.farm_entity_id|stringformat:"s" %}selected{% endif %}>
                                         {{ cattle.cattle_name }}
                                     </option>
@@ -58,27 +58,61 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="pregnancystatus">Pregnancy Status:</label>
-                                <select class="form-control" id="pregnancystatus" name="pregnancystatus">
+                                <label for="gender">Gender:</label>
+                                <select class="form-control" id="gender" name="gender">
                                     <option value="">All</option>
-                                    {% for status in status_list %}
-                                        <option value="{{ status.pregnancy_status_id }}" {% if request.GET.pregnancystatus == status.pregnancy_status_id|stringformat:"s" %}selected{% endif %}>
-                                            {{ status.pregnancy_status }}
+                                    {% for gender in cattle_list %}
+                                    <option value="{{ gender.cattle_gender }}" {% if request.GET.gender == gender.cattle_gender|stringformat:"s" %}selected{% endif %}>
+                                        {{ gender.cattle_gender }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="breed">Breed:</label>
+                                <select class="form-control" id="breed" name="breed">
+                                    <option value="">All</option>
+                                    {% for breed in breed_list %}
+                                        <option value="{{ breed.cattle_breed_id }}" {% if request.GET.breed == breed.cattle_breed_id|stringformat:"s" %}selected{% endif %}>
+                                            {{ breed.cattle_breed_type }}
                                         </option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="type">Pregnancy Type:</label>
-                                <select class="form-control" id="type" name="type">
+                                <label for="estimated_price">Price Range:</label>
+                                <input type="text" class="form-control" id="estimated_price" name="estimated_price" placeholder="e.g. 50000-100000" value="{{ request.GET.estimated_price }}">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="status">Status:</label>
+                                <select class="form-control" id="status" name="status">
                                     <option value="">All</option>
-                                    {% for type in type_list %}
-                                    <option value="{{ type.cattle_pregnancy_type }}" {% if request.GET.type == type.cattle_pregnancy_type %}selected{% endif %}>
-                                        {{ type.cattle_pregnancy_type }}
+                                    {% for status in status_list %}
+                                    <option value="{{ status.cattle_status_id }}" {% if request.GET.status == status.cattle_status_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ status.cattle_status }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="acquired_status">Acquired Status:</label>
+                                <select class="form-control" id="acquired_status" name="acquired_status">
+                                    <option value="">All</option>
+                                    {% for acquired_status in acquiredstatus_list %}
+                                    <option value="{{ acquired_status.acquired_status }}" {% if request.GET.acquired_status == acquired_status.acquired_status %}selected{% endif %}>
+                                        {{ acquired_status.acquired_status }}
                                     </option>
                                     {% endfor %}
                                 </select>
@@ -96,19 +130,29 @@
                     <table id="example1" class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>Catle</th>
-                                <th>Pregnancy Type</th>
-                                <th>Pregnancy Date</th>
-                                <th>Pregnancy Status</th>
+                                <th>Cattle Ear ID</th>
+                                <th>Birth Date</th>
+                                <th>Cattle Name</th>
+                                <th>Gender</th>
+                                <th>Price</th>
+                                <th>Breed</th>
+                                <th>Status</th>
+                                <th>Acquired Status</th>
+                                <th>Acquired Date</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for entry in pregnancy_status_data %}
+                            {% for entry in cattle_data %}
                             <tr>
-                                <td>{{ entry.cattle.cattle_name }}</td> 
-                                <td>{{ entry.cattle_pregnancy_type }}</td>
-                                <td>{{ entry.cattle_pregnancy_date }}</td>
-                                <td>{{ entry.pregnancy_status.pregnancy_status }}</td>
+                                <td>{{ entry.cattle_ear_id }}</td> 
+                                <td>{{ entry.cattle_date_of_birth }}</td>
+                                <td>{{ entry.cattle_name }}</td>
+                                <td>{{ entry.cattle_gender }}</td>
+                                <td>{{ entry.estimated_price }}</td>
+                                <td>{{ entry.cattle_breed.cattle_breed_type }}</td>
+                                <td>{{ entry.cattle_status.cattle_status }}</td>
+                                <td>{{ entry.acquired_status }}</td>
+                                <td>{{ entry.acquired_date }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -117,6 +161,22 @@
             </div>
             {% endif %} 
         </div>
+
+        {% comment %} <div class="pagination">
+            <span class="step-links">
+                {% if cattle_data.has_previous %}
+                    <a href="?page={{ cattle_data.previous_page_number }}">Previous</a>
+                {% endif %}
+    
+                <span class="current">
+                    Page {{ cattle_data.number }} of {{ cattle_data.paginator.num_pages }}.
+                </span>
+    
+                {% if cattle_data.has_next %}
+                    <a href="?page={{ cattle_data.next_page_number }}">Next</a>
+                {% endif %}
+            </span>
+        </div> {% endcomment %}
 
         <br>
         <div class="row">
@@ -157,7 +217,7 @@
                     {
                         extend: 'excel',
                         title: function() {
-                            return companyName + ' Pregnancy Status Report - ' + startDate + ' to ' + endDate;
+                            return companyName + ' Cattle Report - ' + startDate + ' to ' + endDate;
                         },
                         customize: function(xlsx) {
                             var sheet = xlsx.xl.worksheets['sheet1.xml'];
@@ -167,7 +227,7 @@
                     {
                         extend: 'pdf',
                         title: function() {
-                            return 'Pregnancy Status Report'
+                            return 'Cattle Report'
                         },
                         customize: function(doc) {
                             doc.content.splice(0, 0, {
@@ -179,7 +239,7 @@
                     {
                         extend: 'print',
                         title: function() {
-                            return 'Pregnancy Status Report';
+                            return 'Cattle Report';
                         },
                         customize: function(win) {
                             $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
@@ -199,4 +259,5 @@
         initializeDataTables(companyName, startDate, endDate);
     });
 </script>
+
 {% endblock %}

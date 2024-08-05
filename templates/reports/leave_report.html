@@ -7,12 +7,12 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1>Pregnancy Report</h1>
+                    <h1>Leave Report</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="">Home</a></li>
-                        <li class="breadcrumb-item active">Pregnancy Report</li>
+                        <li class="breadcrumb-item active">Leave Report</li>
                     </ol>
                 </div>
             </div>
@@ -22,7 +22,7 @@
     <section class="content">
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Cattle Pregnancy Report </h3>
+                <h3 class="card-title">Leave Requests</h3>
                 <div class="card-tools">
                     <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
                         <i class="fas fa-minus"></i>
@@ -31,60 +31,49 @@
             </div>
 
             <div class="card-body">
-                <form method="get" id="employee-form">
+                <form method="get" id="leave-form">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="start_date">Start Date(Pregnancy Date):</label>
+                                <label for="start_date">Leave Start Date:</label>
                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label for="end_date">End Date(Pregnancy Date):</label>
+                                <label for="end_date">Leave End Date:</label>
                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="cattle">Cattle:</label>
-                                <select class="form-control" id="cattle" name="cattle">
+                                <label for="requested_by">Requested by:</label>
+                                <select class="form-control" id="requested_by" name="requested_by">
                                     <option value="">All</option>
-                                    {% for cattle in cattle_list %}
-                                    <option value="{{ cattle.farm_entity_id }}" {% if request.GET.cattle == cattle.farm_entity_id|stringformat:"s" %}selected{% endif %}>
-                                        {{ cattle.cattle_name }}
+                                    {% for requested_by in employee_list %}
+                                    <option value="{{ requested_by.person_farm_entity_id }}" {% if request.GET.requested_by == requested_by.person_farm_entity_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ requested_by.person_farm_entity.first_name }} {{ requested_by.person_farm_entity.middle_name }}
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        
+                        <div class="col-md-3">
                             <div class="form-group">
-                                <label for="pregnancystatus">Pregnancy Status:</label>
-                                <select class="form-control" id="pregnancystatus" name="pregnancystatus">
+                                <label for="approval_status">Approval Status:</label>
+                                <select class="form-control" id="approval_status" name="approval_status">
                                     <option value="">All</option>
-                                    {% for status in status_list %}
-                                        <option value="{{ status.pregnancy_status_id }}" {% if request.GET.pregnancystatus == status.pregnancy_status_id|stringformat:"s" %}selected{% endif %}>
-                                            {{ status.pregnancy_status }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-2">
-                            <div class="form-group">
-                                <label for="type">Pregnancy Type:</label>
-                                <select class="form-control" id="type" name="type">
-                                    <option value="">All</option>
-                                    {% for type in type_list %}
-                                    <option value="{{ type.cattle_pregnancy_type }}" {% if request.GET.type == type.cattle_pregnancy_type %}selected{% endif %}>
-                                        {{ type.cattle_pregnancy_type }}
+                                    {% for approval_status in approval_status_list %}
+                                    <option value="{{ approval_status.approval_status }}" {% if request.GET.approval_status == approval_status.approval_status %}selected{% endif %}>
+                                        {{ approval_status.approval_status }}
                                     </option>
                                     {% endfor %}
                                 </select>
                             </div>
                         </div>
                     </div>
+                    
                     <button type="submit" class="btn" style="background-color: #007f5c;color: #fff;">Apply Filters</button>
                     <button type="button" class="btn btn-secondary" id="clear-filters">Clear Filters</button>
                 </form>
@@ -96,19 +85,21 @@
                     <table id="example1" class="table table-striped projects">
                         <thead>
                             <tr>
-                                <th>Catle</th>
-                                <th>Pregnancy Type</th>
-                                <th>Pregnancy Date</th>
-                                <th>Pregnancy Status</th>
+                                <th>Leave start date</th>
+                                <th>Leave end date</th>
+                                <th>Requested By</th>
+                                <th>Reason</th>
+                                <th>Approval Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for entry in pregnancy_status_data %}
+                            {% for entry in leave_data %}
                             <tr>
-                                <td>{{ entry.cattle.cattle_name }}</td> 
-                                <td>{{ entry.cattle_pregnancy_type }}</td>
-                                <td>{{ entry.cattle_pregnancy_date }}</td>
-                                <td>{{ entry.pregnancy_status.pregnancy_status }}</td>
+                                <td>{{ entry.start_date }}</td>
+                                <td>{{ entry.end_date }}</td>
+                                <td>{{ entry.person_farm_entity.person_farm_entity.first_name }} {{ entry.person_farm_entity.person_farm_entity.middle_name }}</td> 
+                                <td>{{ entry.reason }}</td>
+                                <td>{{ entry.approval_status }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -132,12 +123,6 @@
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
     });
-
-    document.addEventListener('DOMContentLoaded', (event) => {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('start_date').setAttribute('max', today);
-        document.getElementById('end_date').setAttribute('max', today);
-    });
 </script>
 
 <script>
@@ -157,7 +142,7 @@
                     {
                         extend: 'excel',
                         title: function() {
-                            return companyName + ' Pregnancy Status Report - ' + startDate + ' to ' + endDate;
+                            return companyName + ' Leave Report - ' + startDate + ' to ' + endDate;
                         },
                         customize: function(xlsx) {
                             var sheet = xlsx.xl.worksheets['sheet1.xml'];
@@ -167,7 +152,7 @@
                     {
                         extend: 'pdf',
                         title: function() {
-                            return 'Pregnancy Status Report'
+                            return 'Leave Report'
                         },
                         customize: function(doc) {
                             doc.content.splice(0, 0, {
@@ -179,7 +164,7 @@
                     {
                         extend: 'print',
                         title: function() {
-                            return 'Pregnancy Status Report';
+                            return 'Leave Report';
                         },
                         customize: function(win) {
                             $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
@@ -199,4 +184,5 @@
         initializeDataTables(companyName, startDate, endDate);
     });
 </script>
+
 {% endblock %}

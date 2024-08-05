@@ -145,22 +145,6 @@
             {% endif %}
         </div>
 
-        <div class="pagination">
-            <span class="step-links">
-                {% if procurement_data.has_previous %}
-                    <a href="?page={{ procurement_data.previous_page_number }}">Previous</a>
-                {% endif %}
-
-                <span class="current">
-                    Page {{ procurement_data.number }} of {{ procurement_data.paginator.num_pages }}.
-                </span>
-
-                {% if procurement_data.has_next %}
-                    <a href="?page={{ procurement_data.next_page_number }}">Next</a>
-                {% endif %}
-            </span>
-        </div>
-
         <br>
         <div class="row">
             <div class="col-12">

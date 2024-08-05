@@ -105,28 +105,17 @@
                             <tr>
                                 <td><strong>Total Milk Production</strong></td>
                                 <td><strong>{{ total_amount }} Liters</strong></td>
+                                <td><strong></strong></td>
+                                <td><strong></strong></td>
+                                <td><strong></strong></td>
+                                <td><strong></strong></td>
+                                <td><strong></strong></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
             {% endif %}
-        </div>
-
-        <div class="pagination">
-            <span class="step-links">
-                {% if milk_production_data.has_previous %}
-                    <a href="?page={{ milk_production_data.previous_page_number }}">Previous</a>
-                {% endif %}
-    
-                <span class="current">
-                    Page {{ milk_production_data.number }} of {{ milk_production_data.paginator.num_pages }}.
-                </span>
-    
-                {% if milk_production_data.has_next %}
-                    <a href="?page={{ milk_production_data.next_page_number }}">Next</a>
-                {% endif %}
-            </span>
         </div>
 
         <br>

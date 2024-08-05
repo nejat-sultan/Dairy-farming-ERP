@@ -44,9 +44,9 @@
         </div>
         {% endfor %}
 
-        <div class="card-body p-0">
+        <div class="card-body">
           <div class="table-responsive">
-            <table class="table table-striped projects">
+            <table id="example1" class="table table-striped projects">
               <thead>
                   <tr>
                     <th style="width: 5%">
@@ -134,24 +134,22 @@
         </div>
       </div>
 
-      <div class="pagination">
-        <span class="step-links">
-            {% if data1.has_previous %}
-                <a href="?page={{ data1.previous_page_number }}">Previous</a>
-            {% endif %}
-
-            <span class="current">
-                Page {{ data1.number }} of {{ data1.paginator.num_pages }}.
-            </span>
-
-            {% if data1.has_next %}
-                <a href="?page={{ data1.next_page_number }}">Next</a>
-            {% endif %}
-        </span>
-      </div>
-
     </section>
   </div>
+
+  <script>
+    $(function () {
+      $('#example1').DataTable({
+        "paging": true,
+        "lengthChange": false,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "autoWidth": false,
+        "responsive": true,
+      });
+    });
+  </script>
 
   {% endblock %}
   

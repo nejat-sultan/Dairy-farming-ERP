@@ -391,7 +391,8 @@ class Supplier(models.Model):
     farm_entity = models.OneToOneField('FarmEntity', primary_key=True, on_delete=models.CASCADE)
     supplier_name = models.CharField(max_length=250, null=True)
     account_number = models.CharField(max_length=45, null=True)
-    supplier_type_id = models.IntegerField()
+    # supplier_type_id = models.IntegerField()
+    supplier_type = models.ForeignKey(SupplierType,null=True, on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'supplier'

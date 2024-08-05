@@ -40,9 +40,9 @@
         </div>
         {% endfor %}
 
-        <div class="card-body p-0">
+        <div class="card-body">
           <div class="table-responsive">
-            <table class="table table-striped projects">
+            <table id="example1" class="table table-striped projects">
               <thead>
                   <tr>
                     <th style="width: 5%">
@@ -123,22 +123,6 @@
         </div>
       </div>
 
-      <div class="pagination">
-        <span class="step-links">
-            {% if approved_supp.has_previous %}
-                <a href="?page={{ approved_supp.previous_page_number }}">Previous</a>
-            {% endif %}
-
-            <span class="current">
-                Page {{ approved_supp.number }} of {{ approved_supp.paginator.num_pages }}.
-            </span>
-
-            {% if approved_supp.has_next %}
-                <a href="?page={{ approved_supp.next_page_number }}">Next</a>
-            {% endif %}
-        </span>
-      </div>
-
     </section>
   </div>
 
@@ -181,6 +165,20 @@
     </div>
   </div>
 
+  <script>
+    $(function () {
+      $('#example1').DataTable({
+        "paging": true,
+        "lengthChange": false,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "autoWidth": false,
+        "responsive": true,
+      });
+    });
+  </script>
+  
   <script>
     function openExtraModal(orderItemId) {
       document.getElementById('orderItemId').value = orderItemId;

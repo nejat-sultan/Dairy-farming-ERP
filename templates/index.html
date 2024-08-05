@@ -250,12 +250,12 @@
                 });
               </script>
             </div>
-          </div> 
+          </div>
         </div>
         {% endif %}
 
         <div class="row">
-          {% if request.user|has_permission:"erp.view_dataentryclerkdashboard" %}
+          {% if request.user|has_permission:"erp.view_dataentryclerkdashboard"%}
           <div class="col-lg-4 col-md-12">
             <a href="../../supplier" style="text-decoration: none; color: inherit;">
               <div class="info-box mb-3 bg-warning">
@@ -283,6 +283,16 @@
                 <div class="info-box-content">
                   <span class="info-box-text">{{dash7.description}}</span>
                   <span class="info-box-number">{{dash7.amount}}</span>
+                </div>
+              </div>
+            </a>
+
+            <a href="../../cattle" style="text-decoration: none; color: inherit;">
+              <div class="info-box mb-3 bg-secondary">
+                <span class="info-box-icon"><i class="fas fa-horse"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">{{dash8.description}}</span>
+                  <span class="info-box-number">{{dash8.amount}}</span>
                 </div>
               </div>
             </a>
@@ -351,7 +361,7 @@
           </div>
           {% endif %}
 
-          <div class="col-lg-8 col-md-12">
+          <div class="col-lg-6 col-md-12">
             {% if request.user|has_permission:"erp.view_admindashboard" or request.user|has_permission:"erp.view_storeclerkdashboard" %}
             <div class="card">
               <div class="card-header border-transparent">
@@ -464,53 +474,6 @@
             </div>
             {% endif %}
 
-            {% comment %} {% if request.user|has_permission:"erp.view_admindashboard" %}
-            <div class="card">
-              <div class="card-header border-transparent">
-                <h3 class="card-title">Recent Health Checks</h3>
-
-                <div class="card-tools">
-                  <button type="button" class="btn btn-tool" data-card-widget="collapse">
-                    <i class="fas fa-minus"></i>
-                  </button>
-                </div>
-              </div>
-       
-              <div class="card-body p-0">
-                <div class="table-responsive">
-                  <table class="table m-0">
-                    <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Cattle</th>
-                      <th>Findings</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                      {% for d in healthdatas %}
-                      <tr>
-                        <td>
-                          {{d.id}}
-                        </td>
-                        <td>
-                        {{ d.cattle.cattle_name}}
-                        </td>
-                        <td>
-                          {{ d.findings}}
-                        </td>
-                      </tr>
-                      {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-             
-              <div class="card-footer clearfix">
-                <a href="cattle_health_checkup" class="btn btn-sm btn-secondary float-right">View All Checkups</a>
-              </div>
-            </div>
-            {% endif %} {% endcomment %}
-
             {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
             <div class="card">
               <div class="card-header border-transparent">
@@ -570,6 +533,50 @@
             {% endif %}
           </div>
 
+          {% if request.user|has_permission:"erp.view_admindashboard" %}
+          <div class="col-lg-2 col-md-12">
+            <a href="../../supplier" style="text-decoration: none; color: inherit;">
+              <div class="info-box mb-3 bg-warning">
+                <span class="info-box-icon"><i class="fas fa-user-tie"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">{{dash5.description}}</span>
+                  <span class="info-box-number">{{dash5.amount}}</span>
+                </div>
+              </div>
+            </a>
+          
+            <a href="../../employee" style="text-decoration: none; color: inherit;">
+              <div class="info-box mb-3 bg-success">
+                <span class="info-box-icon"><i class="fas fa-users"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">{{dash6.description}}</span>
+                  <span class="info-box-number">{{dash6.amount}}</span>
+                </div>
+              </div>
+            </a>
+        
+            <a href="../../customer" style="text-decoration: none; color: inherit;">
+              <div class="info-box mb-3 bg-danger">
+                <span class="info-box-icon"><i class="fas fa-user-alt"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">{{dash7.description}}</span>
+                  <span class="info-box-number">{{dash7.amount}}</span>
+                </div>
+              </div>
+            </a>
+
+            <a href="../../cattle" style="text-decoration: none; color: inherit;">
+              <div class="info-box mb-3 bg-secondary">
+                <span class="info-box-icon"><i class="fas fa-horse"></i></span>
+                <div class="info-box-content">
+                  <span class="info-box-text">{{dash8.description}}</span>
+                  <span class="info-box-number">{{dash8.amount}}</span>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endif %}
+
           {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
           <div class="col-md-4">
             <div class="card">
@@ -609,7 +616,6 @@
           </div>
           {% endif %}
         </div>
-
 
 
         {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
