@@ -488,7 +488,7 @@
           </li>
 
           <li class="nav-item">
-            {% if request.user|has_permission:"erp.view_customer" or request.user|has_permission:"erp.view_salesorder" %}
+            {% if request.user|has_permission:"erp.view_customer" or request.user|has_permission:"erp.view_salesorder" or request.user|has_permission:"erp.view_cattlesales" %}
             <a href="#" class="nav-link">
               <i class="nav-icon fas fa-lightbulb"></i>
               <p>
@@ -513,7 +513,17 @@
                 <a href="../../sales_order" class="nav-link">
                   <i class="nav-icon fas fa-lightbulb"></i>
                   <p>
-                    Manage Sales
+                    Manage Stock Sales
+                  </p>
+                </a>
+              </li>
+              {% endif %} 
+              {% if request.user|has_permission:"erp.view_cattlesales" %}
+              <li class="nav-item">
+                <a href="../../cattle_sales" class="nav-link">
+                  <i class="nav-icon fas fa-lightbulb"></i>
+                  <p>
+                    Manage Cattle Sales
                   </p>
                 </a>
               </li>

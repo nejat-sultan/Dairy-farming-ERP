@@ -176,20 +176,6 @@
     </section>
 
     <script>
-      $(function () {
-        $('#example1').DataTable({
-          "paging": true,
-          "lengthChange": false,
-          "searching": true,
-          "ordering": true,
-          "info": true,
-          "autoWidth": false,
-          "responsive": true,
-        });
-      });
-    </script>
-
-    <script>
       function confirmApprove(Id) {
         if (confirm("Are you sure you want to approve this task?")) {
           approveLeave(Id);

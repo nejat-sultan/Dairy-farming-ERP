@@ -107,7 +107,7 @@
             {% if filters_applied %} 
             <div class="card-body">
                 <div class="table-responsive">
-                    <table id="example1" class="table table-striped projects">
+                    <table id="example2" class="table table-striped projects">
                         <thead>
                             <tr>
                                 <th>Task</th>
@@ -155,7 +155,7 @@
 <script>
     $(document).ready(function() {
         function initializeDataTables(companyName, startDate, endDate) {
-            var table = $('#example1').DataTable({
+            var table = $('#example2').DataTable({
                 responsive: true,
                 lengthChange: false,
                 autoWidth: false,
@@ -202,7 +202,7 @@
                 ]
             });
 
-            table.buttons().container().appendTo($('#example1_wrapper .col-md-6:eq(0)'));
+            table.buttons().container().appendTo($('#example2_wrapper .col-md-6:eq(0)'));
         }
 
         var companyName = "{{ latest_farm.full_name }}";

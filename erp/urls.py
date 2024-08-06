@@ -140,6 +140,11 @@ urlpatterns = [
     # path('get_stock_quantity/<int:item_id>/<int:type_id>/', views.get_stock_quantity, name='get_stock_quantity'),
     path('get_stock_quantity/<int:item_id>/<int:type_id>/<int:item_measurement_id>/', views.get_stock_quantity, name='get_stock_quantity'),
 
+    path('cattle_sales', views.cattle_sales),
+    path('cattle_sales_add', views.cattle_sales_add),
+    path('cattle_sales_edit/<str:id>', views.cattle_sales_edit, name='cattle_sales_edit'),
+    path('cattle_sales_delete/<str:id>', views.cattle_sales_delete),
+
     path('region', views.region),
     path('region_add', views.region_add),
     path('region_edit/<str:region_id>', views.region_edit, name='region_edit'),
@@ -313,6 +318,7 @@ urlpatterns = [
     path('total_milk_production_report/', views.total_milk_production_report),
     path('stock_report/', views.stock_report),
     path('sales_report/', views.sales_report),
+    path('customer_report/', views.customer_report),
     path('procurement_report/', views.procurement_report), 
     path('supplier_report/', views.supplier_report),
     path('employee_report/', views.employee_report),

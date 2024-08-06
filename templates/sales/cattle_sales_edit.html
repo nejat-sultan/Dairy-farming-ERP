@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block content %} 
+
+<div class="content-wrapper">
+
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Cattle Sales Edit</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="../cattle_sales">Home</a></li>
+                        <li class="breadcrumb-item active">Cattle Sales Edit</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <form action="/cattle_sales_edit/{{ d.id }}" method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card card-primary">
+                        <div class="card-header" style="background-color: #007f5c;color: #fff;">
+                            <h3 class="card-title">Basic Information</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            {% if errors %}
+                            <div class="alert alert-danger">
+                                <ul>
+                                    {% for error in errors %}
+                                    <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            <div class="form-group">
+                                <label for="cattle_name">Cattle</label>
+                                <input type="text" id="cattle_name" class="form-control" value="{{ d.cattle_farm_entity.cattle_name }}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputName">Customer</label>
+                                <select id="inputStatus" name="customer_id" class="form-control custom-select" required>
+                                    {% for customer in data2 %}
+                                    <option value="{{ customer.customer_id }}" {% if customer.customer_id == d.customer_id %} selected {% endif %}>
+                                        {{ customer.person_farm_entity.first_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputName">Unit Price</label>
+                                <input type="text" id="inputName" name="unit_price" value="{{ d.unit_price }}" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card card-secondary">
+                        <div class="card-header">
+                            <h3 class="card-title">Others</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="inputDescription">Order Date</label>
+                                <input type="datetime-local" id="inputName" name="order_date" value="{{ d.order_date|date:'Y-m-d' }}T{{ d.order_date|time:'H:i' }}" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputName">Payment Method</label>
+                                <select id="inputStatus" name="payment_method" class="form-control custom-select">
+                                    {% for payment_method in data3 %}
+                                    <option value="{{ payment_method.id }}" {% if payment_method.id == d.payment_method_id %} selected {% endif %}>
+                                        {{ payment_method.payment_method }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputName">Payment Status</label>
+                                <select id="inputStatus" name="payment_status" class="form-control custom-select">
+                                    <option value="Not Paid" {% if d.payment_status == 'Not Paid' %} selected {% endif %}>Not Paid</option>
+                                    <option value="Fully Paid" {% if d.payment_status == 'Fully Paid' %} selected {% endif %}>Fully Paid</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <a href="../cattle_sales" class="btn btn-secondary">Back</a>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;"> Update Cattle Sales</button>
+                </div>
+            </div>
+        </form>
+    </section>
+
+</div>
+
+{% endblock %}

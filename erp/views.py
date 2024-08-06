@@ -21,7 +21,7 @@ from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from dairyfarmingerp import settings
-from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleStatus, ContactType, CurrentMilkPrice, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, Farm, FarmContacts, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, OtherIncomeExpense, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
+from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleSales, CattleStatus, ContactType, CurrentMilkPrice, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, Farm, FarmContacts, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, OtherIncomeExpense, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -100,7 +100,7 @@ def farm(request):
     return render(request, 'company/farm.html', context)
 
 def get_assigned_tasks(employee):
-    assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status=None).order_by('-due_time')
+    assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status='pending').order_by('-due_time')
     return assigned_tasks
 
 def get_rejected_tasks(employee):
@@ -690,7 +690,7 @@ def index(request):
     dash7.description = 'Customers'
 
     dash8 = Dashboard()
-    dash8.amount = Cattle.objects.all().count()
+    dash8.amount = Cattle.objects.filter(cattle_status__cattle_status="Active").count()
     dash8.description = 'Cattles'
 
     data = OrderHasItem.objects.all()[:10]
@@ -768,7 +768,7 @@ def cattle(request):
     if not request.user.has_perm('erp.view_cattle'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    data = Cattle.objects.all()
+    data = Cattle.objects.filter(cattle_status__cattle_status="Active")
     context = {"data":data}
 
     return render(request, 'cattle/cattle.html', context)
@@ -1072,8 +1072,7 @@ def cattle_status(request):
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = CattleStatus.objects.all().order_by('-modified_date')
     
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'cattle/cattle_status.html', context)
 
@@ -1192,8 +1191,7 @@ def pregnancy_status(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = PregnancyStatus.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'cattle/pregnancy_status.html', context)
 
@@ -1253,7 +1251,7 @@ def cattle_pregnancy(request):
         return redirect(request.META.get('HTTP_REFERER', '/'))
     
     pregnant_status = PregnancyStatus.objects.filter(pregnancy_status='Pregnant').first()
-    data = CattlePregnancy.objects.filter(pregnancy_status=pregnant_status)
+    data = CattlePregnancy.objects.filter(pregnancy_status=pregnant_status, cattle__cattle_status__cattle_status="Active") 
     cattle = Cattle.objects.all()
 
     context = {"data1":data, 'cattle': cattle,}
@@ -1297,7 +1295,7 @@ def cattle_pregnancy_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data1': Cattle.objects.filter(cattle_gender="Female"),
+                'data1': Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active"),  
                 'data2': PregnancyStatus.objects.all(),
             }
             return render(request, 'cattle/cattle_pregnancy_add.html', context)
@@ -1307,7 +1305,7 @@ def cattle_pregnancy_add(request):
         messages.success(request, "Cattle Pregnancy Added Successfully!")
         return redirect("/cattle_pregnancy")
     
-    cattle_data = Cattle.objects.filter(cattle_gender="Female")
+    cattle_data = Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active")
     status_data = PregnancyStatus.objects.all()
 
     context = {
@@ -1357,7 +1355,7 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
                 'errors': errors,
                 "d": d, 
                 "cattle": edit, 
-                "cattles": Cattle.objects.filter(cattle_gender="Female"),
+                "cattles": Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active"),
             }
             return render(request, 'cattle/cattle_pregnancy_edit.html', context)
         
@@ -1374,7 +1372,7 @@ def cattle_pregnancy_edit(request,cattle_pregnancy_id):
     
 
     d = CattlePregnancy.objects.get(cattle_pregnancy_id=cattle_pregnancy_id)
-    cattles = Cattle.objects.filter(cattle_gender="Female")
+    cattles = Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active")
     statuses = PregnancyStatus.objects.all()
     context = {"d": d, "pregnancy": edit, "cattles": cattles, "statuses": statuses,}
 
@@ -1395,8 +1393,7 @@ def vaccine(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Vaccine.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'cattle/vaccine.html', context)
 
@@ -1459,7 +1456,7 @@ def cattle_has_vaccine(request):
     
     # overdue_cattle = get_overdue_vaccines()
     vaccination_notifications = get_vaccination_notifications()
-    data = CattleHasVaccine.objects.all()
+    data = CattleHasVaccine.objects.filter(cattle__cattle_status__cattle_status="Active")
     cattle = Cattle.objects.all()
     vaccine = Vaccine.objects.all()
 
@@ -1491,7 +1488,7 @@ def cattle_has_vaccine_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data1': Cattle.objects.all(),
+                'data1': Cattle.objects.filter(cattle_status__cattle_status="Active"),
                 'data2': Vaccine.objects.all()
             }
             return render(request, 'cattle/cattle_add.html', context)
@@ -1501,7 +1498,7 @@ def cattle_has_vaccine_add(request):
         messages.success(request, "Cattle Vaccination Added Successfully!")
         return redirect("/cattle_has_vaccine")
     
-    cattle_data = Cattle.objects.all()
+    cattle_data = Cattle.objects.filter(cattle_status__cattle_status="Active")
     vaccine_data = Vaccine.objects.all()
     context = {
         'data1': cattle_data,
@@ -1536,7 +1533,7 @@ def cattle_has_vaccine_edit(request,id):
         if errors:
             context = {
                 'errors': errors,
-                'cattles': Cattle.objects.all(),
+                'cattles': Cattle.objects.filter(cattle_status__cattle_status="Active"),
                 'vaccines': Vaccine.objects.all(),
                 "d": CattleHasVaccine.objects.get(id=id), 
                 "cattle": edit, 
@@ -1555,7 +1552,7 @@ def cattle_has_vaccine_edit(request,id):
     
 
     d = CattleHasVaccine.objects.get(id=id)
-    cattles = Cattle.objects.all()
+    cattles = Cattle.objects.filter(cattle_status__cattle_status="Active")
     vaccines = Vaccine.objects.all()
     context = {"d": d, "cattle": edit, "cattles": cattles, "vaccines": vaccines,}
 
@@ -1577,8 +1574,7 @@ def medicine(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Medicine.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'cattle/medicine.html', context)
 
@@ -1638,7 +1634,7 @@ def cattle_health_checkup(request):
     if not request.user.has_perm('erp.view_cattlehealthcheckup'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    data = CattleHealthCheckup.objects.all()
+    data = CattleHealthCheckup.objects.filter(cattle__cattle_status__cattle_status="Active")
     cattle = Cattle.objects.all()
     person = Person.objects.all()
     employee = Employee.objects.all()
@@ -1683,7 +1679,7 @@ def cattle_health_checkup_add(request):
         messages.success(request, "Cattle Checkup Added Successfully!")
         return redirect("/cattle_health_checkup")
     
-    cattle_data = Cattle.objects.all()
+    cattle_data = Cattle.objects.filter(cattle_status__cattle_status="Active")
     context = {
         'data1': cattle_data,
     }
@@ -1720,7 +1716,7 @@ def cattle_health_checkup_edit(request, id):
         return redirect("/cattle_health_checkup")
 
     d = CattleHealthCheckup.objects.get(id=id)
-    cattles = Cattle.objects.all()
+    cattles = Cattle.objects.filter(cattle_status__cattle_status="Active")
     context = {"d": d, "cattle": edit, "cattles": cattles,}
 
     return render(request, 'cattle/cattle_health_checkup_edit.html', context)
@@ -1882,7 +1878,7 @@ def milk_production(request):
     if not request.user.has_perm('erp.view_milkproduction'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    data = MilkProduction.objects.all()
+    data = MilkProduction.objects.filter(cattle__cattle_status__cattle_status="Active")
     cattle = Cattle.objects.all()
 
     context = {"data1":data, 'cattle': cattle,}
@@ -1962,7 +1958,7 @@ def milk_production_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data2': Cattle.objects.filter(cattle_gender="Female"),
+                'data2': Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active"),
             }
             return render(request, 'cattle/milk_production_add.html', context)
 
@@ -1989,7 +1985,7 @@ def milk_production_add(request):
                 errors.append("Current milk price is not set. Please set the current milk price.")
                 context = {
                     'errors': errors,
-                    'data2': Cattle.objects.filter(cattle_gender="Female"),
+                    'data2': Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active"),
                 }
                 return render(request, 'cattle/milk_production_add.html', context)
 
@@ -2020,7 +2016,7 @@ def milk_production_add(request):
                 errors.append(f"Error updating stock: {str(e)}")
                 context = {
                     'errors': errors,
-                    'data2': Cattle.objects.filter(cattle_gender="Female"),
+                    'data2': Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active"),
                 }
                 return render(request, 'cattle/milk_production_add.html', context)
 
@@ -2034,11 +2030,11 @@ def milk_production_add(request):
 
         context = {
             'errors': errors,
-            'data2': Cattle.objects.filter(cattle_gender="Female"),
+            'data2': Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active"),
         }
         return render(request, 'cattle/milk_production_add.html', context)
 
-    cattle_data = Cattle.objects.filter(cattle_gender="Female")
+    cattle_data = Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active")
     context = {
         'data2': cattle_data,
     }
@@ -2117,7 +2113,7 @@ def milk_production_edit(request, milk_production_id):
             cduration_in_min = 0 
             
         if errors:
-            cattles = Cattle.objects.filter(cattle_gender="Female")
+            cattles = Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active")
             context = {
                 'cattle': edit,
                 'errors': errors,
@@ -2146,7 +2142,7 @@ def milk_production_edit(request, milk_production_id):
             errors.append(f"Error: {str(e)}")
             context = {
                 'errors': errors,
-                'cattles': Cattle.objects.filter(cattle_gender="Female"),
+                'cattles': Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active"),
                 "d": edit,
             }
             return render(request, 'cattle/milk_production_edit.html', context)
@@ -2154,7 +2150,7 @@ def milk_production_edit(request, milk_production_id):
             errors.append(f"Error: {str(e)}")
             context = {
                 'errors': errors,
-                'cattles': Cattle.objects.filter(cattle_gender="Female"),
+                'cattles': Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active"),
                 "d": edit,  
             }
             return render(request, 'cattle/milk_production_edit.html', context)
@@ -2166,7 +2162,7 @@ def milk_production_edit(request, milk_production_id):
             context = {
                 'errors': errors,
                 "d": edit,  
-                "cattles": Cattle.objects.filter(cattle_gender="Female")
+                "cattles": Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active")
             }
             return render(request, 'cattle/milk_production_edit.html', context)
 
@@ -2209,7 +2205,7 @@ def milk_production_edit(request, milk_production_id):
             errors.append(f"Error updating stock: {str(e)}")
             context = {
                 'errors': errors,
-                'cattles': Cattle.objects.filter(cattle_gender="Female"),
+                'cattles': Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active"),
                 "d": edit,  
             }
             return render(request, 'cattle/milk_production_edit.html', context)
@@ -2217,7 +2213,7 @@ def milk_production_edit(request, milk_production_id):
         messages.success(request, "Milk Production Updated Successfully!")
         return redirect("/milk_production")
 
-    cattles = Cattle.objects.filter(cattle_gender="Female")
+    cattles = Cattle.objects.filter(cattle_gender="Female", cattle_status__cattle_status="Active")
     context = {
         "d": edit,  
         "cattle": edit,
@@ -2241,8 +2237,7 @@ def current_milk_price(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = CurrentMilkPrice.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'cattle/current_milk_price.html', context)
 
@@ -2524,7 +2519,7 @@ def cattle_has_feed(request):
     if not request.user.has_perm('erp.view_cattlehasfeed'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    data = CattleHasFeed.objects.all().order_by('-modified_date')
+    data = CattleHasFeed.objects.filter(cattle_farm_entity__cattle_status__cattle_status="Active").order_by('-modified_date')
 
     cattle_data = Cattle.objects.all()
     shift_data = Shift.objects.all()
@@ -2576,7 +2571,7 @@ def cattle_has_feed_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data1': Cattle.objects.all(),
+                'data1': Cattle.objects.filter(cattle_status__cattle_status="Active"),
                 'data2': Shift.objects.all(),
                 'data3': FeedFormulation.objects.all(),
             }
@@ -2588,7 +2583,7 @@ def cattle_has_feed_add(request):
         messages.success(request, "Cattle Feed Added Successfully!")
         return redirect("/cattle_has_feed")
     
-    cattle_data = Cattle.objects.all()
+    cattle_data =     Cattle.objects.filter(cattle_status__cattle_status="Active")
     shift_data = Shift.objects.all()
     formulation_data = FeedFormulation.objects.all()
 
@@ -2625,7 +2620,7 @@ def cattle_has_feed_edit(request,id):
                 'errors': errors,
                 "d": CattleHasFeed.objects.get(id=id),
                 "item": edit,
-                'data1': Cattle.objects.all(),
+                'data1': Cattle.objects.filter(cattle_status__cattle_status="Active"),
                 'data2': Shift.objects.all(),
                 'data3': FeedFormulation.objects.all(),
             }
@@ -2644,7 +2639,7 @@ def cattle_has_feed_edit(request,id):
         return redirect("/cattle_has_feed")
 
     d = CattleHasFeed.objects.get(id=id)
-    cattle_data = Cattle.objects.all()
+    cattle_data = Cattle.objects.filter(cattle_status__cattle_status="Active")
     shift_data = Shift.objects.all()
     formulation_data = FeedFormulation.objects.all()
     context = {"d": d,"item": edit, "data1":cattle_data, 'data2': shift_data, 'data3': formulation_data,}
@@ -2668,8 +2663,7 @@ def person_type(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = PersonType.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'person/person_type.html', context)
 
@@ -2727,8 +2721,7 @@ def person_title(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = PersonTitle.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'person/person_title.html', context)
 
@@ -2786,8 +2779,7 @@ def contact_type(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = ContactType.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'person/contact_type.html', context)
 
@@ -2849,8 +2841,7 @@ def payment_method(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = PaymentMethod.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'sales/payment_method.html', context)
 
@@ -3486,14 +3477,179 @@ def sales_order_delete(request, id):
     messages.error(request, "Sales Order Deleted Successfully!")
     return redirect("/sales_order")
 
+
+@login_required(login_url='login')
+def cattle_sales(request):
+    if not request.user.has_perm('erp.view_cattlesales'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    data = CattleSales.objects.all()
+    context = {
+        "data1":data,
+    }
+
+    return render(request, 'sales/cattle_sales.html', context)
+
+@login_required(login_url='login')
+def cattle_sales_add(request):
+    if not request.user.has_perm('erp.add_cattlesales'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    if request.method == "POST":
+        ccattle_name = request.POST.get('cattle_name')
+        ccustomer_id = request.POST.get('customer_id')
+        corder_date = request.POST.get('order_date')
+        cunit_price = request.POST.get('unit_price')
+        cpayment_method = request.POST.get('payment_method')
+        cpayment_status = request.POST.get('payment_status')
+
+        errors = []
+        if corder_date:
+            try:
+                corder_date = datetime.strptime(corder_date, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Order Date must be in YYYY-MM-DDTHH:MM format.')
+        else:
+            errors.append("Order Date is required.")
+
+        if cunit_price:
+            try:
+                cunit_price = float(cunit_price)
+                if cunit_price < 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append('Price must be a number.')
+        else:
+            errors.append("Price is required.")
+
+        if errors:
+            context = {
+                'errors': errors,
+                'data1': Cattle.objects.filter(cattle_status__cattle_status="Active"),
+                'data2': Customer.objects.all(),
+                'data3': PaymentMethod.objects.all(),
+            }
+            return render(request, 'sales/cattle_sales_add.html', context)
+
+        query = CattleSales(
+            cattle_farm_entity_id=ccattle_name,
+            customer_id=ccustomer_id,
+            order_date=corder_date,
+            unit_price=cunit_price,
+            payment_method_id=cpayment_method,
+            payment_status=cpayment_status,
+            total_amount=cunit_price,
+        )
+        query.save()
+
+        cattle = get_object_or_404(Cattle, farm_entity_id=ccattle_name)
+        sold_status = CattleStatus.objects.get(cattle_status="Sold")
+        cattle.cattle_status = sold_status
+        cattle.save()
+
+        messages.success(request, "Cattle Sales Added Successfully!")
+        return redirect("/cattle_sales")
+
+    data1 = Cattle.objects.filter(cattle_status__cattle_status="Active")
+    data2 = Customer.objects.all()
+    data3 = PaymentMethod.objects.all()
+    context = {
+        'data1': data1,
+        'data2': data2,
+        'data3': data3,
+    }
+
+    return render(request, 'sales/cattle_sales_add.html', context)
+
+@login_required(login_url='login')
+def cattle_sales_edit(request, id):
+    if not request.user.has_perm('erp.change_cattlesales'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    edit = CattleSales.objects.get(id=id)
+
+    if request.method == "POST":
+        ccustomer_id = request.POST.get('customer_id')
+        corder_date = request.POST.get('order_date')
+        cunit_price = request.POST.get('unit_price')
+        cpayment_method = request.POST.get('payment_method')
+        cpayment_status = request.POST.get('payment_status')
+
+        errors = []
+        if corder_date:
+            try:
+                corder_date = datetime.strptime(corder_date, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                errors.append('Order Date must be in YYYY-MM-DDTHH:MM format.')
+        else:
+            errors.append("Order Date is required.")
+
+        if cunit_price:
+            try:
+                cunit_price = float(cunit_price)
+                if cunit_price < 0:
+                    errors.append("Price must be a positive number.")
+            except ValueError:
+                errors.append('Price must be a number.')
+        else:
+            errors.append("Price is required.")
+
+        if errors:
+            context = {
+                'errors': errors,
+                'd': edit,
+                'data1': CattleSales.objects.all(),
+                'data2': Customer.objects.all(),
+                'data3': PaymentMethod.objects.all(),
+            }
+            return render(request, 'sales/cattle_sales_edit.html', context)
+        
+        ctotal_amount = cunit_price
+
+        edit.customer_id = ccustomer_id
+        edit.order_date = corder_date
+        edit.unit_price = cunit_price
+        edit.payment_method_id = cpayment_method
+        edit.payment_status = cpayment_status
+        edit.total_amount = ctotal_amount
+        edit.cattle_farm_entity.cattle_status.cattle_status = "Sold"
+        edit.save()
+
+        messages.success(request, "Cattle Sales updated Successfully!")
+        return redirect("/cattle_sales")
+    
+    d = edit
+    data1 = Cattle.objects.all()
+    data2 = Customer.objects.all()
+    data3 = PaymentMethod.objects.all()
+    context = {
+        "d": d,
+        'data1': data1,
+        'data2': data2,
+        'data3': data3,
+    }
+    return render(request, 'sales/cattle_sales_edit.html', context)
+
+
+def cattle_sales_delete(request, id):
+    if not request.user.has_perm('erp.delete_cattlesales'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    d = CattleSales.objects.get(id=id)
+    d.delete()
+    messages.error(request, "Cattle Sales Deleted Successfully!")
+    return redirect("/cattle_sales")
+
+
 @login_required(login_url='login')
 def region(request):
     if not request.user.has_perm('erp.view_region'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Region.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'person/region.html', context)
 
@@ -3551,8 +3707,7 @@ def guarantee_type(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = GuaranteeType.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'employee/guarantee_type.html', context)
 
@@ -3722,8 +3877,7 @@ def task(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Task.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'employee/task.html', context)
 
@@ -3974,8 +4128,7 @@ def job(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Job.objects.all()
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'employee/job.html', context)
 
@@ -4092,8 +4245,7 @@ def item_type(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = ItemType.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'procurement/item_type.html', context)
 
@@ -4151,8 +4303,7 @@ def item(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = Item.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'procurement/item.html', context)
 
@@ -4210,8 +4361,7 @@ def supplier_type(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = SupplierType.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'procurement/supplier_type.html', context)
 
@@ -5103,8 +5253,7 @@ def item_measurement(request):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
     data = ItemMeasurement.objects.all().order_by('-modified_date')
-    paginated_data = paginate_data(request, data, 10) 
-    context = {"data1":paginated_data}
+    context = {"data1":data}
 
     return render(request, 'inventory/item_measurement.html', context)
 
@@ -5501,7 +5650,7 @@ def stockout_add(request):
         if errors:
             context = {
                 'errors': errors,
-                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+                'data1': Stock.objects.values('item_id', 'item__name').distinct().exclude(item__name="Milk"),
                 'data2': ItemMeasurement.objects.all(),
                 'data3': ItemType.objects.all(),
             }
@@ -5517,7 +5666,7 @@ def stockout_add(request):
             errors.append("Stock item not found.")
             context = {
                 'errors': errors,
-                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+                'data1': Stock.objects.values('item_id', 'item__name').distinct().exclude(item__name="Milk"),
                 'data2': ItemMeasurement.objects.all(),
                 'data3': ItemType.objects.all(),
             }
@@ -5528,7 +5677,7 @@ def stockout_add(request):
         if cquantity > current_stock_quantity:
             errors.append("Requested quantity exceeds current stock")
             
-            item_data = Stock.objects.values('item_id', 'item__name').distinct()
+            item_data = Stock.objects.values('item_id', 'item__name').distinct().exclude(item__name="Milk")
             measurement_data = ItemMeasurement.objects.all()
             type_data = ItemType.objects.all()
             
@@ -5548,7 +5697,7 @@ def stockout_add(request):
         messages.success(request, "Stock out request sent Successfully!")
         return redirect("/stock_out")
     
-    item_data = Stock.objects.values('item_id', 'item__name').distinct()
+    item_data = Stock.objects.values('item_id', 'item__name').distinct().exclude(item__name="Milk")
     measurement_data = ItemMeasurement.objects.all()
     type_data = ItemType.objects.all()
     context = {
@@ -5594,7 +5743,7 @@ def stockout_edit(request,id):
                 'errors': errors,
                 "d": Stockout.objects.get(id=id), 
                 "item": edit,
-                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+                'data1': Stock.objects.values('item_id', 'item__name').distinct().exclude(item__name="Milk"),
                 'current_item_id': current_item_id,
                 'current_item_type_id': current_item_type_id,
                 'current_item_measurement_id': current_item_measurement_id,
@@ -5613,7 +5762,7 @@ def stockout_edit(request,id):
                 'errors': errors,
                 "d": Stockout.objects.get(id=id), 
                 "item": edit,
-                'data1': Stock.objects.values('item_id', 'item__name').distinct(),
+                'data1': Stock.objects.values('item_id', 'item__name').distinct().exclude(item__name="Milk"),
                 'current_item_id': current_item_id,
                 'current_item_type_id': current_item_type_id,
                 'current_item_measurement_id': current_item_measurement_id,
@@ -5627,7 +5776,7 @@ def stockout_edit(request,id):
             errors.append("Requested quantity exceeds current stock")
             
             d = Stockout.objects.get(id=id)
-            data1 = Stock.objects.values('item_id', 'item__name').distinct()
+            data1 = Stock.objects.values('item_id', 'item__name').distinct().exclude(item__name="Milk")
             
             context = {
                 'errors': errors,
@@ -5652,7 +5801,7 @@ def stockout_edit(request,id):
         return redirect("/stock_out")
 
     d = Stockout.objects.get(id=id)
-    data1 = Stock.objects.values('item_id', 'item__name').distinct()
+    data1 = Stock.objects.values('item_id', 'item__name').distinct().exclude(item__name="Milk")
         
     context = {
         'd': d,
@@ -7032,21 +7181,23 @@ def balance_sheet(request):
     past_year = current_year - 1
 
     accounts_receivable_value = SalesOrder.objects.filter(payment_status='Not Paid',order_date__year__lte=current_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+    accounts_receivable_value2 = CattleSales.objects.filter(payment_status='Not Paid', order_date__year__lte=current_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
     other_income_value = OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year,transaction_type='Income',transaction_status='Pending').aggregate(total_value=Sum('amount'))['total_value'] or 0
     current_year_assets = {
         'cattle': Cattle.objects.filter(acquired_date__year__lte=current_year).aggregate(total_value=Sum('estimated_price'))['total_value'] or 0,
         'stock': get_total_stock_value(Stock.objects.all()),
-        'accounts_receivable': accounts_receivable_value + other_income_value,
+        'accounts_receivable': accounts_receivable_value + accounts_receivable_value2 + other_income_value,
         'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year, transaction_type='Income', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
     }
     current_year_total_assets = sum(current_year_assets.values())
 
     past_accounts_receivable_value = SalesOrder.objects.filter(payment_status='Not Paid',order_date__year__lte=past_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+    past_accounts_receivable_value2 = CattleSales.objects.filter(payment_status='Not Paid',order_date__year__lte=past_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
     past_other_income_value = OtherIncomeExpense.objects.filter(transaction_date__year__lte=past_year, transaction_type='Income', transaction_status='Pending').aggregate(total_value=Sum('amount'))['total_value'] or 0
     past_year_assets = {
         'cattle': Cattle.objects.filter(acquired_date__year__lte=past_year).aggregate(total_value=Sum('estimated_price'))['total_value'] or 0,
         'stock': 0,
-        'accounts_receivable': past_accounts_receivable_value + past_other_income_value,
+        'accounts_receivable': past_accounts_receivable_value + past_accounts_receivable_value2 + past_other_income_value,
         'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=past_year, transaction_type='Income', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
     }
     past_year_total_assets = sum(past_year_assets.values())
@@ -7096,10 +7247,16 @@ def account_receivables(request):
     end_date = request.GET.get('end_date')
     
     accounts_receivable_value = 0
+    accounts_receivable_value2 = 0
     other_income_value = 0
 
     if start_date and end_date:
         accounts_receivable_value = SalesOrder.objects.filter(
+            payment_status='Not Paid',
+            order_date__range=[start_date, end_date]
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
+        accounts_receivable_value2 = CattleSales.objects.filter(
             payment_status='Not Paid',
             order_date__range=[start_date, end_date]
         ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
@@ -7116,6 +7273,11 @@ def account_receivables(request):
             order_date__gte=start_date
         ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
 
+        accounts_receivable_value2 = CattleSales.objects.filter(
+            payment_status='Not Paid',
+            order_date__gte=start_date
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
         other_income_value = OtherIncomeExpense.objects.filter(
             transaction_date__gte=start_date,
             transaction_type='Income',
@@ -7128,17 +7290,23 @@ def account_receivables(request):
             order_date__lte=end_date
         ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
 
+        accounts_receivable_value2 = CattleSales.objects.filter(
+            payment_status='Not Paid',
+            order_date__lte=end_date
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
         other_income_value = OtherIncomeExpense.objects.filter(
             transaction_date__lte=end_date,
             transaction_type='Income',
             transaction_status='Pending'
         ).aggregate(total_value=Sum('amount'))['total_value'] or 0
 
-    accounts_receivable_total = accounts_receivable_value + other_income_value
+    accounts_receivable_total = accounts_receivable_value + accounts_receivable_value2 + other_income_value
 
     context = {
         'accounts_receivable': accounts_receivable_total,
         'accounts_receivable_value': accounts_receivable_value,
+        'accounts_receivable_value2': accounts_receivable_value2,
         'other_income_value': other_income_value,
         'filters_applied': bool(start_date or end_date),
     }
@@ -7237,6 +7405,11 @@ def profit_loss(request):
             order_date__range=[start_date, end_date]
         ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
 
+        current_year_incomes['cattle_sales_income'] = CattleSales.objects.filter(
+            payment_status='Fully Paid',
+            order_date__range=[start_date, end_date]
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
         current_year_incomes['other_income'] = OtherIncomeExpense.objects.filter(
             transaction_date__range=[start_date, end_date],
             transaction_type='Income',
@@ -7263,6 +7436,11 @@ def profit_loss(request):
 
     elif start_date:
         current_year_incomes['sales_income'] = SalesOrder.objects.filter(
+            payment_status='Fully Paid',
+            order_date__range=[start_date, datetime.now().date()]
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
+        current_year_incomes['cattle_sales_income'] = CattleSales.objects.filter(
             payment_status='Fully Paid',
             order_date__range=[start_date, datetime.now().date()]
         ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
@@ -7294,6 +7472,11 @@ def profit_loss(request):
     elif end_date:
 
         current_year_incomes['sales_income'] = SalesOrder.objects.filter(
+            payment_status='Fully Paid',
+            order_date__lte=end_date
+        ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
+
+        current_year_incomes['cattle_sales_income'] = CattleSales.objects.filter(
             payment_status='Fully Paid',
             order_date__lte=end_date
         ).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
@@ -7509,14 +7692,7 @@ def supplier_report(request):
     if not request.user.has_perm('erp.view_reports'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
-    # supplier_data = Supplier.objects.all()
-    supplier_data = Supplier.objects.select_related(
-        'farm_entity', 
-        'supplier_type',
-    ).prefetch_related(
-        'farm_entity__farmentitycontact_set',
-        'farm_entity__farmentityaddress_set',
-    ).all()
+    supplier_data = Supplier.objects.all()
 
     context = {
         'supplier_data': supplier_data,
@@ -7579,6 +7755,19 @@ def sales_report(request):
     }
 
     return render(request, 'reports/sales_report.html', context)
+
+@login_required(login_url='login')
+def customer_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    customer_data = Customer.objects.all()
+    
+    context = {
+        'customer_data': customer_data,
+    }
+
+    return render(request, 'reports/customer_report.html', context)
 
 @login_required(login_url='login')
 def employee_report(request):

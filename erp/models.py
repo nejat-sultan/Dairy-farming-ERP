@@ -546,21 +546,6 @@ class PaymentMethod(models.Model):
     class Meta:
         db_table = 'payment_method'
 
-# class SalesOrder(models.Model):
-#     id = models.AutoField(primary_key=True)
-#     # order_date = models.CharField(max_length=45, null=True)
-#     order_date = models.DateTimeField(null=True)
-#     quantity = models.FloatField()
-#     unit_price = models.FloatField(null=True)
-#     payment_status = models.CharField(max_length=45, null=True)
-#     total_amount = models.FloatField(null=True)
-#     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-#     # stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
-#     stock = models.ForeignKey(Stock, on_delete=models.SET_NULL, null=True)
-#     payment_method = models.OneToOneField(PaymentMethod, on_delete=models.CASCADE, null=True)
-
-#     class Meta:
-#         db_table = 'sales_order'
 
 class SalesOrder(models.Model):
     id = models.AutoField(primary_key=True)
@@ -578,6 +563,19 @@ class SalesOrder(models.Model):
 
     class Meta:
         db_table = 'sales_order'
+
+class CattleSales(models.Model):
+    id = models.AutoField(primary_key=True)
+    order_date = models.DateTimeField(null=True)
+    unit_price = models.FloatField(null=True)
+    payment_status = models.CharField(max_length=45, null=True)
+    total_amount = models.FloatField(null=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    cattle_farm_entity = models.ForeignKey(Cattle, on_delete=models.CASCADE)
+    payment_method = models.ForeignKey(PaymentMethod, on_delete=models.CASCADE, null=True)
+
+    class Meta:
+        db_table = 'cattle_sales'
 
 
 class OtherIncomeExpense(models.Model):

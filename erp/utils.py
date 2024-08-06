@@ -57,11 +57,11 @@ def get_low_quantity_items():
     return low_quantity_items
 
 def get_assigned_tasks(employee):
-    assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status=None).order_by('-due_time')
+    assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status='pending').order_by('-due_time')
     return assigned_tasks
 
 def get_completed_tasks():
-    completed_tasks = TaskAssignment.objects.filter(Q(status='Completed') | Q(status='Reassigned'),approval_status=None)
+    completed_tasks = TaskAssignment.objects.filter(Q(status='Completed') | Q(status='Reassigned'),approval_status='pending')
     return completed_tasks
 
 def get_rejected_tasks(employee):
