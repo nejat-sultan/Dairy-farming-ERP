@@ -115,7 +115,10 @@
                                 <th>Due Date</th>
                                 <th>Shift</th>
                                 <th>Status</th>
+                                <th>Task Updated Time</th>
+                                <th>Reason for Delay</th>
                                 <th>Approval Status</th>
+                                <th>Rating(10)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -126,7 +129,10 @@
                                 <td>{{ entry.due_time }}</td>
                                 <td>{{ entry.shift.shift_name }}</td>
                                 <td>{{ entry.status }}</td>
+                                <td>{{ entry.task_updated_time }}</td>
+                                <td>{{ entry.reason }}</td>
                                 <td>{{ entry.approval_status }}</td>
+                                <td>{{ entry.rating }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>

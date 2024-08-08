@@ -137,6 +137,14 @@
                     </a>
                     <div class="dropdown-divider"></div>
                 {% endif %}
+                {% if notifications.overdue_tasks %}
+                    <a href="../../assign_task" class="dropdown-item">
+                        <i class="fas fa-tasks mr-2"></i> 
+                        <span class="notification-text">There is {{ overdue_tasks_count }} overdue tasks.</span>
+                        <span class="float-right text-muted text-sm">Overdue Tasks</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                {% endif %}
             {% endif %}
             
             {% if request.user|has_permission:"erp.view_storeclerkdashboard" or request.user|has_permission:"erp.view_admindashboard" %}
@@ -165,6 +173,15 @@
                         <i class="fas fa-tasks mr-2"></i> 
                         <span class="notification-text">You have {{ rejected_tasks_count }} rejected tasks.</span>
                         <span class="float-right text-muted text-sm">Rejected Tasks</span>
+                    </a>
+                    <div class="dropdown-divider"></div> 
+                {% endif %}
+
+                {% if notifications.overdue_tasks %}
+                    <a href="../../assign_task" class="dropdown-item">
+                        <i class="fas fa-tasks mr-2"></i> 
+                        <span class="notification-text">You have {{ overdue_tasks_count }} overdue tasks.</span>
+                        <span class="float-right text-muted text-sm">Overdue Tasks</span>
                     </a>
                     <div class="dropdown-divider"></div>
                 {% endif %}
@@ -223,7 +240,16 @@
                         <span class="float-right text-muted text-sm">Completed Tasks</span>
                     </a>
                     <div class="dropdown-divider"></div>
-                {% endif %}
+                {% endif %} 
+
+                {% comment %} {% if notifications.upcoming_due_tasks %}
+                <a href="../../assign_task" class="dropdown-item">
+                    <i class="fas fa-clipboard-check mr-2"></i> 
+                    <span class="notification-text">There is {{ upcoming_due_tasks_count }} task with arriving due date and not completed.</span>
+                    <span class="float-right text-muted text-sm">Arriving DueDate</span>
+                </a>
+                <div class="dropdown-divider"></div>
+              {% endif %} {% endcomment %}
             {% endif %}
         </div>
       </li>

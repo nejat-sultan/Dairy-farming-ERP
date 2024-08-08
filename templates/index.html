@@ -676,7 +676,7 @@
 
     <div id="notifications" style="display:none;">
     {% if request.user|has_permission:"erp.view_admindashboard" %}
-      {% if vaccination_notifications %}
+      {% if vaccination_notifications or overdue_tasks %}
         <div id="overdue-cattle-notification">
             {% for notification in vaccination_notifications %}
               {% if notification.status == 'upcoming' %}
@@ -685,7 +685,12 @@
                   <strong>{{ notification.name }}</strong> was scheduled for <strong>{{ notification.vaccine_name }}</strong> on <strong>{{ notification.scheduled_time|date:"Y-m-d H:i" }}(Overdue)</strong>.<br>
               {% endif %}
             {% endfor %}
+
+            {% for task_assignment in overdue_tasks %}
+                The task <strong>{{ task_assignment.task.task_name }}</strong> is Overdue. Due Time was: <strong>{{ task_assignment.due_time }}</strong><br>
+            {% endfor %}
         </div>
+
       {% endif %}
     {% endif %}
 
@@ -693,18 +698,23 @@
       {% if low_quantity_items %}
         <div id="low-quantity-items-notification">
           {% for item in low_quantity_items %}
-              {{ item.item.name }} is low on stock wiith quantity: {{ item.quantity }}<br>
+              {{ item.item.name }} is low on stock with quantity: {{ item.quantity }}<br>
           {% endfor %}
         </div>
       {% endif %}
     {% endif %}
 
     {% if request.user|has_permission:"erp.view_laboremployeedashboard" %}
-      {% if assigned_tasks or rejected_tasks %}
+      {% if assigned_tasks or rejected_tasks or overdue_tasks %}
         <div id="task-assignment-notifications" style="display:none;">
           {% if assigned_tasks %}
             {% for task_assignment in assigned_tasks %}
                   {{ task_assignment.task.task_name }} - Due Time: {{ task_assignment.due_time }}<br>
+              {% endfor %}
+          {% endif %} 
+          {% if overdue_tasks %}
+            {% for task_assignment in overdue_tasks %}
+                  The task {{ task_assignment.task.task_name }} is Overdue. Due Time was: {{ task_assignment.due_time }}<br>
               {% endfor %}
           {% endif %}
           {% if rejected_tasks %}

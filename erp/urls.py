@@ -170,6 +170,7 @@ urlpatterns = [
     path('assign_task_edit/<str:id>', views.assign_task_edit, name='assign_task_edit'),
     path('assign_task_delete/<str:id>', views.assign_task_delete),
     path('update_status', views.update_status),
+    path('add_reason', views.add_reason),
     path('add_rating', views.add_rating),
     path('approve_task/<int:id>/', views.approve_task, name='approve_task'),
     path('reject_task/<int:id>/', views.reject_task, name='reject_task'),

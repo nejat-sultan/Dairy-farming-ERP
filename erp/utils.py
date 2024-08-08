@@ -56,6 +56,21 @@ def get_low_quantity_items():
     ).filter(quantity_float__lt=5)
     return low_quantity_items
 
+# def get_upcoming_due_tasks(employee):
+#     now = timezone.now()
+#     notification_threshold = now + timedelta(hours=24) 
+#     upcoming_due_tasks = TaskAssignment.objects.filter(assigned_to=employee,due_time__lte=notification_threshold,due_time__gt=now).exclude(Q(status='Completed') | Q(status='Reassigned'))
+#     return upcoming_due_tasks
+
+def get_overdue_tasks(employee=None):
+    now = timezone.now()
+    if employee:
+        overdue_tasks = TaskAssignment.objects.filter(assigned_to=employee, due_time__lt=now, status__in=['pending', 'On Progress'])
+    else:
+        overdue_tasks = TaskAssignment.objects.filter(due_time__lt=now, status__in=['pending', 'On Progress'])
+    return overdue_tasks
+
+
 def get_assigned_tasks(employee):
     assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status='pending').order_by('-due_time')
     return assigned_tasks

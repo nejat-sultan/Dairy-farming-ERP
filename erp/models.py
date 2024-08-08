@@ -114,6 +114,8 @@ class Employee(models.Model):
     profile_pic_path = models.CharField(max_length=1000, null=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE)
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='employees')
+    employment_approval_status = models.CharField(max_length=45, null=True)
+    probation_end_date = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'employee'
@@ -183,6 +185,8 @@ class TaskAssignment(models.Model):
     due_time = models.DateTimeField(null=True)
     approval_status = models.CharField(max_length=45, null=True)
     rating = models.FloatField(null=True)
+    reason = models.CharField(max_length=200, null=True)
+    task_updated_time = models.DateTimeField(null=True)
 
     class Meta:
         db_table = 'task_assignment'
@@ -272,7 +276,7 @@ class CattleHasVaccine(models.Model):
     cattle = models.ForeignKey(Cattle, on_delete=models.CASCADE)
     vaccine = models.ForeignKey(Vaccine, on_delete=models.CASCADE)
     cattle_given_time = models.DateTimeField(null=True)
-    given_status = models.CharField(max_length=45)
+    given_status = models.CharField(max_length=45, null=True)
     modified_date = models.DateTimeField(null=True)
     
     class Meta:

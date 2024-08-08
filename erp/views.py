@@ -103,6 +103,14 @@ def get_assigned_tasks(employee):
     assigned_tasks = TaskAssignment.objects.filter(assigned_to=employee, status='pending').order_by('-due_time')
     return assigned_tasks
 
+def get_overdue_tasks(employee=None):
+    now = timezone.now()
+    if employee:
+        overdue_tasks = TaskAssignment.objects.filter(assigned_to=employee, due_time__lt=now, status__in=['pending', 'On Progress'])
+    else:
+        overdue_tasks = TaskAssignment.objects.filter(due_time__lt=now, status__in=['pending', 'On Progress'])
+    return overdue_tasks
+
 def get_rejected_tasks(employee):
     rejected_tasks = TaskAssignment.objects.filter(assigned_to=employee,approval_status='Rejected')
     return rejected_tasks
@@ -117,6 +125,7 @@ def farm_context_processor(request):
     approval_required_stockout_requests = get_approval_required_stockout_requests()
     approval_required_stockin_requests = get_approval_required_stockin_requests()
     completed_tasks = get_completed_tasks()
+    overdue_tasks = get_overdue_tasks()
 
     if request.user.is_authenticated:
         try:
@@ -126,7 +135,17 @@ def farm_context_processor(request):
         except UserProfile.DoesNotExist:
             assigned_tasks = []
     else:
-        assigned_tasks = []
+        assigned_tasks = []  
+
+    if request.user.is_authenticated:
+        try:
+            user_profile = UserProfile.objects.get(user=request.user)
+            employee = user_profile.employee
+            overdue_tasks = get_overdue_tasks(employee)
+        except UserProfile.DoesNotExist:
+            overdue_tasks = []
+    else:
+        overdue_tasks = get_overdue_tasks()
 
     if request.user.is_authenticated:
         try:
@@ -148,14 +167,16 @@ def farm_context_processor(request):
         notifications['approval_required_leave_requests'] = approval_required_leave_requests
         notifications['approval_required_stockout_requests'] = approval_required_stockout_requests
         notifications['approval_required_stockin_requests'] = approval_required_stockin_requests
-        notifications['completed_tasks'] = completed_tasks
+        notifications['completed_tasks'] = completed_tasks 
+        notifications['overdue_tasks'] = get_overdue_tasks()
         total_notifications += (len(vaccination_notifications) +
                                 len(approval_required_orders) +
                                 len(approval_required_ordersuppliers) +
                                 len(approval_required_leave_requests) +
                                 len(approval_required_stockout_requests) +
                                 len(approval_required_stockin_requests) +
-                                len(completed_tasks))
+                                len(completed_tasks) + 
+                                len(notifications['overdue_tasks']))
 
     if request.user.has_perm('erp.view_storeclerkdashboard') or request.user.has_perm('erp.view_admindashboard'):
         notifications['low_quantity_items'] = low_quantity_items
@@ -164,7 +185,8 @@ def farm_context_processor(request):
     if request.user.has_perm('erp.view_laboremployeedashboard'):
         notifications['assigned_tasks'] = assigned_tasks
         notifications['rejected_tasks'] = rejected_tasks
-        total_notifications += len(assigned_tasks) + len(rejected_tasks)
+        notifications['overdue_tasks'] = overdue_tasks
+        total_notifications += len(assigned_tasks) + len(rejected_tasks) + len(overdue_tasks)
         
 
     return {
@@ -180,7 +202,9 @@ def farm_context_processor(request):
         'approval_required_stockin_requests_count': len(approval_required_stockin_requests) if 'approval_required_stockin_requests' in notifications else 0,
         'completed_tasks_count': len(completed_tasks) if 'completed_tasks' in notifications else 0,
         'assigned_tasks_count': len(assigned_tasks) if 'assigned_tasks' in notifications else 0,
-        'rejected_tasks_count': len(rejected_tasks) if 'rejected_tasks' in notifications else 0,
+        'rejected_tasks_count': len(rejected_tasks) if 'rejected_tasks' in notifications else 0, 
+        # 'overdue_tasks_count': len(overdue_tasks) if 'overdue_tasks' in notifications else 0,
+        'overdue_tasks_count': len(notifications['overdue_tasks']) if 'overdue_tasks' in notifications else 0,
     }
 
 
@@ -725,6 +749,19 @@ def index(request):
     pending_stockin_requests = get_approval_required_stockin_requests()
     completed_tasks = get_completed_tasks()
     rejected_tasks = get_rejected_tasks(employee)
+
+    overdue_tasks = []
+
+    if request.user.is_authenticated:
+        if request.user.has_perm('erp.view_admindashboard'):
+            overdue_tasks = get_overdue_tasks()
+        else:
+            try:
+                user_profile = UserProfile.objects.get(user=request.user)
+                employee = user_profile.employee
+                overdue_tasks = get_overdue_tasks(employee)
+            except UserProfile.DoesNotExist:
+                overdue_tasks = []
  
     cattle_photos = {}
     for cow in cattle:
@@ -758,7 +795,7 @@ def index(request):
         'employeedatas':employeedatas,'healthdatas':healthdatas,'cattlepregnancy':cattlepregnancy,'leave':leave,'task':task,   'formulations': formulations,'ingredients': ingredients,
         'low_quantity_items': low_quantity_items, 'assigned_tasks': assigned_tasks,'pending_orders': pending_orders,
         'pending_leave_requests': pending_leave_requests,'pending_stockout_requests': pending_stockout_requests,'pending_stockin_requests': pending_stockin_requests,
-        'pending_ordersuppliers': pending_ordersuppliers, 'completed_tasks':completed_tasks, 'rejected_tasks':rejected_tasks, 
+        'pending_ordersuppliers': pending_ordersuppliers, 'completed_tasks':completed_tasks, 'rejected_tasks':rejected_tasks, 'overdue_tasks': overdue_tasks,
         'vaccination_notifications': vaccination_notifications,
     }
     return render(request, 'index.html',context)
@@ -3937,19 +3974,22 @@ def assign_task(request):
     if not request.user.has_perm('erp.view_taskassignment'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
+
     user = request.user
     if request.user.has_perm('erp.add_taskassignment'):
         data = TaskAssignment.objects.all()
+        overdue_tasks = get_overdue_tasks() 
     else:
         user_profile = get_object_or_404(UserProfile, user=user)
         assigned_person = user_profile.employee
         data = TaskAssignment.objects.filter(assigned_to=assigned_person)
+        overdue_tasks = get_overdue_tasks() 
 
     task_data = Task.objects.all()
     shift_data = Shift.objects.all()
     employee_data = Employee.objects.all()
 
-    context = {"data1":data,'task_data': task_data,'shift_data': shift_data, 'employee_data': employee_data}
+    context = {"data1":data,'task_data': task_data,'shift_data': shift_data, 'employee_data': employee_data, 'overdue_tasks': overdue_tasks}
 
     return render(request, 'employee/assign_task.html', context)
 
@@ -4070,9 +4110,11 @@ def update_status(request):
 
             if status == 'Completed' and original_status == 'Rejected':
                 task.status = 'Reassigned'
-                task.approval_status = None
+                task.approval_status = 'pending'
+                task.task_updated_time = datetime.now()
             else:
                 task.status = status
+                task.task_updated_time = datetime.now()
                 print(f'Status set to {status}')  
 
             task.save()
@@ -4085,6 +4127,25 @@ def update_status(request):
     else:
         messages.error(request, 'Invalid request method.')
         return redirect('/assign_task') 
+    
+def add_reason(request):
+    if request.method == 'POST':
+        task_id = request.POST.get('id')
+        reason = request.POST.get('reason')
+
+        if not task_id:
+            messages.error(request, 'Task ID is missing.')
+            return redirect('/assign_task')
+
+        task = get_object_or_404(TaskAssignment, pk=task_id)
+        task.reason = reason   
+        task.save()
+
+        messages.success(request, 'Delay Reason added successfully.')
+        return redirect('/assign_task')
+    else:
+        return redirect('/assign_task')
+
     
 def add_rating(request):
      if request.method == 'POST':

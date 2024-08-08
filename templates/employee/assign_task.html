@@ -51,25 +51,28 @@
             <table id="example1" class="table table-striped projects">
               <thead>
                   <tr>
-                      <th style="width: 5%">
+                      <th style="width: 3%">
                           Id
                       </th>
                       <th style="width: 10%">
                           Task
                       </th>
                       <th style="width: 10%">
-                        Shift
-                      </th>
-                      <th style="width: 10%">
                         Employee
                       </th>
-                      <th style="width: 15%">
+                      <th style="width: 10%">
                           Due Time
                       </th>
                       <th style="width: 10%">
                           Status
                       </th>
-                      <th style="width: 13%">
+                      <th style="width: 10%">
+                        Updated time
+                      </th>
+                      <th style="width: 10%">
+                        Delay Reason
+                      </th>
+                      <th style="width: 10%">
                         Approval Status
                     </th>
                       <th style="width: 27%"> Actions </th>
@@ -77,7 +80,7 @@
               </thead>
               <tbody>
                 {% for d in data1 %}
-                  <tr>
+                  <tr class="{% if d in overdue_tasks %}table-warning{% endif %}">
                       <td>
                         {{d.id}}
                       </td>
@@ -85,13 +88,6 @@
                         {% for task in task_data %}
                           {% if task.id == d.task_id %}
                             {{ task.task_name }}
-                          {% endif %}
-                        {% endfor %}
-                      </td>
-                      <td>
-                        {% for shift in shift_data %}
-                          {% if shift.id == d.shift_id %}
-                            {{ shift.shift_name }}
                           {% endif %}
                         {% endfor %}
                       </td>
@@ -111,6 +107,12 @@
                         </span>
                       </td>
                       <td>
+                        {{d.task_updated_time}}
+                      </td>
+                      <td>
+                        {{d.reason}}
+                      </td>
+                      <td>
                         <span class="badge {% if d.approval_status == 'Approved' %}badge-success{% elif d.approval_status == 'Rejected' %}badge-danger {% endif %}">
                           {{ d.approval_status }}
                         </span>
@@ -120,6 +122,9 @@
                         {% if request.user|has_permission:"erp.change_taskstatus" %} 
                         <a class="btn btn-info btn-sm" href="#" onclick="openEditStatusModal('{{ d.id }}', '{{ d.approval_status }}')" data-toggle="modal" data-target="#editStatusModal">
                           <i class="fas fa-pencil-alt"></i> Update Status
+                        </a>
+                        <a class="btn btn-info btn-sm" href="#" onclick="openAddReasonModal('{{ d.id }}')" data-toggle="modal" data-target="#addReasonModal">
+                          <i class="fas fa-plus"></i> Delay Reason 
                         </a>
                         {% endif %}
                         {% if request.user|has_permission:"erp.change_taskassignment" %} 
@@ -259,6 +264,37 @@
         console.log('Original Status:', originalStatus); 
       }
   </script>
+
+  <div class="modal fade" id="addReasonModal" tabindex="-1" aria-labelledby="addReasonModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addReasonModalLabel">Add Task Delay Reason</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addReasonForm" method="POST" action="/add_reason" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" id="tid">
+                    <div class="form-group">
+                        <label for="reason">Reason</label>
+                        <input type="text" class="form-control" id="reason" name="reason">
+                    </div>
+                    <button type="submit" class="btn float-right" style="background-color: #007f5c;color: #fff;"> Add Reason</button>
+                </form>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <script>
+    function openAddReasonModal(tId) {
+      document.getElementById('tid').value = tId;
+    }
+</script>
+
 
   <div class="modal fade" id="addRatingModal" tabindex="-1" aria-labelledby="addRatingModalLabel" aria-hidden="true">
     <div class="modal-dialog">
