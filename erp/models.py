@@ -1,3 +1,4 @@
+from datetime import timezone
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -101,6 +102,8 @@ class Person(models.Model):
     class Meta:
         db_table = 'person'
 
+from django.utils import timezone
+
 class Employee(models.Model):
     person_farm_entity = models.OneToOneField(Person, on_delete=models.CASCADE, primary_key=True)
     salary = models.FloatField(null=True)
@@ -116,9 +119,12 @@ class Employee(models.Model):
     department = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='employees')
     employment_approval_status = models.CharField(max_length=45, null=True)
     probation_end_date = models.DateTimeField(null=True)
+    last_leave_update = models.DateField(null=True) 
+    years_of_experience = models.FloatField(null=True, default=0)
 
     class Meta:
         db_table = 'employee'
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)

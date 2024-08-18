@@ -554,6 +554,8 @@ def get_procurement_value2(queryset, start_date, end_date):
 
 @login_required(login_url='login')
 def index(request):
+    update_leave_hours()
+
 #milk production report
     end_date = now()
     start_date = end_date - timedelta(days=30)
@@ -611,9 +613,9 @@ def index(request):
     chart_data_json2 = json.dumps(chart_data2)
 
 #vaccination report
-    total_cattle_count = Cattle.objects.count()
+    total_cattle_count = Cattle.objects.filter(cattle_status__cattle_status="Active").count()
     # Get vaccinated cattle count
-    vaccinated_cattle_count = CattleHasVaccine.objects.values('cattle').distinct().count()
+    vaccinated_cattle_count = CattleHasVaccine.objects.filter(cattle__cattle_status__cattle_status="Active",given_status='Given').count()
     # Calculate non-vaccinated cattle count
     non_vaccinated_cattle_count = total_cattle_count - vaccinated_cattle_count
     # Prepare the data for the chart
@@ -6036,6 +6038,74 @@ def employee_view(request, farm_entity_id):
 
     return render(request, 'employee/employee_view.html', context)
 
+def calculate_years_of_experience(employee):
+    total_experience = 0
+    experiences = EmployeeExperience.objects.filter(person_farm_entity=employee)
+    
+    for exp in experiences:
+        start_date = exp.start_date or datetime.now().date()
+        end_date = exp.end_date or datetime.now().date()
+        total_experience += (end_date - start_date).days / 365.25 #converting from days to years
+    
+    if employee.hire_date:
+        current_experience = (datetime.now().date() - employee.hire_date).days / 365.25
+        total_experience += current_experience
+    
+    return total_experience
+
+def calculate_annual_leave_years_of_service(years_of_experience):
+    if years_of_experience < 1:
+        return 0
+
+    years_of_experience = int(years_of_experience)
+
+    total_leave_hours = 0
+    base_hours = 128
+    increment_per_two_years = 8
+    
+    for year in range(1, years_of_experience + 1):
+        increments = (year - 1) // 2
+        total_leave_hours += base_hours + increments * increment_per_two_years
+
+    return total_leave_hours
+
+
+def update_leave_hours():
+    today = timezone.now().date()
+
+    employees_on_probation = Employee.objects.filter(probation_end_date__lte=today, available_leave_hours=0, contract_type="Permanent")
+    for employee in employees_on_probation:
+        employee.available_leave_hours = 128  
+        employee.last_leave_update = today 
+        employee.save()
+
+
+    permanent_employees = Employee.objects.filter(contract_type="Permanent")
+    for employee in permanent_employees:
+        if employee.last_leave_update is None or employee.last_leave_update.year < today.year:
+            employee.years_of_experience = calculate_years_of_experience(employee) 
+            employee.available_leave_hours = calculate_annual_leave_years_of_service(employee.years_of_experience)
+            employee.last_leave_update = today
+            employee.save()
+
+
+def add_months(source_date, months):
+    new_month = source_date.month - 1 + months
+    new_year = source_date.year + new_month // 12
+    new_month = new_month % 12 + 1  # Wrap around to 1-12
+    
+    if new_month == 2: 
+        # Check if the new year is a leap year
+        if (new_year % 4 == 0 and (new_year % 100 != 0 or new_year % 400 == 0)):
+            day = min(source_date.day, 29)  # 29 days in leap year
+        else:
+            day = min(source_date.day, 28)  # 28 days in non-leap year
+    elif new_month in [4, 6, 9, 11]:  # April, June, September, November
+        day = min(source_date.day, 30)  # 30 days
+    else:
+        day = min(source_date.day, 31)  # 31 days for the rest
+    return datetime(new_year, new_month, day)
+
 @login_required(login_url='login')
 def employee_add(request):
     if not request.user.has_perm('erp.add_employee'):
@@ -6052,7 +6122,7 @@ def employee_add(request):
         cdepartment = request.POST.get('department')
         csalary = request.POST.get('salary')
         chire_data = request.POST.get('hire_date')
-        cavailableleavehours = 384
+        cavailableleavehours = 0
         cnational_id = request.POST.get('national_id')
         ccontract_type = request.POST.get('contract_type')
         ccontract_period = request.POST.get('contract_period')
@@ -6100,7 +6170,13 @@ def employee_add(request):
         else:
             ccontract_period = 0 
 
-        
+        probation_end_date = None
+        if chire_data and ccontract_type == "Permanent":
+            probation_duration = 3 
+            probation_end_date = add_months(chire_data, probation_duration)
+            if timezone.now().date() >= probation_end_date.date():
+                cavailableleavehours = 128
+
         if errors:
             context = {
                 'errors': errors,
@@ -6144,7 +6220,13 @@ def employee_add(request):
             department_id=cdepartment,
             modified_date=cdate,
             status=cstatus,
+            probation_end_date=probation_end_date,
         )
+
+        total_experience = calculate_years_of_experience(employee)
+        employee.years_of_experience = total_experience
+        employee.save()
+
 
         messages.success(request, "Employee Added Successfully!")
         return redirect("/employee")
@@ -6195,7 +6277,8 @@ def employee_edit(request, farm_entity_id):
 
         employee.department_id = request.POST.get('department')
         employee.salary = request.POST.get('salary')
-        employee.hire_date = request.POST.get('hire_date')
+        new_hire_date = request.POST.get('hire_date')
+        employee.available_leave_hours = request.POST.get('available_leave_hours')
         employee.national_id = request.POST.get('national_id')
         employee.contract_type = request.POST.get('contract_type')
         employee.contract_period_in_month = request.POST.get('contract_period')
@@ -6211,14 +6294,14 @@ def employee_edit(request, farm_entity_id):
         else:
             person.date_of_birth = None 
 
-        if employee.hire_date:
-            parsed_hire_data = parse_date(employee.hire_date)
+        if new_hire_date:
+            parsed_hire_data = parse_date(new_hire_date)
             if not parsed_hire_data:
                 errors.append('Hire date must be in YYYY-MM-DD format.')
             else:
-                employee.hire_date = parsed_hire_data
+                new_hire_date = parsed_hire_data
         else:
-            employee.hire_date = None 
+            new_hire_date = None 
 
         if not person.gender:
             errors.append('Gender is required.')
@@ -6233,6 +6316,14 @@ def employee_edit(request, farm_entity_id):
         else:
             employee.salary = 0 
 
+        if employee.available_leave_hours:
+            try:
+                employee.available_leave_hours = float(employee.available_leave_hours)
+            except ValueError:
+                errors.append('Available Leave Hours must be a number.')
+        else:
+            employee.available_leave_hours = 0 
+
         if employee.contract_period_in_month:
             try:
                 employee.contract_period_in_month = float(employee.contract_period_in_month)
@@ -6240,6 +6331,25 @@ def employee_edit(request, farm_entity_id):
                 errors.append('Contract Period must be a number.')
         else:
             employee.contract_period_in_month = 0
+
+        if employee.contract_type == "Permanent":
+            probation_duration = 3
+            if new_hire_date and new_hire_date != employee.hire_date:
+                employee.probation_end_date = add_months(new_hire_date, probation_duration)
+                employee.hire_date = new_hire_date
+
+                years_of_experience = (timezone.now().date() - employee.hire_date).days / 365.25
+                employee.available_leave_hours = calculate_annual_leave_years_of_service(years_of_experience)
+                # employee.last_leave_update = timezone.now().date()  
+            else:
+                employee.probation_end_date = add_months(employee.hire_date, probation_duration)
+        else:
+            if new_hire_date:
+                employee.hire_date = new_hire_date
+                years_of_experience = (timezone.now().date() - employee.hire_date).days / 365.25
+            else:
+                years_of_experience = (timezone.now().date() - employee.hire_date).days / 365.25
+
 
         if errors:
             context = {
@@ -6258,6 +6368,10 @@ def employee_edit(request, farm_entity_id):
             return render(request, 'employee/employee_edit.html', context)
 
         person.save()
+        employee.save()
+
+        total_experience = calculate_years_of_experience(employee)
+        employee.years_of_experience = total_experience
         employee.save()
 
         messages.success(request, "Employee Updated Successfully!")
@@ -6537,6 +6651,14 @@ def add_employee_experience(request):
         )
         experience.save()
 
+        employee = get_object_or_404(Employee, person_farm_entity_id=cemployee_id)
+        total_experience = calculate_years_of_experience(employee)
+        employee.years_of_experience = total_experience
+        if employee.contract_type == "Permanent":
+            employee.available_leave_hours = calculate_annual_leave_years_of_service(total_experience)
+        employee.save()
+                
+
         messages.success(request, "Employee Experience Added Successfully!")
         return redirect('employee_edit', farm_entity_id=cemployee_id)
 
@@ -6627,6 +6749,13 @@ def edit_employee_experience(request):
         experience.end_date = end_date
         experience.salary = salary
         experience.save()
+
+        employee = get_object_or_404(Employee, person_farm_entity_id=experience.person_farm_entity_id)
+        total_experience = calculate_years_of_experience(employee)
+        employee.years_of_experience = total_experience
+        if employee.contract_type == "Permanent":
+            employee.available_leave_hours = calculate_annual_leave_years_of_service(total_experience)
+        employee.save()
 
         messages.success(request, 'Experience updated successfully.')
         return redirect('employee_edit', farm_entity_id=experience.person_farm_entity_id)
@@ -7015,6 +7144,12 @@ def leave_add(request):
 
         user_profile = UserProfile.objects.get(user=request.user)
         cperson_farm_entity_id = user_profile.employee_id
+    
+        employee = get_object_or_404(Employee, pk=cperson_farm_entity_id)
+
+        if employee.probation_end_date is None or timezone.now() < employee.probation_end_date:
+            messages.error(request, "You cannot request leave until you have passed your probation period.")
+            return redirect("/leave_add")
 
         query = EmployeeLeave.objects.create(start_date=cstart_date, end_date=cend_date, reason=creason,approval_status=capproval_status, person_farm_entity_id=cperson_farm_entity_id)
         query.save()
