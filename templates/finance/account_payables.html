@@ -91,66 +91,94 @@
     document.getElementById('clear-filters').addEventListener('click', function() {
         window.location.href = window.location.pathname;
     });
+
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').setAttribute('max', today);
+        document.getElementById('end_date').setAttribute('max', today);
+    });
 </script> 
 
 <script>
+    function getBase64Image(url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+        xhr.responseType = 'blob'; 
+        xhr.onload = function() {
+            var reader = new FileReader();
+            reader.onloadend = function() {
+                callback(reader.result); 
+            };
+            reader.readAsDataURL(xhr.response); 
+        };
+        xhr.send();
+    }
+
     $(document).ready(function() {
-        function initializeDataTables(companyName, startDate, endDate) {
-            var table = $('#example2').DataTable({
-                responsive: true,
-                lengthChange: false,
-                autoWidth: false,
-                buttons: [
-                    'copy', 'excel', 'pdf', 'print'
-                ],
-                order: [],
-                dom: 'Bfrtip', 
-                buttons: [
-                    'copy',
-                    {
-                        extend: 'excel',
-                        title: function() {
-                            return companyName + ' Account Payables Report - ' + startDate + ' to ' + endDate;
-                        },
-                        customize: function(xlsx) {
-                            var sheet = xlsx.xl.worksheets['sheet1.xml'];
-                            $('row c[r^="A"]', sheet).attr('s', '2');
-                        }
-                    },
-                    {
-                        extend: 'pdf',
-                        title: function() {
-                            return 'Account Payables Report'
-                        },
-                        customize: function(doc) {
-                            doc.content.splice(0, 0, {
-                                text: startDate + ' to ' + endDate + '\n' + companyName,
-                                style: 'header'
-                            });
-                        }
-                    },
-                    {
-                        extend: 'print',
-                        title: function() {
-                            return 'Account Payables Report';
-                        },
-                        customize: function(win) {
-                            $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
-                            $(win.document.body).prepend('<h5 style="text-align:center;">' + startDate + ' to ' + endDate + '</h5>');
-                            $(win.document.body).find('h3, h5').css('text-align', 'center');
-                        }
-                    }
-                ]
-            });
-
-            table.buttons().container().appendTo($('#example2_wrapper .col-md-6:eq(0)'));
-        }
-
         var companyName = "{{ latest_farm.full_name }}";
+        var logoUrl = "{{ latest_farm.logo_url }}"; 
         var startDate = "{{ request.GET.start_date }}";
         var endDate = "{{ request.GET.end_date }}";
-        initializeDataTables(companyName, startDate, endDate);
+    
+        getBase64Image(logoUrl, function(base64Image) {
+            initializeDataTables(companyName, startDate, endDate, base64Image, logoUrl);
+        });
     });
+        
+    function initializeDataTables(companyName, startDate, endDate, base64Image, logoUrl) {
+        var table = $('#example2').DataTable({
+            responsive: true,
+            lengthChange: false,
+            autoWidth: false,
+            buttons: [
+                'copy', 
+                {
+                    extend: 'excel',
+                    title: function() {
+                        return companyName + ' Account Payables Report - ' + startDate + ' to ' + endDate;
+                    },
+                    customize: function(xlsx) {
+                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                        $('row c[r^="A"]', sheet).attr('s', '2');
+                    }
+                },
+                {
+                    extend: 'pdf',
+                    title: function() {
+                        return 'Account Payables Report';
+                    },
+                    customize: function(doc) {
+                        doc.content.splice(0, 0, {
+                            text: startDate + ' to ' + endDate + '\n' + companyName,
+                            style: 'header'
+                        });
+                        doc.content.splice(1, 0, {
+                            image: base64Image,
+                            width: 100, 
+                            alignment: 'center'
+                        });
+                    }
+                },
+                {
+                    extend: 'print',
+                    title: function() {
+                        return 'Account Payables Report';
+                    },
+                    customize: function(win) {
+                        $(win.document.body).prepend('<img src="' + logoUrl + '" style="display:block; margin:auto; width:100px;">');
+                        $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
+                        $(win.document.body).prepend('<h5 style="text-align:center;">' + startDate + ' to ' + endDate + '</h5>');
+                        $(win.document.body).find('h3, h5').css('text-align', 'center');
+                    }
+                }
+            ],
+            order: [],
+            dom: 'Bfrtip'
+        });
+    
+        table.buttons().container().appendTo($('#example2_wrapper .col-md-6:eq(0)'));
+    }
+
 </script>
 
 {% endblock %}

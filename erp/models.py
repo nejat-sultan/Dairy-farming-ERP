@@ -102,7 +102,6 @@ class Person(models.Model):
     class Meta:
         db_table = 'person'
 
-from django.utils import timezone
 
 class Employee(models.Model):
     person_farm_entity = models.OneToOneField(Person, on_delete=models.CASCADE, primary_key=True)

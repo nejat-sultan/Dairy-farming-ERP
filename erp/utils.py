@@ -23,7 +23,7 @@ def get_vaccination_notifications():
     now = timezone.now()
     one_week_later = now + timedelta(days=7)
 
-    upcoming_vaccinations = CattleHasVaccine.objects.filter(cattle_given_time__range=(now, one_week_later),given_status='Pending').order_by('cattle_given_time')
+    upcoming_vaccinations = CattleHasVaccine.objects.filter(cattle__cattle_status__cattle_status="Active", cattle_given_time__range=(now, one_week_later),given_status='Pending').order_by('cattle_given_time')
     for vaccination in upcoming_vaccinations:
         cattle = vaccination.cattle
         notifications.append({
@@ -34,7 +34,7 @@ def get_vaccination_notifications():
             'status': 'upcoming'
         })
 
-    overdue_vaccinations = CattleHasVaccine.objects.filter(cattle_given_time__lt=now,given_status='Pending').order_by('cattle_given_time')
+    overdue_vaccinations = CattleHasVaccine.objects.filter(cattle__cattle_status__cattle_status="Active", cattle_given_time__lt=now,given_status='Pending').order_by('cattle_given_time')
     for vaccination in overdue_vaccinations:
         cattle = vaccination.cattle
         notifications.append({
@@ -94,6 +94,10 @@ def get_approval_required_ordersuppliers():
 def get_approval_required_leave_requests():
     approval_required_leave_requests = EmployeeLeave.objects.filter(approval_status='Pending')
     return approval_required_leave_requests
+
+# def get_approved_leave(employee):
+#     approved_leave = EmployeeLeave.objects.filter(person_farm_entity_id=employee,approval_status='Approved')
+#     return approved_leave
 
 def get_approval_required_stockout_requests():
     approval_required_stockout_requests = Stockout.objects.filter(status='Pending')
