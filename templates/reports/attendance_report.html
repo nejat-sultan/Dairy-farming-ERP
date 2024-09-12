@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Attendance Report</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="">Home</a></li>
+                        <li class="breadcrumb-item active">Attendance Report</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Attendance</h3>
+                <div class="card-tools">
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <form method="get" id="attendance-form">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="start_date">Start Date:</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request.GET.start_date }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="end_date">End Date:</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request.GET.end_date }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="employee">Employee:</label>
+                                <select class="form-control" id="employee" name="employee">
+                                    <option value="">All</option>
+                                    {% for employee in employee_list %}
+                                    <option value="{{ employee.person_farm_entity_id }}" {% if request.GET.employee == employee.person_farm_entity_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ employee.person_farm_entity.first_name }} {{ employee.person_farm_entity.middle_name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn" style="background-color: #007f5c;color: #fff;">Apply Filters</button>
+                    <button type="button" class="btn btn-secondary" id="clear-filters">Clear Filters</button>
+                </form>
+            </div>
+
+            {% if filters_applied %} 
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table id="example2" class="table table-striped projects">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Employee</th>
+                                <th>Check-in Time</th>
+                                <th>Check-out Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in attendance_data %}
+                            <tr>
+                                <td>{{ entry.date }}</td>
+                                <td>{{ entry.employee.person_farm_entity.first_name }} {{ entry.employee.person_farm_entity.middle_name }}</td> 
+                                <td>{{ entry.check_in_time }}</td>
+                                <td>{{ entry.check_out_time }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <br>
+        <div class="row">
+            <div class="col-12">
+                <a href="../../reports" class="btn btn-secondary">Back</a>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+    document.getElementById('clear-filters').addEventListener('click', function() {
+        window.location.href = window.location.pathname;
+    });
+</script>
+
+<script>
+    function getBase64Image(url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+        xhr.responseType = 'blob'; 
+        xhr.onload = function() {
+            var reader = new FileReader();
+            reader.onloadend = function() {
+                callback(reader.result); 
+            };
+            reader.readAsDataURL(xhr.response); 
+        };
+        xhr.send();
+    }
+
+    $(document).ready(function() {
+        var companyName = "{{ latest_farm.full_name }}";
+        var logoUrl = "{{ latest_farm.logo_url }}"; 
+        var startDate = "{{ request.GET.start_date }}";
+        var endDate = "{{ request.GET.end_date }}";
+    
+        getBase64Image(logoUrl, function(base64Image) {
+            initializeDataTables(companyName, startDate, endDate, base64Image, logoUrl);
+        });
+    });
+        
+    function initializeDataTables(companyName, startDate, endDate, base64Image, logoUrl) {
+        var table = $('#example2').DataTable({
+            responsive: true,
+            lengthChange: false,
+            autoWidth: false,
+            buttons: [
+                'copy', 
+                {
+                    extend: 'excel',
+                    title: function() {
+                        return companyName + ' Attendance Report - ' + startDate + ' to ' + endDate;
+                    },
+                    customize: function(xlsx) {
+                        var sheet = xlsx.xl.worksheets['sheet1.xml'];
+                        $('row c[r^="A"]', sheet).attr('s', '2');
+                    }
+                },
+                {
+                    extend: 'pdf',
+                    title: function() {
+                        return 'Attendance Report';
+                    },
+                    customize: function(doc) {
+                        doc.content.splice(0, 0, {
+                            text: startDate + ' to ' + endDate + '\n' + companyName,
+                            style: 'header'
+                        });
+                        doc.content.splice(1, 0, {
+                            image: base64Image,
+                            width: 100, 
+                            alignment: 'center'
+                        });
+                    }
+                },
+                {
+                    extend: 'print',
+                    title: function() {
+                        return 'Attendance Report';
+                    },
+                    customize: function(win) {
+                        $(win.document.body).prepend('<img src="' + logoUrl + '" style="display:block; margin:auto; width:100px;">');
+                        $(win.document.body).prepend('<h3 style="text-align:center;">' + companyName + '</h3>');
+                        $(win.document.body).prepend('<h5 style="text-align:center;">' + startDate + ' to ' + endDate + '</h5>');
+                        $(win.document.body).find('h3, h5').css('text-align', 'center');
+                    }
+                }
+            ],
+            order: [],
+            dom: 'Bfrtip'
+        });
+    
+        table.buttons().container().appendTo($('#example2_wrapper .col-md-6:eq(0)'));
+    }
+
+</script>
+
+{% endblock %}

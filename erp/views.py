@@ -1,8 +1,6 @@
 import base64
-from calendar import monthrange
 from collections import defaultdict
 from datetime import datetime
-from urllib.parse import urlencode
 from django.utils.timezone import now, timedelta
 import json
 import logging
@@ -13,15 +11,14 @@ import matplotlib # type: ignore
 matplotlib.use('agg') 
 import matplotlib.pyplot as plt # type: ignore
 import pandas as pd # type: ignore
-from django.forms import DateField, ValidationError
 from django.shortcuts import get_object_or_404, render,redirect
 from django.core.files.storage import FileSystemStorage
 from django.utils import timezone
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect, JsonResponse
 from decimal import Decimal
 from erp.decorators import allowed_users, unauthenticated_user
 from dairyfarmingerp import settings
-from .models import CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleSales, CattleStatus, ContactType, CurrentMilkPrice, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, Farm, FarmContacts, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, OtherIncomeExpense, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
+from .models import Attendance, CattleBreed, CattleHasFeed, CattleHasVaccine, CattleHealthCheckup, CattleHealthCheckupHasMedicine, CattlePhoto, CattlePregnancy, CattleSales, CattleStatus, ContactType, CurrentMilkPrice, Customer, Dashboard, Department, DirectlyAddedItem, Employee, EmployeeExperience, EmployeeLeave, Farm, FarmContacts, FarmEntity, FarmEntityAddress, FarmEntityContact, FeedFormulation, FeedIngredient, Guarantee, GuaranteeType, HealthCheckupSymptoms, Item, ItemType, OtherIncomeExpense, PaymentMethod, SalesOrder, Stock, ItemMeasurement, Job, JobHistory, Medicine, MilkProduction, Order, OrderHasItem, OrderHasItemSupplier, Person, PersonTitle, PersonType, PregnancyStatus, Region, Shift, Stockout, Supplier, SupplierType, Task, TaskAssignment, UserProfile, Vaccine
 from .models import Cattle
 from django.contrib import messages
 from django.contrib.auth.forms import UserCreationForm
@@ -1168,6 +1165,7 @@ def cattle_breed(request):
     if not request.user.has_perm('erp.view_cattlebreed'):
         messages.error(request, 'You are not authorised to view the page.')
         return redirect(request.META.get('HTTP_REFERER', '/'))
+    
     data = CattleBreed.objects.all().order_by('-modified_date')
     context = {"data1":data}
 
@@ -4022,7 +4020,8 @@ def assign_task_add(request):
                 'errors': errors,
                 'data1': Task.objects.all(),
                 'data2': Shift.objects.all(),
-                'data3': Employee.objects.all(),
+                # 'data3': Employee.objects.all(),
+                'data3': Employee.objects.filter(attendance__date=timezone.now().date(),attendance__check_out_time__isnull=True).distinct(),
 
             }
             return render(request, 'employee/assign_task_add.html', context)
@@ -4034,7 +4033,8 @@ def assign_task_add(request):
      
     task_data = Task.objects.all()
     shift_data = Shift.objects.all()
-    employee_data = Employee.objects.all()
+    # employee_data = Employee.objects.all()
+    employee_data = Employee.objects.filter(attendance__date=timezone.now().date(),attendance__check_out_time__isnull=True).distinct()
     context = {
         'data1': task_data,
         'data2': shift_data,
@@ -4070,7 +4070,7 @@ def assign_task_edit(request,id):
                 'd': TaskAssignment.objects.get(id=id),
                 'data1': Task.objects.all(),
                 'data2': Shift.objects.all(),
-                'data3': Employee.objects.all(),
+                'data3': Employee.objects.filter(attendance__date=timezone.now().date(),attendance__check_out_time__isnull=True).distinct(),
 
             }
             return render(request, 'employee/assign_task_edit.html', context)
@@ -4087,7 +4087,7 @@ def assign_task_edit(request,id):
     d = TaskAssignment.objects.get(id=id)
     task_data = Task.objects.all()
     shift_data = Shift.objects.all()
-    employee_data = Employee.objects.all()
+    employee_data = Employee.objects.filter(attendance__date=timezone.now().date(),attendance__check_out_time__isnull=True).distinct()
     context = {'d': d,'data1': task_data,'data2': shift_data,'data3': employee_data,}
 
     return render(request, 'employee/assign_task_edit.html', context)
@@ -6107,6 +6107,55 @@ def add_months(source_date, months):
     return datetime(new_year, new_month, day)
 
 @login_required(login_url='login')
+def mark_attendance(request):
+    if request.method == 'POST':
+        user = request.user
+        try:
+            user_profile = UserProfile.objects.get(user=user)
+            employee = user_profile.employee
+
+            # Get current time in local timezone
+            current_time = timezone.localtime(timezone.now()).time()
+
+            # Create or update attendance record for today
+            attendance, created = Attendance.objects.get_or_create(
+                employee=employee,
+                date=timezone.now().date(),
+                defaults={'check_in_time': current_time}
+            )
+            if not created and not attendance.check_out_time:
+                # If already checked in but hasn't checked out yet, allow them to check out
+                attendance.check_out_time = current_time
+                attendance.save()
+
+            return JsonResponse({'status': 'success', 'created': created})
+        except UserProfile.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'User profile not found'})
+        except Employee.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Employee not found'})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+def attendance(request):
+    if not request.user.has_perm('erp.view_attendance'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    
+    user = request.user
+    if request.user.has_perm('erp.view_admindashboard'):
+        data = data = Attendance.objects.all().order_by('-date')
+    else:
+        user_profile = get_object_or_404(UserProfile, user=user)
+        attendance_person = user_profile.employee
+        data = Attendance.objects.filter(employee_id=attendance_person)
+
+    employee = Employee.objects.all()
+    context = {"data":data, 'employee':employee}
+
+    return render(request, 'employee/attendance.html', context)
+
+
+@login_required(login_url='login')
 def employee_add(request):
     if not request.user.has_perm('erp.add_employee'):
         messages.error(request, 'You are not authorised to view the page.')
@@ -7380,7 +7429,7 @@ def balance_sheet(request):
     accounts_receivable_value2 = CattleSales.objects.filter(payment_status='Not Paid', order_date__year__lte=current_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
     other_income_value = OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year,transaction_type='Income',transaction_status='Pending').aggregate(total_value=Sum('amount'))['total_value'] or 0
     current_year_assets = {
-        'cattle': Cattle.objects.filter(acquired_date__year__lte=current_year).aggregate(total_value=Sum('estimated_price'))['total_value'] or 0,
+        'cattle': Cattle.objects.filter(cattle_status__cattle_status="Active", acquired_date__year__lte=current_year).aggregate(total_value=Sum('estimated_price'))['total_value'] or 0,
         'stock': get_total_stock_value(Stock.objects.all()),
         'accounts_receivable': accounts_receivable_value + accounts_receivable_value2 + other_income_value,
         'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=current_year, transaction_type='Income', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
@@ -7391,7 +7440,7 @@ def balance_sheet(request):
     past_accounts_receivable_value2 = CattleSales.objects.filter(payment_status='Not Paid',order_date__year__lte=past_year).aggregate(total_value=Sum('total_amount'))['total_value'] or 0
     past_other_income_value = OtherIncomeExpense.objects.filter(transaction_date__year__lte=past_year, transaction_type='Income', transaction_status='Pending').aggregate(total_value=Sum('amount'))['total_value'] or 0
     past_year_assets = {
-        'cattle': Cattle.objects.filter(acquired_date__year__lte=past_year).aggregate(total_value=Sum('estimated_price'))['total_value'] or 0,
+        'cattle': Cattle.objects.filter(cattle_status__cattle_status="Active", acquired_date__year__lte=past_year).aggregate(total_value=Sum('estimated_price'))['total_value'] or 0,
         'stock': 0,
         'accounts_receivable': past_accounts_receivable_value + past_accounts_receivable_value2 + past_other_income_value,
         'other_income': OtherIncomeExpense.objects.filter(transaction_date__year__lte=past_year, transaction_type='Income', transaction_status='Paid').aggregate(total_value=Sum('amount'))['total_value'] or 0,
@@ -8117,6 +8166,34 @@ def leave_report(request):
 
     return render(request, 'reports/leave_report.html', context)
 
+@login_required(login_url='login')
+def attendance_report(request):
+    if not request.user.has_perm('erp.view_reports'):
+        messages.error(request, 'You are not authorised to view the page.')
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    employee_id = request.GET.get('employee')
+
+    attendance_data = Attendance.objects.all()
+
+    if start_date:
+        attendance_data = attendance_data.filter(date__gte=start_date)
+    if end_date:
+        attendance_data = attendance_data.filter(date__lte=end_date)
+    if employee_id:
+        attendance_data = attendance_data.filter(employee_id=employee_id)
+
+    employee_list = Employee.objects.all()
+
+    context = {
+        'attendance_data': attendance_data,
+        'employee_list': employee_list,
+        'filters_applied': bool(start_date or end_date or employee_id),
+    }
+
+    return render(request, 'reports/attendance_report.html', context)
 
 @login_required(login_url='login')
 def cattle_report(request):

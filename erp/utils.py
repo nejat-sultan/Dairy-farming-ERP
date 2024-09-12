@@ -53,7 +53,7 @@ def get_low_quantity_items():
             F('quantity'),
             output_field=FloatField()
         )
-    ).filter(quantity_float__lt=5)
+    ).filter(quantity_float__lt=10)
     return low_quantity_items
 
 # def get_upcoming_due_tasks(employee):

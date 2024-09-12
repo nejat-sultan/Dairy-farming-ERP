@@ -1,7 +1,4 @@
 from django.urls import path
-
-from dairyfarmingerp import settings
-from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
@@ -23,6 +20,7 @@ urlpatterns = [
     path('change_password', views.change_password, name='change_password'),
 
     path('cattle', views.cattle),
+    
     path('cattle_add', views.cattle_add),
     path('cattle_view/<str:farm_entity_id>', views.cattle_view, name='cattle_view'),
     path('cattle_edit/<str:farm_entity_id>', views.cattle_edit, name='cattle_edit'),
@@ -279,6 +277,9 @@ urlpatterns = [
     path('employee_delete/<int:farm_entity_id>', views.employee_delete),
     path('employee_view/<str:farm_entity_id>', views.employee_view, name='employee_view'),
 
+    path('mark-attendance/', views.mark_attendance, name='mark_attendance'),
+    path('attendance', views.attendance, name='attendance'),
+
     path('add_employee_contact', views.add_employee_contact),
     path('add_employee_address', views.add_employee_address),
     path('add_employee_experience', views.add_employee_experience),
@@ -324,6 +325,7 @@ urlpatterns = [
     path('supplier_report/', views.supplier_report),
     path('employee_report/', views.employee_report),
     path('task_report/', views.task_report),
+    path('attendance_report/', views.attendance_report),
     path('employee_with_task_report/', views.employee_with_task_report),
     path('leave_report/', views.leave_report),
     path('cattle_report/', views.cattle_report),

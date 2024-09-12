@@ -603,6 +603,14 @@
                 </a>
               </li> 
               {% endif %}   
+              {% if request.user|has_permission:"erp.view_attendance" %}
+              <li class="nav-item">
+                <a href="../../attendance" class="nav-link">
+                  <i class="nav-icon fas fa-arrow-right"></i>
+                  <p>Attendance</p>
+                </a>
+              </li> 
+              {% endif %} 
             </ul>
             {% endif %}  
           </li>

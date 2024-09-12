@@ -1,6 +1,6 @@
-from datetime import timezone
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 # Create your models here.
 class Dashboard:
@@ -102,7 +102,6 @@ class Person(models.Model):
     class Meta:
         db_table = 'person'
 
-
 class Employee(models.Model):
     person_farm_entity = models.OneToOneField(Person, on_delete=models.CASCADE, primary_key=True)
     salary = models.FloatField(null=True)
@@ -124,6 +123,15 @@ class Employee(models.Model):
     class Meta:
         db_table = 'employee'
 
+class Attendance(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    date = models.DateField(default=timezone.now)
+    check_in_time = models.TimeField(auto_now_add=True)
+    check_out_time = models.TimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'attendance'
+        unique_together = ('employee', 'date')  # Ensure each employee has one record per day
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -131,6 +139,7 @@ class UserProfile(models.Model):
 
     class Meta:
         db_table = 'user_profile'
+
 
 class EmployeeExperience(models.Model):
     experience_id = models.AutoField(primary_key=True)

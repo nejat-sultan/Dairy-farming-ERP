@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+
+  <div class="content-wrapper">
+    <section class="content-header">
+      <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-sm-6">
+            <h1>Attendance</h1>
+          </div>
+          <div class="col-sm-6">
+            <ol class="breadcrumb float-sm-right">
+              <li class="breadcrumb-item"><a href="">Home</a></li>
+              <li class="breadcrumb-item active">Attendance</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content">
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Attendance</h3>
+
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Collapse">
+              <i class="fas fa-minus"></i>
+            </button>
+          </div>
+        </div>
+
+        {% for message in messages %}
+        <div class="alert alert-{{message.tags}} alert-dismissible fade show" role="alert">
+          <strong>{{message}}</strong>
+        </div>
+        {% endfor %}
+        
+        <div class="card-body">
+          <div class="table-responsive">
+            <table id="example1" class="table table-striped projects">
+              <thead>
+                  <tr>
+                      <th style="width: 15%">
+                        Id
+                      </th>
+                      <th style="width: 15%">
+                        Employee
+                      </th>
+                      <th style="width: 20%">
+                        Date
+                      </th>
+                      <th style="width: 25%">
+                        Check In
+                      </th>
+                      <th style="width: 25%">
+                        Check Out
+                      </th>
+                  </tr> 
+              </thead>
+              <tbody>
+                {% for d in data %}
+                  <tr>
+                      <td>
+                        {{d.id}}
+                      </td>
+                      <td>
+                        {% for emp in employee %}
+                          {% if emp.person_farm_entity_id == d.employee_id %}
+                            {{ emp.person_farm_entity.first_name }}  {{ emp.person_farm_entity.middle_name }}
+                          {% endif %}
+                        {% endfor %}
+                      </td>
+                      <td>
+                        {{d.date}}
+                      </td>
+                      <td>
+                        {{d.check_in_time}}
+                      </td>
+                      <td>
+                        {{d.check_out_time}}
+                      </td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  {% endblock %}
